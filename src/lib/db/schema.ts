@@ -81,3 +81,17 @@ export const dailySummaries = pgTable(
 
 export const mealTypes = ["breakfast", "lunch", "dinner", "snack"] as const;
 export type MealType = (typeof mealTypes)[number];
+
+export const userAiConfigs = pgTable(
+  "user_ai_configs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    baseUrl: text("base_url"),
+    model: text("model"),
+    apiKey: text("api_key"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [unique("user_ai_configs_user_id_unique").on(table.userId)],
+);
