@@ -1,51 +1,16 @@
-# Logging Guidelines
+# 日志规范
 
-> How logging is done in this project.
+## 当前状态
 
----
+当前业务代码没有引入 pino 或其他结构化 logger，也没有生产日志事件实现。不要在 API 中新增 `console.log` 作为业务日志。
 
-## Overview
+## 未来新增日志时必须遵守
 
-<!--
-Document your project's logging conventions here.
+* 记录事件名、资源 ID、用户 ID 和耗时等必要元数据。
+* 禁止记录密码、密码哈希、JWT、邀请码明文、`DATABASE_URL` 或其他 API Key。
+* AI 原始响应和图片二进制不能进入普通日志。
+* 错误日志应记录可诊断的错误类型，不返回调用栈给客户端。
 
-Questions to answer:
-- What logging library do you use?
-- What are the log levels and when to use each?
-- What should be logged?
-- What should NOT be logged (PII, secrets)?
--->
+## 当前验证
 
-(To be filled by the team)
-
----
-
-## Log Levels
-
-<!-- When to use each level: debug, info, warn, error -->
-
-(To be filled by the team)
-
----
-
-## Structured Logging
-
-<!-- Log format, required fields -->
-
-(To be filled by the team)
-
----
-
-## What to Log
-
-<!-- Important events to log -->
-
-(To be filled by the team)
-
----
-
-## What NOT to Log
-
-<!-- Sensitive data, PII, secrets -->
-
-(To be filled by the team)
+质量检查使用 `rg 'console\\.(log|debug)' src` 确认业务源码没有调试输出。

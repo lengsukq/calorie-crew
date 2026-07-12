@@ -1,39 +1,23 @@
-# Frontend Development Guidelines
+# 前端开发规范
 
-> Best practices for frontend development in this project.
+> 当前实现：Next.js App Router + React + TypeScript + 普通 CSS；尚未接入 Tailwind。
 
----
+## 开发前检查清单
 
-## Overview
+* [ ] 页面是否使用 Server Component 处理鉴权和首屏边界？
+* [ ] 客户端组件是否只保留必要的表单/交互状态？
+* [ ] API 输入/输出是否有对应的 TypeScript 类型或 Zod schema？
+* [ ] 所有按钮是否有 disabled/loading 状态？
+* [ ] 手机、平板、PC 是否都没有横向溢出？
+* [ ] 用户数据是否只通过当前会话用户访问？
 
-This directory contains guidelines for frontend development. Fill in each file with your project's specific conventions.
+## 规范索引
 
----
-
-## Guidelines Index
-
-| Guide | Description | Status |
-|-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | Module organization and file layout | To fill |
-| [Component Guidelines](./component-guidelines.md) | Component patterns, props, composition | To fill |
-| [Hook Guidelines](./hook-guidelines.md) | Custom hooks, data fetching patterns | To fill |
-| [State Management](./state-management.md) | Local state, global state, server state | To fill |
-| [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | To fill |
-| [Type Safety](./type-safety.md) | Type patterns, validation | To fill |
-
----
-
-## How to Fill These Guidelines
-
-For each guideline file:
-
-1. Document your project's **actual conventions** (not ideals)
-2. Include **code examples** from your codebase
-3. List **forbidden patterns** and why
-4. Add **common mistakes** your team has made
-
-The goal is to help AI assistants and new team members understand how YOUR project works.
-
----
-
-**Language**: All documentation should be written in **English**.
+| 文档 | 说明 | 状态 |
+|---|---|---|
+| [目录结构](./directory-structure.md) | 当前页面和组件组织 | 已完成 |
+| [组件规范](./component-guidelines.md) | Props、客户端组件、响应式 | 已完成 |
+| [Hook 规范](./hook-guidelines.md) | 当前尚未建立独立 Hook 的约定 | 已完成 |
+| [状态管理](./state-management.md) | Server Component 与本地 state | 已完成 |
+| [质量规范](./quality-guidelines.md) | lint、类型、响应式检查 | 已完成 |
+| [类型安全](./type-safety.md) | TypeScript 与 Zod | 已完成 |

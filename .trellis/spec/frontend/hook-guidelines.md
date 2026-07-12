@@ -1,51 +1,21 @@
-# Hook Guidelines
+# Hook 规范
 
-> How hooks are used in this project.
+## 当前状态
 
----
+项目当前没有独立 `hooks/` 目录。首版 `Dashboard` 直接在客户端组件中使用 `useState`、`useEffect` 和 `fetch`，这是当前实现事实，不应在维护文档中假设 `useDashboard()` 已存在。
 
-## Overview
+## 新增 Hook 的触发条件
 
-<!--
-Document your project's hook conventions here.
+当两个或更多组件共享以下逻辑时，抽取 Hook：
 
-Questions to answer:
-- What custom hooks do you have?
-- How do you handle data fetching?
-- What are the naming conventions?
-- How do you share stateful logic?
--->
+* Dashboard 数据加载和刷新。
+* 登录/注册提交状态。
+* 邀请码列表和审计详情。
 
-(To be filled by the team)
+Hook 应返回具名对象，例如 `{ data, isLoading, error, reload }`，并明确返回类型。
 
----
+## 注意事项
 
-## Custom Hook Patterns
-
-<!-- How to create and structure custom hooks -->
-
-(To be filled by the team)
-
----
-
-## Data Fetching
-
-<!-- How data fetching is handled (React Query, SWR, etc.) -->
-
-(To be filled by the team)
-
----
-
-## Naming Conventions
-
-<!-- Hook naming rules (use*, etc.) -->
-
-(To be filled by the team)
-
----
-
-## Common Mistakes
-
-<!-- Hook-related mistakes your team has made -->
-
-(To be filled by the team)
+* 不在条件语句中调用 Hook。
+* 不用 Hook 保存可由 API 响应直接派生的数据。
+* 数据请求失败必须返回可展示的错误状态，不能只写控制台。

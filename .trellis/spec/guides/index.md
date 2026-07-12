@@ -34,6 +34,8 @@ These guides help you **ask the right questions before coding**.
 - [ ] Data format changes between layers
 - [ ] Multiple consumers need the same data
 - [ ] You're not sure where to put some logic
+- [ ] **拍照识别**：涉及前端上传 → API 校验 → AI 调用 → DB 写入 → 前端确认 → 汇总更新（5+ 层）
+- [ ] **快照生成**：涉及 Cron → API → Service → DB 读写（确保幂等 + 不重复写入）
 
 → Read [Cross-Layer Thinking Guide](./cross-layer-thinking-guide.md)
 

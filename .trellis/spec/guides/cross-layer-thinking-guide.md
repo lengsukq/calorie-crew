@@ -160,3 +160,101 @@ Create detailed flow docs when:
 - Multiple teams are involved
 - Data format is complex
 - Feature has caused bugs before
+
+---
+
+## CalorieCrew: 拍照识别跨层数据流
+
+下面是 CalorieCrew 特有的餐次拍照识别跨层流程。每次实现相关功能时参考。
+
+### 完整数据流
+
+```
+[前端]    用户拍照 → PhotoUploadCard → POST /api/ai/recognize-meal
+                                         ↓
+[API]     图片校验（大小/格式） → rate limit 检查
+                                         ↓
+[Service] 调用 AI 供应商 → 解析 JSON → Zod 校验
+                                         ↓
+[DB]      写入 ai_recognition_tasks + pending_food_logs
+                                         ↓
+[API]     返回识别结果到前端
+                                         ↓
+[前端]    AiRecognitionResult → 用户编辑（可选）
+                                         ↓
+[前端]    用户确认 → POST /api/ai/recognize-meal/[taskId]/confirm
+                                         ↓
+[API]     校验 taskId/status → 写入 food_logs
+                                         ↓
+[DB]      food_logs insert → trigger recalculateDailySummary
+                                         ↓
+[DB]      upsert daily_summaries
+                                         ↓
+[API]     返回 updated daily_summary
+                                         ↓
+[前端]    Dashboard 刷新今日热量
+```
+
+### 每个边界的格式契约
+
+| 边界 | 输入格式 | 输出格式 | 校验 |
+|------|----------|----------|------|
+| 前端 → API (recognize) | `multipart/form-data`: image + date + mealType | JSON `{ taskId, status, result }` | 前端: 图片大小/格式; API: rate limit |
+| Service → AI Provider | system prompt + image (base64) | JSON string | Zod `mealRecognitionSchema` |
+| AI → DB (pending) | Parsed `MealRecognitionResult` | SQL insert | 无（已校验） |
+| 前端 → API (confirm) | JSON `{ items: FoodItem[] }` | JSON `{ message, foodLogIds, dailySummary }` | Zod `confirmSchema` |
+| API → DB (food_logs) | Validated food items | SQL insert | 无（已校验） |
+| food_logs → daily_summaries | food_logs row | SQL upsert | 幂等, 可重算 |
+
+### 快照系统跨层数据流
+
+```
+                               ┌─────────────────────────────┐
+                               │  food_logs 变更              │
+                               │  (INSERT/UPDATE/DELETE)      │
+                               └──────────┬──────────────────┘
+                                          │
+                                          ▼
+                               ┌─────────────────────────────┐
+                               │  recalculateDailySummary()   │
+                               │  → upsert daily_summaries    │
+                               └──────────┬──────────────────┘
+                                          │
+              ┌───────────────────────────┼───────────────────────────┐
+              ▼                           ▼                           ▼
+   ┌────────────────────┐     ┌────────────────────┐     ┌────────────────────┐
+   │ Dashboard 今日视图   │     │ Cron 00:10 UTC     │     │ 按需补算             │
+   │ (读 daily_summaries)│     │ → daily_snapshots  │     │ (Dashboard 打开时)   │
+   └────────────────────┘     └────────────────────┘     └────────────────────┘
+```
+
+### 每日 Cron 流程
+
+```
+POST /api/cron/generate-daily-snapshots
+  ↓
+校验 Authorization: Bearer ${CRON_SECRET}
+  ↓
+查询所有活跃用户
+  ↓
+为昨天生成 daily_snapshots（跳过已存在的）
+  ↓
+查询所有活跃小队
+  ↓
+为昨天生成 team_daily_snapshots
+  ↓
+清理过期 invite codes
+  ↓
+清理过期 AI pending tasks
+  ↓
+清理过期临时图片
+  ↓
+返回 { userCount, teamCount, durationMs }
+```
+
+### 常见跨层问题
+
+1. **日期格式不统一**：前端用 `2026-07-12`，DB 用 `DATE` 类型，API 用 `string`。统一用 `YYYY-MM-DD`。
+2. **AI 返回 JSON 格式异常**：AI 可能返回 Markdown 包裹的 JSON 或格式错误的 JSON。Zod schema 校验必须在入库前完成。
+3. **Snapshot 重复生成**：Cron 和按需补算可能同时运行。用 `UNIQUE(user_id, snapshot_date)` + `ON CONFLICT DO NOTHING` 防止重复。
+4. **mealType 不匹配**：四种餐次的枚举值在前端、API、DB 三处必须完全一致（`breakfast | lunch | dinner | snack`）。

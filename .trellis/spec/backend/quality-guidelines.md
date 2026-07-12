@@ -1,51 +1,39 @@
-# Quality Guidelines
+# 后端质量规范
 
-> Code quality standards for backend development.
+## 当前实现基线
 
----
+* TypeScript 使用 `strict: true`，质量门禁是 `npm run lint`、`npm run typecheck`、`npm run build`。
+* 输入边界使用 Zod；数据库访问使用 Drizzle 参数化表达式。
+* 当前 API 路由仍直接调用 Drizzle 查询；这是首版现状。后续新增复杂业务应抽到 `src/lib/services/`，并逐步收敛现有路由。
+* 当前没有业务测试套件，不能把“构建通过”当成数据库/鉴权行为已被集成验证。
 
-## Overview
+## 当前代码示例
 
-<!--
-Document your project's quality standards here.
+```typescript
+const userId = await getSessionUserId();
+if (!userId) return jsonError("未登录", 401);
 
-Questions to answer:
-- What patterns are forbidden?
-- What linting rules do you enforce?
-- What are your testing requirements?
-- What code review standards apply?
--->
+const parsed = foodLogSchema.safeParse(await request.json());
+if (!parsed.success) return jsonError("饮食记录格式不正确", 400);
+```
 
-(To be filled by the team)
+## 禁止
 
----
+* `any`、`@ts-ignore`、无必要的非空断言。
+* 输出密码、哈希、JWT、数据库连接串、邀请码源值。
+* 拼接 SQL 或省略 `userId` 过滤。
+* 用 200 表示鉴权、校验或资源错误。
+* 新增 `console.log` 调试代码。
 
-## Forbidden Patterns
+## 质量检查
 
-<!-- Patterns that should never be used and why -->
+* `git diff --check`
+* `npm run lint`
+* `npm run typecheck`
+* `npm run build`
+* 检查迁移文件是否与 `src/lib/db/schema.ts` 一致。
+* 检查 UI/API/Service/DB 的用户 ID 是否贯穿完整。
 
-(To be filled by the team)
+## 后续测试要求
 
----
-
-## Required Patterns
-
-<!-- Patterns that must always be used -->
-
-(To be filled by the team)
-
----
-
-## Testing Requirements
-
-<!-- What level of testing is expected -->
-
-(To be filled by the team)
-
----
-
-## Code Review Checklist
-
-<!-- What reviewers should check -->
-
-(To be filled by the team)
+新增行为后补充注册/登录、邀请码次数与审计、用户隔离、汇总重算的集成测试；引入 UI 测试后覆盖手机、平板、PC 三种视口。

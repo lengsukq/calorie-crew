@@ -1,0 +1,10 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/backend/index.md", "reason": "后端开发前检查清单与规范索引"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "food_logs 与 daily_summaries 的数据库、upsert、聚合约定"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "API 和服务层统一错误处理"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "前端开发前检查清单与规范索引"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Dashboard、餐次卡片和表单组件约定"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "数据获取和变更 Hook 约定"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "API、服务、数据库、组件之间的数据流检查"}
+{"file": ".trellis/spec/backend/meal-recognition-snapshot.md", "reason": "项目分阶段边界和 daily_summaries 契约"}
+{"file": ".trellis/spec/backend/auth-guidelines.md", "reason": "登录、首个管理员、邀请码次数与审计契约"}
