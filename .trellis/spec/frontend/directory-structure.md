@@ -5,21 +5,84 @@
 ```text
 src/
 ├── app/
-│   ├── page.tsx                 # 根据会话跳转 /login 或 /dashboard
-│   ├── layout.tsx               # metadata、全局 CSS
-│   ├── globals.css               # 当前响应式 CSS
-│   ├── login/page.tsx
-│   ├── register/page.tsx
-│   └── dashboard/page.tsx       # 服务端鉴权后组合 Dashboard
-└── components/
-    ├── auth/AuthForm.tsx         # 登录/注册客户端表单
-    └── dashboard/Dashboard.tsx  # 当前 Dashboard 客户端交互
+│   ├── page.tsx                   # 根重定向（middleware 处理）
+│   ├── layout.tsx                 # 根布局 (metadata + font)
+│   ├── globals.css                # 全局样式（Y2K 组件类 + 布局类）
+│   ├── middleware.ts              # 中间件鉴权
+│   ├── (auth)/                    # 未认证路由组
+│   │   ├── layout.tsx             # Auth 装饰布局（气泡）
+│   │   ├── login/page.tsx
+│   │   └── register/page.tsx
+│   ├── (tabs)/                    # 已认证路由组（AppShell）
+│   │   ├── layout.tsx             # AppShell 布局（TopBar + TabBar + Toaster）
+│   │   ├── loading.tsx            # 全局加载态
+│   │   ├── today/page.tsx         # 今日 Tab（服务端鉴权）
+│   │   ├── diary/page.tsx         # 日记 Tab
+│   │   ├── progress/page.tsx      # 进度 Tab
+│   │   └── profile/page.tsx       # 我的 Tab（服务端鉴权）
+│   └── api/                       # API 路由
+│       ├── auth/...
+│       ├── food-logs/...
+│       ├── dashboard/
+│       │   ├── today/route.ts
+│       │   └── history/route.ts   # GET - 历史汇总
+│       ├── admin/invites/...
+│       └── users/
+│           └── target/route.ts    # PUT - 更新热量目标
+├── components/
+│   ├── auth/
+│   │   ├── AuthBackground.tsx     # 共享装饰气泡
+│   │   └── AuthForm.tsx           # 登录/注册复用表单
+│   ├── layout/
+│   │   ├── TabBar.tsx             # 底部 Tab / 桌面侧边栏
+│   │   └── TopBar.tsx             # 顶部导航栏
+│   ├── today/
+│   │   ├── TodayContent.tsx       # 今日页面（使用 useSummary）
+│   │   ├── CalorieRing.tsx        # SVG 热量圆环
+│   │   └── MealGroup.tsx          # 餐次分组列表
+│   ├── diary/
+│   │   ├── DiaryContent.tsx       # 日记页面（使用 useFoodLogs）
+│   │   └── DateNavigator.tsx      # 日期切换器
+│   ├── progress/
+│   │   ├── ProgressContent.tsx    # 进度页面（使用 useHistory）
+│   │   ├── CalorieChart.tsx       # SVG 柱状图
+│   │   └── MacroDonut.tsx         # SVG 营养素环形图
+│   ├── profile/
+│   │   ├── ProfileContent.tsx     # 我的页面（使用 useUserTarget）
+│   │   ├── TargetSetting.tsx      # 热量目标编辑
+│   │   └── AdminPanel.tsx         # 管理员面板
+│   ├── notifications/
+│   │   ├── NotificationBell.tsx   # 通知铃铛
+│   │   └── NotificationPanel.tsx  # 通知下拉面板
+│   ├── shared/
+│   │   └── FoodLogForm.tsx        # 共享食物记录表单
+│   └── ui/
+│       └── BottomSheet.tsx        # 底部弹出层
+├── hooks/                         # 自定义 Hook 目录（已建立）
+│   ├── useFoodLogs.ts            # 饮食记录 CRUD
+│   ├── useSummary.ts             # 今日汇总
+│   ├── useHistory.ts             # 历史趋势
+│   └── useUserTarget.ts          # 用户目标更新
+├── lib/
+│   ├── api/                       # API 客户端层（已建立）
+│   │   ├── client.ts             # 基础 fetch 包装
+│   │   ├── food-logs.ts          # 饮食记录 API
+│   │   ├── dashboard.ts          # 仪表盘 API
+│   │   └── users.ts              # 用户设置 API
+│   ├── auth/...
+│   ├── db/...
+│   └── ...
+├── shared/                        # 共享常量/类型（已建立）
+│   ├── constants.ts               # MEAL_ORDER, MEAL_LABELS, MEAL_ICONS
+│   └── types.ts                   # FoodLogEntry, DailySummary, HistoryDay 等
+└── test/
+    └── setup.ts                   # Vitest 测试初始化
 ```
-
-API 客户端目前直接写在客户端组件中，项目尚未建立 `hooks/` 或 `lib/api/` 层。新增功能如果出现重复 fetch，应优先抽成 Hook/API client，而不是继续复制。
 
 ## 命名
 
-* 页面文件使用 App Router 保留名 `page.tsx`、`layout.tsx`。
-* React 组件使用 PascalCase 文件名和 named export。
-* API、schema、service 文件使用 kebab-case。
+- 页面文件使用 App Router 保留名 `page.tsx`、`layout.tsx`
+- React 组件使用 PascalCase 文件名和 named export
+- Hook 文件使用 `useXxx` 前缀的 camelCase
+- API、schema、service 文件使用 kebab-case
+- 测试文件与被测文件同名 + `.test.ts` / `.test.tsx`

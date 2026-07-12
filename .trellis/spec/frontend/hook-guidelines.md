@@ -1,21 +1,49 @@
 # Hook 规范
 
-## 当前状态
+## 当前实现
 
-项目当前没有独立 `hooks/` 目录。首版 `Dashboard` 直接在客户端组件中使用 `useState`、`useEffect` 和 `fetch`，这是当前实现事实，不应在维护文档中假设 `useDashboard()` 已存在。
+项目在 `src/hooks/` 目录下已有以下自定义 Hook：
 
-## 新增 Hook 的触发条件
+| Hook | 用途 | 所属页面 |
+|---|---|---|
+| `useFoodLogs` | 按日期获取饮食记录、新增/删除操作 | Diary |
+| `useSummary` | 获取今日汇总 + 日志列表 | Today |
+| `useHistory` | 获取历史汇总数据 (7/30天) | Progress |
+| `useUserTarget` | 更新每日热量目标 | Profile |
+
+所有 Hook 遵循统一规范：
+- 返回 `{ data/hookSpecific, loading, error, reload }` 命名对象
+- 通过 `src/lib/api/` 层调用后端 API，不在 Hook 中直接写 `fetch`
+- 使用 `useCallback` 包裹加载函数，`useEffect` 触发初始化加载
+- 错误状态可展示（不 throw，不 console.error 了之）
+
+## 新增 Hook 的原则
 
 当两个或更多组件共享以下逻辑时，抽取 Hook：
 
-* Dashboard 数据加载和刷新。
-* 登录/注册提交状态。
-* 邀请码列表和审计详情。
+- 同类型 API 数据获取和刷新
+- 相同表单提交/验证逻辑
+- 跨组件共享的客户端状态
 
-Hook 应返回具名对象，例如 `{ data, isLoading, error, reload }`，并明确返回类型。
+## Hook 签名规范
+
+```typescript
+interface UseXxxOptions {
+  // 必填参数尽量用具名字段，不用位置参数
+}
+
+interface UseXxxReturn {
+  data: XxxData[];
+  loading: boolean;
+  error: string | null;
+  reload: () => Promise<void>;
+  // 可能包含 mutate 方法
+}
+```
 
 ## 注意事项
 
-* 不在条件语句中调用 Hook。
-* 不用 Hook 保存可由 API 响应直接派生的数据。
-* 数据请求失败必须返回可展示的错误状态，不能只写控制台。
+- 不在条件语句中调用 Hook
+- 不用 Hook 保存可由 API 响应直接派生的数据
+- 数据请求失败必须返回可展示的错误状态
+- Hook 使用 `"use client"` 指令表明客户端边界
