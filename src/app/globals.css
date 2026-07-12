@@ -1,9 +1,8 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
 
 /* ===================================================
-   Base Layer — global resets & defaults
+   Base Layer
    =================================================== */
 @layer base {
   * {
@@ -12,98 +11,258 @@
 
   body {
     @apply m-0 min-h-screen;
-    background: linear-gradient(135deg, #0a1f0d 0%, #1a3a1e 50%, #0f2216 100%);
+    background: linear-gradient(
+      135deg,
+      #ecfeff 0%,
+      #eff6ff 40%,
+      #f0fdfa 100%
+    );
     font-family: var(--font-inter), system-ui, sans-serif;
-    color: rgba(255, 255, 255, 0.9);
+    color: #334155;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   h1 {
-    @apply text-2xl font-bold tracking-tight;
+    @apply text-3xl font-bold tracking-tight;
+    color: #1e293b;
   }
 
   h2 {
-    @apply text-lg font-semibold;
+    @apply text-xl font-bold;
+    color: #1e293b;
   }
 
   a {
-    @apply text-emerald-400 transition-colors duration-200;
+    @apply font-semibold transition-all duration-200;
+    color: #0891b2;
   }
 
   a:hover {
-    @apply text-emerald-300;
+    color: #0e7490;
   }
 
   ::selection {
-    background-color: rgba(52, 211, 153, 0.3);
-    color: white;
+    background-color: rgba(6, 182, 212, 0.2);
+    color: #0e7490;
   }
 }
 
 /* ===================================================
-   Component Layer — reusable glassmorphism classes
+   Component Layer — Y2K / Frutiger Aero
    =================================================== */
 @layer components {
-  /* ---- Glass Card ---- */
+  /* ---- Decorative Bubble ---- */
+  .y2k-bubble {
+    position: absolute;
+    border-radius: 50%;
+    background: linear-gradient(
+      135deg,
+      rgba(6, 182, 212, 0.15) 0%,
+      rgba(59, 130, 246, 0.1) 50%,
+      rgba(16, 185, 129, 0.15) 100%
+    );
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    box-shadow:
+      0 8px 32px rgba(6, 182, 212, 0.1),
+      inset 0 -4px 12px rgba(0, 0, 0, 0.03),
+      inset 4px 4px 12px rgba(255, 255, 255, 0.5);
+    animation: y2k-float 6s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes y2k-float {
+    0%,
+    100% {
+      transform: translateY(0) scale(1);
+    }
+    50% {
+      transform: translateY(-20px) scale(1.05);
+    }
+  }
+
+  /* ---- Glass Card (general purpose) ---- */
   .glass-card {
-    @apply rounded-glass border border-glass-border bg-white/10 p-6 shadow-glass backdrop-blur-glass transition-all duration-300;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.05),
+      inset 0 -2px 8px rgba(0, 0, 0, 0.02),
+      inset 0 2px 8px rgba(255, 255, 255, 0.4);
+    transition: all 0.3s ease;
   }
 
   .glass-card:hover {
-    @apply border-glass bg-white/[0.14];
+    box-shadow:
+      0 12px 32px rgba(0, 0, 0, 0.08),
+      inset 0 -2px 8px rgba(0, 0, 0, 0.02),
+      inset 0 2px 8px rgba(255, 255, 255, 0.4);
+    transform: translateY(-2px);
   }
 
   .glass-card-narrow {
     @apply mx-auto w-full max-w-md;
   }
 
+  /* ---- Stat Card (dashboard metric) ---- */
+  .stat-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.05),
+      inset 0 -2px 8px rgba(0, 0, 0, 0.02),
+      inset 0 2px 8px rgba(255, 255, 255, 0.4);
+    transition: all 0.3s ease;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      0 12px 32px rgba(0, 0, 0, 0.1),
+      inset 0 -2px 8px rgba(0, 0, 0, 0.02),
+      inset 0 2px 8px rgba(255, 255, 255, 0.4);
+  }
+
+  /* ---- Icon Container (for stat cards) ---- */
+  .icon-box {
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    font-size: 24px;
+    box-shadow:
+      0 4px 12px rgba(0, 0, 0, 0.1),
+      inset 0 -2px 6px rgba(0, 0, 0, 0.08),
+      inset 0 2px 6px rgba(255, 255, 255, 0.4);
+  }
+
+  /* ---- Trend badge ---- */
+  .trend-up {
+    @apply inline-block rounded-xl px-3 py-1 text-xs font-semibold;
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+  }
+
+  .trend-down {
+    @apply inline-block rounded-xl px-3 py-1 text-xs font-semibold;
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+  }
+
   /* ---- Glass Input ---- */
-  .glass-input {
-    @apply w-full rounded-glass-sm border border-glass-border bg-white/5 px-4 py-3 text-sm text-white placeholder-white/40 shadow-inner backdrop-blur-xs transition-all duration-200;
+  .glass-input,
+  .glass-select {
+    width: 100%;
+    padding: 11px 16px;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(6, 182, 212, 0.2);
+    border-radius: 12px;
+    outline: none;
+    font-size: 14px;
+    color: #334155;
+    transition: all 0.3s ease;
+  }
+
+  .glass-input::placeholder {
+    color: #94a3b8;
   }
 
   .glass-input:focus {
-    @apply border-emerald-400/50 bg-white/10 outline-none ring-2 ring-emerald-400/20;
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(6, 182, 212, 0.5);
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
   }
 
-  .glass-input:-webkit-autofill,
-  .glass-input:-webkit-autofill:hover,
-  .glass-input:-webkit-autofill:focus {
-    -webkit-text-fill-color: white;
-    -webkit-box-shadow: 0 0 0px 1000px rgba(15, 34, 22, 0.9) inset;
-    transition: background-color 5000s ease-in-out 0s;
-  }
-
-  select.glass-input {
+  .glass-select {
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='rgba(255,255,255,0.4)' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 12px center;
     padding-right: 36px;
   }
 
-  select.glass-input option {
-    @apply bg-forest-900 text-white;
+  .glass-select:focus {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-color: rgba(6, 182, 212, 0.5);
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
   }
 
   /* ---- Glass Label ---- */
   .glass-label {
-    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/60;
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wider;
+    color: #64748b;
   }
 
-  /* ---- Glass Button ---- */
+  /* ---- Primary Button (gradient) ---- */
+  .glass-button-primary {
+    @apply inline-flex cursor-pointer items-center justify-center rounded-3xl px-6 py-3 text-sm font-semibold;
+    border: none;
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    color: white;
+    box-shadow:
+      0 4px 16px rgba(6, 182, 212, 0.3),
+      inset 0 -2px 8px rgba(0, 0, 0, 0.1),
+      inset 0 2px 8px rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .glass-button-primary:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 8px 24px rgba(6, 182, 212, 0.4),
+      inset 0 -2px 8px rgba(0, 0, 0, 0.1),
+      inset 0 2px 8px rgba(255, 255, 255, 0.3);
+  }
+
+  .glass-button-primary:active {
+    transform: translateY(0);
+  }
+
+  .glass-button-primary:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  .glass-button-primary:disabled:hover {
+    transform: none;
+    box-shadow:
+      0 4px 16px rgba(6, 182, 212, 0.3),
+      inset 0 -2px 8px rgba(0, 0, 0, 0.1),
+      inset 0 2px 8px rgba(255, 255, 255, 0.3);
+  }
+
+  /* ---- Secondary Button (glass outline) ---- */
   .glass-button {
-    @apply inline-flex cursor-pointer items-center justify-center rounded-glass-sm border border-glass-border bg-white/10 px-5 py-3 text-sm font-semibold text-white shadow-glass-sm backdrop-blur-xs transition-all duration-200;
+    @apply inline-flex cursor-pointer items-center justify-center rounded-3xl px-6 py-3 text-sm font-semibold;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 2px solid rgba(6, 182, 212, 0.3);
+    color: #0891b2;
+    transition: all 0.3s ease;
   }
 
   .glass-button:hover {
-    @apply border-emerald-400/40 bg-emerald-500/20 shadow-glass-glow;
-    transform: scale(1.02);
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(6, 182, 212, 0.5);
+    transform: translateY(-2px);
   }
 
   .glass-button:active {
-    transform: scale(0.98);
+    transform: translateY(0);
   }
 
   .glass-button:disabled {
@@ -111,84 +270,146 @@
   }
 
   .glass-button:disabled:hover {
-    @apply border-glass-border bg-white/10 shadow-glass-sm;
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(6, 182, 212, 0.3);
     transform: none;
   }
 
-  .glass-button-primary {
-    @apply glass-button border-emerald-500/40 bg-emerald-500/20 text-emerald-100 shadow-glass-glow;
-  }
-
-  .glass-button-primary:hover {
-    @apply border-emerald-400/60 bg-emerald-400/30;
-  }
-
+  /* ---- Danger Button ---- */
   .glass-button-danger {
-    @apply glass-button border-red-400/30 bg-red-500/15 text-red-200;
+    @apply inline-flex cursor-pointer items-center justify-center rounded-3xl px-6 py-3 text-sm font-semibold;
+    border: 2px solid rgba(239, 68, 68, 0.3);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #dc2626;
+    transition: all 0.3s ease;
   }
 
   .glass-button-danger:hover {
-    @apply border-red-400/50 bg-red-500/25 shadow-[0_0_20px_rgba(248,113,113,0.15)];
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.5);
+    transform: translateY(-2px);
   }
 
-  /* ---- Glass Tag / Badge ---- */
+  .glass-button-danger:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  .glass-button-danger:disabled:hover {
+    transform: none;
+  }
+
+  /* ---- Chips / Tags ---- */
   .glass-tag {
-    @apply inline-flex items-center rounded-full border border-glass-border-light bg-white/5 px-3 py-1 text-xs font-medium text-white/70 backdrop-blur-xs;
+    @apply inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold;
+    background: rgba(100, 116, 139, 0.1);
+    color: #64748b;
+    border: 1px solid rgba(100, 116, 139, 0.2);
   }
 
   .glass-tag-success {
-    @apply glass-tag border-emerald-400/20 bg-emerald-400/10 text-emerald-300;
+    @apply inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold;
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.3);
   }
 
   .glass-tag-warning {
-    @apply glass-tag border-amber-400/20 bg-amber-400/10 text-amber-300;
+    @apply inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold;
+    background: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.3);
   }
 
   .glass-tag-error {
-    @apply glass-tag border-red-400/20 bg-red-400/10 text-red-300;
+    @apply inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold;
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.3);
   }
 
-  /* ---- Message / Alert ---- */
+  /* ---- Messages ---- */
   .glass-message {
-    @apply rounded-glass-sm border border-glass-border-light bg-white/5 px-4 py-3 text-sm text-white/80 backdrop-blur-xs;
+    @apply rounded-xl px-4 py-3 text-sm;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(226, 232, 240, 0.3);
+    color: #475569;
   }
 
   .glass-message-error {
-    @apply glass-message border-red-400/20 bg-red-500/10 text-red-200;
+    @apply rounded-xl px-4 py-3 text-sm;
+    background: rgba(239, 68, 68, 0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #dc2626;
   }
 
   .glass-message-success {
-    @apply glass-message border-emerald-400/20 bg-emerald-500/10 text-emerald-200;
+    @apply rounded-xl px-4 py-3 text-sm;
+    background: rgba(16, 185, 129, 0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    color: #059669;
+  }
+
+  /* ---- List Item ---- */
+  .list-item {
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+  }
+
+  .list-item:hover {
+    background: rgba(255, 255, 255, 0.7);
+    transform: translateX(4px);
+  }
+
+  /* ---- Progress Bar ---- */
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(226, 232, 240, 0.6);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #06b6d4 0%, #0891b2 100%);
+    border-radius: 4px;
+    box-shadow: 0 0 8px rgba(6, 182, 212, 0.5);
+    transition: width 0.3s ease;
   }
 
   /* ---- Divider ---- */
   .glass-divider {
-    @apply my-6 border-0 border-t border-glass-border-light;
+    @apply my-6 border-0 border-t;
+    border-color: rgba(226, 232, 240, 0.5);
+  }
+
+  /* ---- Loading Spinner ---- */
+  .y2k-spinner {
+    @apply inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid;
+    border-color: rgba(255, 255, 255, 0.3);
+    border-top-color: white;
   }
 }
 
 /* ===================================================
-   Utility Layer — layout helpers (backward-compatible)
+   Utilities — layout helpers
    =================================================== */
 @layer utilities {
   .stack {
     @apply grid gap-4;
-  }
-
-  .grid-layout {
-    @apply grid grid-cols-1 gap-3;
-  }
-
-  @media (min-width: 640px) {
-    .grid-layout {
-      @apply grid-cols-2;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .grid-layout {
-      @apply grid-cols-4;
-    }
   }
 
   .page-header {
