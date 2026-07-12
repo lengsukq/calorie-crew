@@ -3,6 +3,7 @@
 import { useUserTarget } from "@/hooks/useUserTarget";
 import { TargetSetting } from "@/components/profile/TargetSetting";
 import { AdminPanel } from "@/components/profile/AdminPanel";
+import { AiConfigPanel } from "@/components/profile/AiConfigPanel";
 
 interface ProfileContentProps {
   email: string;
@@ -61,6 +62,9 @@ export function ProfileContent({ email, role, calorieTarget }: ProfileContentPro
           <p className="text-xs text-slate-400">暂无通知</p>
         </div>
       </div>
+
+      {/* AI settings */}
+      <AiConfigPanel />
 
       {/* Admin section */}
       {role === "admin" && <AdminPanel onCreateInvite={handleCreateInvite} />}

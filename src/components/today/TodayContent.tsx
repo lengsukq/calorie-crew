@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSummary } from "@/hooks/useSummary";
 import { CalorieRing } from "@/components/today/CalorieRing";
@@ -9,6 +9,10 @@ import { FoodLogForm } from "@/components/shared/FoodLogForm";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { todayDate } from "@/lib/api/client";
 import type { FoodLogFormData } from "@/shared/types";
+import type { RecognizedFood } from "@/lib/services/food-recognize.service";
+
+const RECENT_FOODS_KEY = "calorie_crew_recent_foods";
+const MAX_RECENT = 5;
 
 interface TodayContentProps {
   email: string;
@@ -16,23 +20,66 @@ interface TodayContentProps {
   calorieTarget: number;
 }
 
+function loadRecentFoods(): RecognizedFood[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(RECENT_FOODS_KEY);
+    return raw ? (JSON.parse(raw) as RecognizedFood[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentFoods(foods: RecognizedFood[]) {
+  try {
+    localStorage.setItem(RECENT_FOODS_KEY, JSON.stringify(foods.slice(0, MAX_RECENT)));
+  } catch {
+    // localStorage full - ignore
+  }
+}
+
+function addRecentFood(food: RecognizedFood) {
+  const existing = loadRecentFoods();
+  const filtered = existing.filter(
+    (f) => f.foodName !== food.foodName || f.servingDescription !== food.servingDescription,
+  );
+  const updated = [food, ...filtered].slice(0, MAX_RECENT);
+  saveRecentFoods(updated);
+}
+
 export function TodayContent({ email, role, calorieTarget }: TodayContentProps) {
   const { logs, summary, reload } = useSummary({ date: todayDate() });
   const [showAddSheet, setShowAddSheet] = useState(false);
+  const [recentFoods, setRecentFoods] = useState<RecognizedFood[]>([]);
+
+  useEffect(() => {
+    setRecentFoods(loadRecentFoods());
+  }, []);
 
   async function handleAddLog(data: FoodLogFormData) {
     try {
-      await fetch("/api/food-logs", {
+      const response = await fetch("/api/food-logs", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ logDate: todayDate(), ...data }),
       });
+      if (!response.ok) {
+        toast.error("保存失败");
+        return;
+      }
       setShowAddSheet(false);
       toast.success("记录已保存");
       await reload();
     } catch {
       toast.error("保存失败");
     }
+  }
+
+  async function handleAiUse(food: RecognizedFood) {
+    addRecentFood(food);
+    setRecentFoods(loadRecentFoods());
+    setShowAddSheet(true);
+    // Auto-fill will happen via FoodLogForm's built-in AiFoodRecognizer
   }
 
   async function handleDelete(id: string) {
@@ -87,6 +134,35 @@ export function TodayContent({ email, role, calorieTarget }: TodayContentProps) 
       >
         + 快速记录
       </button>
+
+      {/* Recent AI-recognized foods */}
+      {recentFoods.length > 0 && (
+        <div className="glass-card">
+          <h2 className="mb-3 text-sm font-bold text-slate-800">最近识别的食物</h2>
+          <div className="flex flex-wrap gap-2">
+            {recentFoods.map((food, index) => (
+              <button
+                key={`${food.foodName}-${index}`}
+                onClick={() => handleAiUse(food)}
+                className="list-item !inline-flex !w-auto !items-center !gap-2 !px-3 !py-2"
+                title={`${food.foodName} · ${food.calories} kcal`}
+              >
+                <span className="text-sm font-medium text-slate-700">{food.foodName}</span>
+                <span className="text-xs text-slate-400">{food.calories} kcal</span>
+              </button>
+            ))}
+            <button
+              onClick={() => {
+                saveRecentFoods([]);
+                setRecentFoods([]);
+              }}
+              className="rounded-lg px-2 py-1 text-xs text-slate-400 hover:text-red-500 transition-colors"
+            >
+              清除
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Meal-grouped entries */}
       <MealGroup logs={logs} onDelete={handleDelete} />
