@@ -1,7 +1,4 @@
-import { redirect } from "next/navigation";
-import { getSessionUserId } from "@/lib/auth/session";
-
-export default async function HomePage() {
-  const userId = await getSessionUserId();
-  redirect(userId ? "/dashboard" : "/login");
+// Root page - middleware handles redirect
+export default function HomePage() {
+  return null;
 }

@@ -402,6 +402,324 @@
     border-color: rgba(255, 255, 255, 0.3);
     border-top-color: white;
   }
+
+  /* ===================================================
+     App Shell — Mobile-first Layout
+     =================================================== */
+
+  /* Main shell: flex column, full viewport height */
+  .app-shell {
+    @apply flex min-h-dvh flex-col;
+  }
+
+  /* Top bar: fixed at top on mobile, relative on desktop */
+  .top-bar {
+    @apply fixed left-0 right-0 top-0 z-40 h-14;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+  }
+
+  /* Main content: scrollable, with padding for fixed top bar and bottom tab bar */
+  .app-content {
+    @apply flex-1 overflow-y-auto pt-14;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* ---- Mobile Bottom Tab Bar ---- */
+  .tab-bar-mobile {
+    @apply fixed bottom-0 left-0 right-0 z-50 h-16;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(226, 232, 240, 0.5);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .tab-item {
+    @apply flex flex-col items-center gap-0.5 px-3 py-1.5 text-xs text-slate-400 no-underline transition-all duration-200;
+  }
+
+  .tab-item:hover {
+    @apply text-slate-600 no-underline;
+  }
+
+  .tab-item-active {
+    @apply text-cyan-600;
+  }
+
+  .tab-item-active .tab-icon {
+    @apply scale-110;
+  }
+
+  .tab-item-active .tab-label {
+    @apply font-semibold;
+  }
+
+  .tab-icon {
+    @apply text-xl leading-none transition-transform duration-200;
+  }
+
+  .tab-label {
+    @apply text-[10px] font-medium leading-none transition-all duration-200;
+  }
+
+  /* ---- Desktop Sidebar ---- */
+  .tab-bar-sidebar {
+    @apply hidden;
+  }
+
+  .sidebar-item {
+    @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-500 no-underline transition-all duration-200;
+  }
+
+  .sidebar-item:hover {
+    @apply bg-white/50 text-slate-700 no-underline;
+  }
+
+  .sidebar-item-active {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(8, 145, 178, 0.08));
+    @apply font-semibold text-cyan-700;
+  }
+
+  .sidebar-icon {
+    @apply text-xl;
+  }
+
+  .sidebar-label {
+    @apply hidden lg:inline;
+  }
+
+  /* Responsive: md+ switches to sidebar layout */
+  @media (min-width: 768px) {
+    .app-shell {
+      display: flex;
+      flex-direction: row;
+    }
+
+    .top-bar {
+      left: 16rem;
+    }
+
+    .app-content {
+      padding-top: 3.5rem;
+      padding-bottom: 0;
+      margin-left: 16rem;
+    }
+
+    .tab-bar-mobile {
+      display: none;
+    }
+
+    .tab-bar-sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 40;
+      display: flex;
+      height: 100dvh;
+      width: 16rem;
+      flex-direction: column;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-right: 1px solid rgba(226, 232, 240, 0.5);
+      padding-top: 1rem;
+    }
+  }
+
+  /* Tablet: narrower sidebar */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .top-bar {
+      left: 5rem;
+    }
+
+    .app-content {
+      margin-left: 5rem;
+    }
+
+    .tab-bar-sidebar {
+      width: 5rem;
+    }
+
+    .sidebar-item {
+      display: flex;
+      justify-content: center;
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+
+    .sidebar-label {
+      display: none;
+    }
+  }
+
+  /* Desktop: full sidebar with labels */
+  @media (min-width: 1024px) {
+    .sidebar-item {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    .sidebar-label {
+      display: inline;
+    }
+  }
+
+  /* ---- Notification Bell ---- */
+  .notification-bell {
+    @apply relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition-all duration-200;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(226, 232, 240, 0.3);
+  }
+
+  .notification-bell:hover {
+    @apply bg-white/80;
+    border-color: rgba(6, 182, 212, 0.3);
+  }
+
+  .notification-dot {
+    @apply absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full;
+    background: #ef4444;
+    border: 2px solid white;
+  }
+
+  /* ---- Notification Panel (dropdown) ---- */
+  .notification-panel {
+    @apply absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-2xl;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(226, 232, 240, 0.5);
+    box-shadow:
+      0 12px 40px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  .notification-item {
+    @apply flex items-start gap-3 px-4 py-3 text-sm transition-colors duration-200;
+  }
+
+  .notification-item:hover {
+    background: rgba(6, 182, 212, 0.04);
+  }
+
+  /* ---- Bottom Sheet ---- */
+  .bottom-sheet-overlay {
+    @apply fixed inset-0 z-50;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .bottom-sheet {
+    @apply fixed bottom-0 left-0 right-0 z-50 max-h-[85dvh] overflow-y-auto rounded-t-3xl;
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow:
+      0 -8px 32px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .bottom-sheet-handle {
+    @apply mx-auto mb-4 h-1.5 w-10 rounded-full;
+    background: rgba(148, 163, 184, 0.3);
+  }
+
+  /* ---- Calorie Ring (SVG donut chart) ---- */
+  .calorie-ring {
+    @apply relative flex items-center justify-center;
+  }
+
+  .calorie-ring svg {
+    @apply -rotate-90;
+  }
+
+  .calorie-ring-bg {
+    fill: none;
+    stroke: rgba(226, 232, 240, 0.3);
+  }
+
+  .calorie-ring-fill {
+    fill: none;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s ease-in-out;
+  }
+
+  /* ---- Chart Bar (Progress tab) ---- */
+  .chart-bar {
+    @apply rounded-full transition-all duration-500;
+  }
+
+  .chart-bar:hover {
+    @apply opacity-80;
+  }
+
+  /* ---- Macro Donut ---- */
+  .macro-donut {
+    @apply relative flex items-center justify-center;
+  }
+
+  /* ---- Calorie goal edit ---- */
+  .goal-input {
+    @apply w-24 rounded-xl border-0 px-3 py-2 text-right text-lg font-bold;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(6, 182, 212, 0.2);
+    outline: none;
+    transition: all 0.2s;
+  }
+
+  .goal-input:focus {
+    border-color: rgba(6, 182, 212, 0.5);
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+  }
+
+  /* ---- Page fade-in animation ---- */
+  @keyframes page-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .page-enter {
+    animation: page-fade-in 0.3s ease-out;
+  }
+
+  /* ---- Swipe to delete ---- */
+  .swipe-container {
+    @apply relative overflow-hidden;
+  }
+
+  .swipe-action {
+    @apply absolute right-0 top-0 flex h-full items-center justify-center px-5 text-sm font-semibold text-white;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+  }
+
+  /* ---- Empty state ---- */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-12 text-center;
+  }
+
+  .empty-state-icon {
+    @apply mb-3 text-4xl opacity-60;
+  }
+
+  .empty-state-text {
+    @apply text-sm text-slate-400;
+  }
 }
 
 /* ===================================================

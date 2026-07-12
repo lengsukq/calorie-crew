@@ -3,22 +3,22 @@ import { getSessionUserId } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { Dashboard } from "@/components/dashboard/Dashboard";
+import { TodayContent } from "@/components/today/TodayContent";
 
-export default async function DashboardPage() {
+export default async function TodayPage() {
   const userId = await getSessionUserId();
   if (!userId) redirect("/login");
   const user = await db.query.users.findFirst({
     where: eq(users.id, userId),
-    columns: { email: true, role: true },
+    columns: { email: true, role: true, calorieTarget: true },
   });
   if (!user) redirect("/login");
 
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto max-w-5xl px-4 py-8">
-        <Dashboard email={user.email} role={user.role} />
-      </div>
-    </div>
+    <TodayContent
+      email={user.email}
+      role={user.role}
+      calorieTarget={user.calorieTarget}
+    />
   );
 }

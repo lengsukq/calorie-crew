@@ -32,7 +32,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       setError(result.error ?? "操作失败");
       return;
     }
-    router.push("/dashboard");
+    router.push("/today");
     router.refresh();
   }
 
