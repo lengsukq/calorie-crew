@@ -3,6 +3,7 @@ import { db } from "@/lib/db/client";
 import { userAiConfigs } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { jsonError } from "@/lib/http";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { getEffectiveConfig, recognizeFood } from "@/lib/services/food-recognize.service";
 import { z } from "zod";
 
@@ -15,6 +16,10 @@ const recognizeSchema = z.object({
 export async function POST(request: Request): Promise<Response> {
   const userId = await getSessionUserId();
   if (!userId) return jsonError("未登录", 401);
+
+  if (!checkRateLimit(`ai:${userId}`, 10, 60_000)) {
+    return jsonError("操作过于频繁，请稍后再试", 429);
+  }
 
   const parsed = recognizeSchema.safeParse(await request.json());
   if (!parsed.success) {

@@ -126,8 +126,7 @@ export async function recognizeFood(
   });
 
   if (!response.ok) {
-    const errorText = await response.text().catch(() => "Unknown error");
-    throw new Error(`AI 识别服务调用失败 (${response.status}): ${errorText}`);
+    throw new Error("AI 识别服务暂时不可用");
   }
 
   const result = (await response.json()) as {

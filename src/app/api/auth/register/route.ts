@@ -39,5 +39,5 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   await setSession(user.id);
-  return Response.json({ user });
+  return Response.json({ user: { id: user.id, email: user.email } });
 }
