@@ -1,800 +1,205 @@
 @import "tailwindcss";
-@config "../../tailwind.config.ts";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ===================================================
+   Design Tokens
+   现代极简数据风：白底 + 单一青蓝主色 + slate 中性灰
+   =================================================== */
+:root {
+  --radius: 0.75rem;
+
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+
+  /* 主色：收敛后的青蓝 (cyan-600 附近) */
+  --primary: 192 81% 40%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
+
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
+
+  --accent: 210 40% 96%;
+  --accent-foreground: 222 47% 11%;
+
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 192 81% 40%;
+
+  /* 业务语义色 */
+  --success: 142 71% 45%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
+  --danger: 0 72% 51%;
+  --danger-foreground: 0 0% 100%;
+
+  /* 图表配色 (收敛为单主色 + 中性) */
+  --chart-1: 192 81% 40%;
+  --chart-2: 142 71% 45%;
+  --chart-3: 38 92% 50%;
+  --chart-4: 262 83% 58%;
+  --chart-5: 215 16% 47%;
+}
+
+.dark {
+  --background: 222 47% 11%;
+  --foreground: 210 40% 98%;
+  --card: 222 47% 13%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222 47% 13%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 192 81% 45%;
+  --primary-foreground: 222 47% 11%;
+  --secondary: 217 33% 20%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217 33% 20%;
+  --muted-foreground: 215 20% 65%;
+  --accent: 217 33% 25%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 63% 50%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217 33% 25%;
+  --input: 217 33% 25%;
+  --ring: 192 81% 45%;
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+  --color-danger: hsl(var(--danger));
+  --color-danger-foreground: hsl(var(--danger-foreground));
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 0.25rem);
+  --radius-sm: calc(var(--radius) - 0.5rem);
+
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+}
 
 /* ===================================================
    Base Layer
    =================================================== */
 @layer base {
   * {
-    box-sizing: border-box;
+    border-color: hsl(var(--border));
   }
 
   body {
-    @apply m-0 min-h-screen;
-    background: linear-gradient(
-      135deg,
-      #ecfeff 0%,
-      #eff6ff 40%,
-      #f0fdfa 100%
-    );
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
     font-family: var(--font-inter), system-ui, sans-serif;
-    color: #334155;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   h1 {
-    @apply text-3xl font-bold tracking-tight;
-    color: #1e293b;
+    @apply text-2xl font-bold tracking-tight;
   }
 
   h2 {
-    @apply text-xl font-bold;
-    color: #1e293b;
-  }
-
-  a {
-    @apply font-semibold transition-all duration-200;
-    color: #0891b2;
-  }
-
-  a:hover {
-    color: #0e7490;
+    @apply text-base font-semibold;
   }
 
   ::selection {
-    background-color: rgba(6, 182, 212, 0.2);
-    color: #0e7490;
+    background-color: hsl(var(--primary) / 0.2);
+    color: hsl(var(--primary));
   }
 }
 
 /* ===================================================
-   Component Layer — Y2K / Frutiger Aero
+   Animations
    =================================================== */
-@layer components {
-  /* ---- Decorative Bubble ---- */
-  .y2k-bubble {
-    position: absolute;
-    border-radius: 50%;
-    background: linear-gradient(
-      135deg,
-      rgba(6, 182, 212, 0.15) 0%,
-      rgba(59, 130, 246, 0.1) 50%,
-      rgba(16, 185, 129, 0.15) 100%
-    );
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 2px solid rgba(255, 255, 255, 0.4);
-    box-shadow:
-      0 8px 32px rgba(6, 182, 212, 0.1),
-      inset 0 -4px 12px rgba(0, 0, 0, 0.03),
-      inset 4px 4px 12px rgba(255, 255, 255, 0.5);
-    animation: y2k-float 6s ease-in-out infinite;
-    pointer-events: none;
-  }
-
-  @keyframes y2k-float {
-    0%,
-    100% {
-      transform: translateY(0) scale(1);
-    }
-    50% {
-      transform: translateY(-20px) scale(1.05);
-    }
-  }
-
-  /* ---- Glass Card (general purpose) ---- */
-  .glass-card {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 20px;
-    padding: 24px;
-    box-shadow:
-      0 4px 16px rgba(0, 0, 0, 0.05),
-      inset 0 -2px 8px rgba(0, 0, 0, 0.02),
-      inset 0 2px 8px rgba(255, 255, 255, 0.4);
-    transition: all 0.3s ease;
-  }
-
-  .glass-card:hover {
-    box-shadow:
-      0 12px 32px rgba(0, 0, 0, 0.08),
-      inset 0 -2px 8px rgba(0, 0, 0, 0.02),
-      inset 0 2px 8px rgba(255, 255, 255, 0.4);
-    transform: translateY(-2px);
-  }
-
-  .glass-card-narrow {
-    @apply mx-auto w-full max-w-md;
-  }
-
-  /* ---- Stat Card (dashboard metric) ---- */
-  .stat-card {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 20px;
-    padding: 20px;
-    box-shadow:
-      0 4px 16px rgba(0, 0, 0, 0.05),
-      inset 0 -2px 8px rgba(0, 0, 0, 0.02),
-      inset 0 2px 8px rgba(255, 255, 255, 0.4);
-    transition: all 0.3s ease;
-  }
-
-  .stat-card:hover {
-    transform: translateY(-4px);
-    box-shadow:
-      0 12px 32px rgba(0, 0, 0, 0.1),
-      inset 0 -2px 8px rgba(0, 0, 0, 0.02),
-      inset 0 2px 8px rgba(255, 255, 255, 0.4);
-  }
-
-  /* ---- Icon Container (for stat cards) ---- */
-  .icon-box {
-    width: 52px;
-    height: 52px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 14px;
-    font-size: 24px;
-    box-shadow:
-      0 4px 12px rgba(0, 0, 0, 0.1),
-      inset 0 -2px 6px rgba(0, 0, 0, 0.08),
-      inset 0 2px 6px rgba(255, 255, 255, 0.4);
-  }
-
-  /* ---- Trend badge ---- */
-  .trend-up {
-    @apply inline-block rounded-xl px-3 py-1 text-xs font-semibold;
-    background: rgba(16, 185, 129, 0.1);
-    color: #059669;
-  }
-
-  .trend-down {
-    @apply inline-block rounded-xl px-3 py-1 text-xs font-semibold;
-    background: rgba(239, 68, 68, 0.1);
-    color: #dc2626;
-  }
-
-  /* ---- Glass Input ---- */
-  .glass-input,
-  .glass-select {
-    width: 100%;
-    padding: 11px 16px;
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(6, 182, 212, 0.2);
-    border-radius: 12px;
-    outline: none;
-    font-size: 14px;
-    color: #334155;
-    transition: all 0.3s ease;
-  }
-
-  .glass-input::placeholder {
-    color: #94a3b8;
-  }
-
-  .glass-input:focus {
-    background: rgba(255, 255, 255, 0.9);
-    border-color: rgba(6, 182, 212, 0.5);
-    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
-  }
-
-  .glass-select {
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    padding-right: 36px;
-  }
-
-  .glass-select:focus {
-    background-color: rgba(255, 255, 255, 0.9);
-    border-color: rgba(6, 182, 212, 0.5);
-    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
-  }
-
-  /* ---- Glass Label ---- */
-  .glass-label {
-    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wider;
-    color: #64748b;
-  }
-
-  /* ---- Primary Button (gradient) ---- */
-  .glass-button-primary {
-    @apply inline-flex cursor-pointer items-center justify-center rounded-3xl px-6 py-3 text-sm font-semibold;
-    border: none;
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
-    color: white;
-    box-shadow:
-      0 4px 16px rgba(6, 182, 212, 0.3),
-      inset 0 -2px 8px rgba(0, 0, 0, 0.1),
-      inset 0 2px 8px rgba(255, 255, 255, 0.3);
-    transition: all 0.3s ease;
-  }
-
-  .glass-button-primary:hover {
-    transform: translateY(-2px);
-    box-shadow:
-      0 8px 24px rgba(6, 182, 212, 0.4),
-      inset 0 -2px 8px rgba(0, 0, 0, 0.1),
-      inset 0 2px 8px rgba(255, 255, 255, 0.3);
-  }
-
-  .glass-button-primary:active {
-    transform: translateY(0);
-  }
-
-  .glass-button-primary:disabled {
-    @apply cursor-not-allowed opacity-50;
-  }
-
-  .glass-button-primary:disabled:hover {
-    transform: none;
-    box-shadow:
-      0 4px 16px rgba(6, 182, 212, 0.3),
-      inset 0 -2px 8px rgba(0, 0, 0, 0.1),
-      inset 0 2px 8px rgba(255, 255, 255, 0.3);
-  }
-
-  /* ---- Secondary Button (glass outline) ---- */
-  .glass-button {
-    @apply inline-flex cursor-pointer items-center justify-center rounded-3xl px-6 py-3 text-sm font-semibold;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 2px solid rgba(6, 182, 212, 0.3);
-    color: #0891b2;
-    transition: all 0.3s ease;
-  }
-
-  .glass-button:hover {
-    background: rgba(255, 255, 255, 0.95);
-    border-color: rgba(6, 182, 212, 0.5);
-    transform: translateY(-2px);
-  }
-
-  .glass-button:active {
-    transform: translateY(0);
-  }
-
-  .glass-button:disabled {
-    @apply cursor-not-allowed opacity-50;
-  }
-
-  .glass-button:disabled:hover {
-    background: rgba(255, 255, 255, 0.8);
-    border-color: rgba(6, 182, 212, 0.3);
-    transform: none;
-  }
-
-  /* ---- Danger Button ---- */
-  .glass-button-danger {
-    @apply inline-flex cursor-pointer items-center justify-center rounded-3xl px-6 py-3 text-sm font-semibold;
-    border: 2px solid rgba(239, 68, 68, 0.3);
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: #dc2626;
-    transition: all 0.3s ease;
-  }
-
-  .glass-button-danger:hover {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: rgba(239, 68, 68, 0.5);
-    transform: translateY(-2px);
-  }
-
-  .glass-button-danger:disabled {
-    @apply cursor-not-allowed opacity-50;
-  }
-
-  .glass-button-danger:disabled:hover {
-    transform: none;
-  }
-
-  /* ---- Chips / Tags ---- */
-  .glass-tag {
-    @apply inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold;
-    background: rgba(100, 116, 139, 0.1);
-    color: #64748b;
-    border: 1px solid rgba(100, 116, 139, 0.2);
-  }
-
-  .glass-tag-success {
-    @apply inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold;
-    background: rgba(16, 185, 129, 0.1);
-    color: #059669;
-    border: 1px solid rgba(16, 185, 129, 0.3);
-  }
-
-  .glass-tag-warning {
-    @apply inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold;
-    background: rgba(245, 158, 11, 0.1);
-    color: #d97706;
-    border: 1px solid rgba(245, 158, 11, 0.3);
-  }
-
-  .glass-tag-error {
-    @apply inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold;
-    background: rgba(239, 68, 68, 0.1);
-    color: #dc2626;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-  }
-
-  /* ---- Messages ---- */
-  .glass-message {
-    @apply rounded-xl px-4 py-3 text-sm;
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(226, 232, 240, 0.3);
-    color: #475569;
-  }
-
-  .glass-message-error {
-    @apply rounded-xl px-4 py-3 text-sm;
-    background: rgba(239, 68, 68, 0.08);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    color: #dc2626;
-  }
-
-  .glass-message-success {
-    @apply rounded-xl px-4 py-3 text-sm;
-    background: rgba(16, 185, 129, 0.08);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(16, 185, 129, 0.2);
-    color: #059669;
-  }
-
-  /* ---- List Item ---- */
-  .list-item {
-    padding: 16px;
-    background: rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    transition: all 0.3s ease;
-    overflow-x: hidden;
-  }
-
-  .list-item:hover {
-    background: rgba(255, 255, 255, 0.7);
-    transform: translateX(4px);
-  }
-
-  /* ---- Progress Bar ---- */
-  .progress-bar {
-    width: 100%;
-    height: 8px;
-    background: rgba(226, 232, 240, 0.6);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #06b6d4 0%, #0891b2 100%);
-    border-radius: 4px;
-    box-shadow: 0 0 8px rgba(6, 182, 212, 0.5);
-    transition: width 0.3s ease;
-  }
-
-  /* ---- Divider ---- */
-  .glass-divider {
-    @apply my-6 border-0 border-t;
-    border-color: rgba(226, 232, 240, 0.5);
-  }
-
-  /* ---- Loading Spinner ---- */
-  .y2k-spinner {
-    @apply inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid;
-    border-color: rgba(255, 255, 255, 0.3);
-    border-top-color: white;
-  }
-
-  /* ===================================================
-     App Shell — Mobile-first Layout
-     =================================================== */
-
-  /* Main shell: flex column, full viewport height */
-  .app-shell {
-    @apply flex min-h-dvh flex-col;
-  }
-
-  /* Top bar: fixed at top on mobile, relative on desktop */
-  .top-bar {
-    @apply fixed left-0 right-0 top-0 z-40 h-14;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(226, 232, 240, 0.5);
-  }
-
-  /* Main content: scrollable, with padding for fixed top bar and bottom tab bar */
-  .app-content {
-    @apply flex-1 overflow-y-auto pt-14;
-    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
-  }
-
-  /* ---- Mobile Bottom Tab Bar ---- */
-  .tab-bar-mobile {
-    @apply fixed bottom-0 left-0 right-0 z-50 h-16;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid rgba(226, 232, 240, 0.5);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-
-  .tab-item {
-    @apply flex flex-col items-center gap-0.5 px-3 py-1.5 text-xs text-slate-400 no-underline transition-all duration-200;
-  }
-
-  .tab-item:hover {
-    @apply text-slate-600 no-underline;
-  }
-
-  .tab-item-active {
-    @apply text-cyan-600;
-  }
-
-  .tab-item-active .tab-icon {
-    @apply scale-110;
-  }
-
-  .tab-item-active .tab-label {
-    @apply font-semibold;
-  }
-
-  .tab-icon {
-    @apply flex items-center justify-center leading-none transition-transform duration-200;
-  }
-
-  .tab-icon svg {
-    @apply h-5 w-5;
-  }
-
-  .tab-icon-svg {
-    @apply transition-colors duration-200;
-  }
-
-  .tab-label {
-    @apply text-[10px] font-medium leading-none transition-all duration-200;
-  }
-
-  /* ---- Desktop Sidebar ---- */
-  .tab-bar-sidebar {
-    @apply hidden;
-  }
-
-  .sidebar-item {
-    @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-500 no-underline transition-all duration-200;
-  }
-
-  .sidebar-item:hover {
-    @apply bg-white/50 text-slate-700 no-underline;
-  }
-
-  .sidebar-item-active {
-    background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(8, 145, 178, 0.08));
-    @apply font-semibold text-cyan-700;
-  }
-
-  .sidebar-icon {
-    @apply text-xl;
-  }
-
-  .sidebar-label {
-    @apply hidden lg:inline;
-  }
-
-  /* ---- Sidebar Footer (daily progress) ---- */
-  .sidebar-footer {
-    @apply mx-3 mb-4 rounded-2xl px-4 py-4;
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(226, 232, 240, 0.4);
-  }
-
-  .sidebar-progress-track {
-    width: 100%;
-    height: 6px;
-    background: rgba(226, 232, 240, 0.5);
-    border-radius: 3px;
-    overflow: hidden;
-  }
-
-  .sidebar-progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #06b6d4, #0891b2);
-    border-radius: 3px;
-    transition: width 0.5s ease;
-  }
-
-  /* Responsive: md+ switches to sidebar layout */
-  @media (min-width: 768px) {
-    .app-shell {
-      display: flex;
-      flex-direction: row;
-    }
-
-    .top-bar {
-      left: 16rem;
-    }
-
-    .app-content {
-      padding-top: 3.5rem;
-      padding-bottom: 0;
-      margin-left: 16rem;
-    }
-
-    .tab-bar-mobile {
-      display: none;
-    }
-
-    .tab-bar-sidebar {
-      position: fixed;
-      left: 0;
-      top: 0;
-      z-index: 40;
-      display: flex;
-      height: 100dvh;
-      width: 16rem;
-      flex-direction: column;
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-right: 1px solid rgba(226, 232, 240, 0.5);
-      padding-top: 1rem;
-    }
-  }
-
-  /* Tablet: narrower sidebar */
-  @media (min-width: 768px) and (max-width: 1023px) {
-    .top-bar {
-      left: 5rem;
-    }
-
-    .app-content {
-      margin-left: 5rem;
-    }
-
-    .tab-bar-sidebar {
-      width: 5rem;
-    }
-
-    .sidebar-item {
-      display: flex;
-      justify-content: center;
-      padding-left: 0.5rem;
-      padding-right: 0.5rem;
-    }
-
-    .sidebar-label {
-      display: none;
-    }
-  }
-
-  /* Desktop: full sidebar with labels */
-  @media (min-width: 1024px) {
-    .sidebar-item {
-      padding-left: 1rem;
-      padding-right: 1rem;
-    }
-
-    .sidebar-label {
-      display: inline;
-    }
-  }
-
-  /* ---- Notification Bell ---- */
-  .notification-bell {
-    @apply relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition-all duration-200;
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(226, 232, 240, 0.3);
-  }
-
-  .notification-bell:hover {
-    @apply bg-white/80;
-    border-color: rgba(6, 182, 212, 0.3);
-  }
-
-  .notification-dot {
-    @apply absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full;
-    background: #ef4444;
-    border: 2px solid white;
-  }
-
-  /* ---- Notification Panel (dropdown) ---- */
-  .notification-panel {
-    @apply absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-2xl;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(226, 232, 240, 0.5);
-    box-shadow:
-      0 12px 40px rgba(0, 0, 0, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  }
-
-  .notification-item {
-    @apply flex items-start gap-3 px-4 py-3 text-sm transition-colors duration-200;
-  }
-
-  .notification-item:hover {
-    background: rgba(6, 182, 212, 0.04);
-  }
-
-  /* ---- Bottom Sheet ---- */
-  .bottom-sheet-overlay {
-    @apply fixed inset-0 z-50;
-    background: rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-  }
-
-  .bottom-sheet {
-    @apply fixed bottom-0 left-0 right-0 z-[60] max-h-[80dvh] overflow-y-auto rounded-t-3xl;
-    background: rgba(255, 255, 255, 0.97);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow:
-      0 -8px 32px rgba(0, 0, 0, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.6);
-    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
-  }
-
-  .bottom-sheet-handle {
-    @apply mx-auto mb-4 h-1.5 w-10 rounded-full;
-    background: rgba(148, 163, 184, 0.3);
-  }
-
-  /* ---- Calorie Ring (SVG donut chart) ---- */
-  .calorie-ring {
-    @apply relative flex items-center justify-center;
-  }
-
-  .calorie-ring svg {
-    @apply -rotate-90;
-  }
-
-  .calorie-ring-bg {
-    fill: none;
-    stroke: rgba(226, 232, 240, 0.3);
-  }
-
-  .calorie-ring-fill {
-    fill: none;
-    stroke-linecap: round;
-    transition: stroke-dashoffset 1s ease-in-out;
-  }
-
-  /* ---- Chart Bar (Progress tab) ---- */
-  .chart-bar {
-    @apply rounded-full transition-all duration-500;
-  }
-
-  .chart-bar:hover {
-    @apply opacity-80;
-  }
-
-  /* ---- Macro Donut ---- */
-  .macro-donut {
-    @apply relative flex items-center justify-center;
-  }
-
-  /* ---- Calorie goal edit ---- */
-  .goal-input {
-    @apply w-24 rounded-xl px-3 py-2 text-right text-lg font-bold;
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(6, 182, 212, 0.2);
-    outline: none;
-    transition: all 0.2s;
-  }
-
-  .goal-input:focus {
-    border-color: rgba(6, 182, 212, 0.5);
-    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
-  }
-
-  /* ---- Page fade-in animation ---- */
-  @keyframes page-fade-in {
-    from {
-      opacity: 0;
-      transform: translateY(8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .page-enter {
-    animation: page-fade-in 0.3s ease-out;
-  }
-
-  /* ---- Slide-in animation for desktop panel ---- */
-  @keyframes slide-in-right {
-    from {
-      transform: translateX(100%);
-    }
-    to {
-      transform: translateX(0);
-    }
-  }
-
-  .animate-slide-in-right {
-    animation: slide-in-right 0.25s ease-out;
-  }
-
-  /* ---- Swipe to delete ---- */
-  .swipe-container {
-    @apply relative overflow-hidden;
-  }
-
-  .swipe-action {
-    @apply absolute right-0 top-0 flex h-full items-center justify-center px-5 text-sm font-semibold text-white;
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-  }
-
-  /* ---- Empty state ---- */
-  .empty-state {
-    @apply flex flex-col items-center justify-center py-12 text-center;
-  }
-
-  .empty-state-icon {
-    @apply mb-3 text-4xl opacity-60;
-  }
-
-  .empty-state-text {
-    @apply text-sm text-slate-400;
-  }
-
-  /* ---- Y2K Logo (auth pages) ---- */
-  .y2k-logo {
-    @apply relative mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 via-blue-400 to-teal-400 shadow-xl;
-  }
-
-  .y2k-logo > span {
-    @apply absolute text-xl font-bold text-white;
-  }
-
-  .y2k-logo > div {
-    @apply h-8 w-8 rounded-full bg-white/60 blur-sm;
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
   }
 }
 
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: page-fade-in 0.25s ease-out;
+}
+
 /* ===================================================
-   Utilities — layout helpers
+   Utilities
    =================================================== */
 @layer utilities {
   .stack {
     @apply grid gap-4;
   }
 
-  .page-header {
-    @apply flex flex-wrap items-center justify-between gap-4;
+  /* 安全区域 padding，用于底部固定栏 */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
-  .narrow-card {
-    @apply mx-auto w-full max-w-md;
+  /* 数字等宽对齐，用于统计数值 */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 }
