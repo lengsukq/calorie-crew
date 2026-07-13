@@ -2,7 +2,7 @@ import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { foodLogs, type MealType } from "@/lib/db/schema";
 import { recalculateDailySummary } from "@/lib/services/daily-summary.service";
-import { selectFoodLogsToCopy } from "@/lib/services/food-log.duplicate-key";
+import { selectFoodLogsToCopy, type FoodLogDuplicateKeyFields } from "@/lib/services/food-log.duplicate-key";
 
 export interface FoodLogWriteInput {
   logDate: string;
@@ -51,7 +51,7 @@ async function copyFoodLogsToDate(
   userId: string,
   sourceRows: Array<{
     userId: string;
-    mealType: MealType | string;
+    mealType: MealType;
     foodName: string;
     servingDescription: string;
     calories: number;
@@ -74,7 +74,7 @@ async function copyFoodLogsToDate(
     },
   });
 
-  const rowsToCopy = selectFoodLogsToCopy(sourceRows, existingTargetLogs);
+  const rowsToCopy = selectFoodLogsToCopy(sourceRows, existingTargetLogs as FoodLogDuplicateKeyFields[]);
   if (rowsToCopy.length === 0) return 0;
 
   await db.insert(foodLogs).values(
@@ -193,7 +193,11 @@ export async function batchActionFoodLogs(
   }
 
   if (action === "copy" && targetDate) {
-    const copiedCount = await copyFoodLogsToDate(userId, rows, targetDate);
+    const copiedCount = await copyFoodLogsToDate(
+      userId,
+      rows as Array<{ userId: string; mealType: MealType; foodName: string; servingDescription: string; calories: number; proteinG: string; carbsG: string; fatG: string }>,
+      targetDate,
+    );
     if (copiedCount > 0) {
       affectedDates.add(targetDate);
     }

@@ -4,7 +4,11 @@ import { jwtVerify } from "jose";
 const SESSION_COOKIE = "calorie_crew_session";
 
 function secretKey(): Uint8Array {
-  return new TextEncoder().encode(process.env.SESSION_SECRET ?? "");
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    throw new Error("SESSION_SECRET environment variable is not configured");
+  }
+  return new TextEncoder().encode(secret);
 }
 
 const protectedPaths = ["/today", "/diary", "/progress", "/profile"];

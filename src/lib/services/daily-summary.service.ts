@@ -18,6 +18,9 @@ export async function recalculateDailySummary(userId: string, logDate: string): 
       columns: { sleepMinutes: true },
     }),
   ]);
+
+  if (!user) return;
+
   const totals = logs.reduce((sum, log) => ({
     calories: sum.calories + log.calories,
     proteinG: sum.proteinG + Number(log.proteinG),
@@ -31,7 +34,7 @@ export async function recalculateDailySummary(userId: string, logDate: string): 
   const totalWaterMl = waterEntries.reduce((sum, entry) => sum + entry.amountMl, 0);
   const sleepMinutes = sleepEntries.reduce((sum, entry) => sum + entry.sleepMinutes, 0);
   const netKcal = totals.calories - totalExerciseKcal;
-  const targetKcal = user?.calorieTarget ?? 2000;
+  const targetKcal = user.calorieTarget;
 
   await db.insert(dailySummaries).values({
     userId,

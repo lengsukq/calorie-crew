@@ -1,7 +1,7 @@
 import type { MealType } from "@/lib/db/schema";
 
 export interface FoodLogDuplicateKeyFields {
-  mealType: MealType | string;
+  mealType: MealType;
   foodName: string;
   servingDescription: string;
   calories: number;

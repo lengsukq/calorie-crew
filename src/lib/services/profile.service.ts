@@ -5,7 +5,6 @@ import {
   users,
   weightLogs,
   type ActivityLevel,
-  type AiAdviceFrequency,
   type HealthGoal,
   type ProfileGender,
 } from "@/lib/db/schema";
@@ -166,17 +165,4 @@ export async function updateUserTarget(
   }).where(eq(users.id, userId));
 }
 
-export async function getProfilePreferences(userId: string): Promise<{
-  aiAdviceEnabled: boolean;
-  aiAdviceFrequency: AiAdviceFrequency;
-}> {
-  const profile = await db.query.userProfiles.findFirst({
-    where: eq(userProfiles.userId, userId),
-    columns: { aiAdviceEnabled: true, aiAdviceFrequency: true },
-  });
 
-  return {
-    aiAdviceEnabled: profile?.aiAdviceEnabled ?? true,
-    aiAdviceFrequency: profile?.aiAdviceFrequency ?? "daily",
-  };
-}
