@@ -59,6 +59,8 @@ export const foodLogs = pgTable(
     proteinG: numeric("protein_g", { precision: 8, scale: 2 }).notNull().default("0"),
     carbsG: numeric("carbs_g", { precision: 8, scale: 2 }).notNull().default("0"),
     fatG: numeric("fat_g", { precision: 8, scale: 2 }).notNull().default("0"),
+    note: text("note"),
+    tags: json("tags").$type<string[]>().default([]),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -173,11 +175,62 @@ export const aiAdvices = pgTable(
     readAt: timestamp("read_at", { withTimezone: true }),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    feedback: text("feedback", { enum: ["helpful", "not_helpful"] }),
+    feedbackAt: timestamp("feedback_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    dismissed: boolean("dismissed").notNull().default(false),
+    dismissedAt: timestamp("dismissed_at", { withTimezone: true }),
   },
   (table) => [
     unique("ai_advices_user_type_expires_unique").on(table.userId, table.type, table.expiresAt),
     index("ai_advices_user_created_idx").on(table.userId, table.createdAt),
   ],
+);
+
+export const waterLogs = pgTable(
+  "water_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    logDate: date("log_date").notNull(),
+    amountMl: integer("amount_ml").notNull(),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [unique("water_logs_user_date_id_unique").on(table.userId, table.logDate, table.id)],
+);
+
+export const sleepLogs = pgTable(
+  "sleep_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    logDate: date("log_date").notNull(),
+    sleepMinutes: integer("sleep_minutes").notNull(),
+    quality: integer("quality").notNull().default(3),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [unique("sleep_logs_user_date_unique").on(table.userId, table.logDate)],
+);
+
+export const bodyMeasurements = pgTable(
+  "body_measurements",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    logDate: date("log_date").notNull(),
+    chestCm: numeric("chest_cm", { precision: 6, scale: 2 }),
+    waistCm: numeric("waist_cm", { precision: 6, scale: 2 }),
+    hipCm: numeric("hip_cm", { precision: 6, scale: 2 }),
+    armCm: numeric("arm_cm", { precision: 6, scale: 2 }),
+    legCm: numeric("leg_cm", { precision: 6, scale: 2 }),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [unique("body_measurements_user_date_unique").on(table.userId, table.logDate)],
 );
 
 export const mealTypes = ["breakfast", "lunch", "dinner", "snack"] as const;

@@ -15,6 +15,8 @@ export const foodLogSchema = z.object({
   proteinG: z.number().min(0).max(1000),
   carbsG: z.number().min(0).max(1000),
   fatG: z.number().min(0).max(1000),
+  note: z.string().trim().max(300).optional().nullable(),
+  tags: z.array(z.string().trim().min(1).max(40)).max(10).optional().default([]),
 });
 
 export const foodLogUpdateSchema = foodLogSchema.partial().refine(

@@ -47,6 +47,11 @@ function mapAdviceRow(row: typeof aiAdvices.$inferSelect): AiAdviceData {
     generatedAt: row.createdAt.toISOString(),
     expiresAt: row.expiresAt.toISOString(),
     readAt: row.readAt?.toISOString() ?? null,
+    feedback: row.feedback ?? null,
+    feedbackAt: row.feedbackAt?.toISOString() ?? null,
+    completedAt: row.completedAt?.toISOString() ?? null,
+    dismissed: row.dismissed,
+    dismissedAt: row.dismissedAt?.toISOString() ?? null,
   };
 }
 
@@ -60,7 +65,7 @@ function getAdviceExpiration(type: AiAdviceType): Date {
   return new Date(Date.now() + hoursToLive * 60 * 60 * 1000);
 }
 
-function fallbackAdvicePayload(message = "建议暂时不可用，请稍后重试。") : SanitizedAdvicePayload {
+function fallbackAdvicePayload(message = "建议暂时不可用，请稍后重试。"): SanitizedAdvicePayload {
   return {
     summary: message,
     suggestions: [
@@ -202,9 +207,12 @@ export async function getAdvices(
   userId: string,
   type?: AiAdviceType,
   range: "7d" | "30d" | "90d" = "7d",
+  options?: { includeDismissed?: boolean; includeHistory?: boolean },
 ): Promise<AiAdviceData[]> {
-  const conditions = [eq(aiAdvices.userId, userId), gte(aiAdvices.createdAt, getRangeStartDate(range))];
+  const conditions = [eq(aiAdvices.userId, userId)];
   if (type) conditions.push(eq(aiAdvices.type, type));
+  if (!options?.includeHistory) conditions.push(gt(aiAdvices.expiresAt, new Date()));
+  if (!options?.includeDismissed) conditions.push(eq(aiAdvices.dismissed, false));
 
   const rows = await db.query.aiAdvices.findMany({
     where: and(...conditions),
@@ -254,4 +262,46 @@ export async function deleteAdvice(userId: string, id: string): Promise<boolean>
     .returning({ id: aiAdvices.id });
 
   return deletedRows.length > 0;
+}
+
+export async function feedbackAdvice(userId: string, id: string, feedback: "helpful" | "not_helpful"): Promise<boolean> {
+  const [updated] = await db.update(aiAdvices).set({ feedback, feedbackAt: new Date() })
+    .where(and(eq(aiAdvices.userId, userId), eq(aiAdvices.id, id)))
+    .returning({ id: aiAdvices.id });
+
+  return updated !== undefined;
+}
+
+export async function completeAdvice(userId: string, id: string): Promise<boolean> {
+  const [updated] = await db.update(aiAdvices).set({ completedAt: new Date() })
+    .where(and(eq(aiAdvices.userId, userId), eq(aiAdvices.id, id)))
+    .returning({ id: aiAdvices.id });
+
+  return updated !== undefined;
+}
+
+export async function dismissAdvice(userId: string, id: string): Promise<boolean> {
+  const [updated] = await db.update(aiAdvices).set({ dismissed: true, dismissedAt: new Date() })
+    .where(and(eq(aiAdvices.userId, userId), eq(aiAdvices.id, id)))
+    .returning({ id: aiAdvices.id });
+
+  return updated !== undefined;
+}
+
+export async function reactivateAdvice(userId: string, id: string): Promise<AiAdviceData | null> {
+  const existing = await db.query.aiAdvices.findFirst({
+    where: and(eq(aiAdvices.userId, userId), eq(aiAdvices.id, id)),
+  });
+
+  if (!existing) return null;
+
+  const newExpiresAt = getAdviceExpiration(existing.type);
+  await db.update(aiAdvices).set({ expiresAt: newExpiresAt, dismissed: false, dismissedAt: null })
+    .where(and(eq(aiAdvices.userId, userId), eq(aiAdvices.id, id)));
+
+  const reactivated = await db.query.aiAdvices.findFirst({
+    where: and(eq(aiAdvices.userId, userId), eq(aiAdvices.id, id)),
+  });
+
+  return reactivated ? mapAdviceRow(reactivated) : null;
 }

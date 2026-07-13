@@ -138,4 +138,62 @@ export interface AiAdviceData {
   generatedAt: string;
   expiresAt: string;
   readAt: string | null;
+  feedback: "helpful" | "not_helpful" | null;
+  feedbackAt: string | null;
+  completedAt: string | null;
+  dismissed: boolean;
+  dismissedAt: string | null;
+}
+
+export interface WaterLogEntry {
+  id: string;
+  logDate: string;
+  amountMl: number;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface WaterLogFormData {
+  logDate: string;
+  amountMl: number;
+  note?: string | null;
+}
+
+export interface SleepLogEntry {
+  id: string;
+  logDate: string;
+  sleepMinutes: number;
+  quality: number;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SleepLogFormData {
+  logDate: string;
+  sleepMinutes: number;
+  quality: number;
+  note?: string | null;
+}
+
+export interface BodyMeasurementEntry {
+  id: string;
+  logDate: string;
+  chestCm: string | null;
+  waistCm: string | null;
+  hipCm: string | null;
+  armCm: string | null;
+  legCm: string | null;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface BodyMeasurementFormData {
+  logDate: string;
+  chestCm?: number | null;
+  waistCm?: number | null;
+  hipCm?: number | null;
+  armCm?: number | null;
+  legCm?: number | null;
+  note?: string | null;
 }
