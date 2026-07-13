@@ -108,7 +108,7 @@ export function AiConfigPanel() {
               value={model}
               onChange={(e) => setModel(e.target.value)}
               className="glass-input"
-              placeholder="Qwen/Qwen2.5-VL-72B-Instruct"
+              placeholder="Qwen/Qwen3.5-4B"
             />
           </label>
 
