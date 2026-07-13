@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useProfile } from "@/hooks/useProfile";
 import { useSummary } from "@/hooks/useSummary";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { CalorieRing } from "@/components/today/CalorieRing";
@@ -9,6 +10,7 @@ import { ExerciseCard } from "@/components/today/ExerciseCard";
 import { MealGroup } from "@/components/today/MealGroup";
 import { WeightCard } from "@/components/today/WeightCard";
 import { MiniStatCard } from "@/components/shared/MiniStatCard";
+import { AiAdviceCard } from "@/components/shared/AiAdviceCard";
 import { FoodLogForm } from "@/components/shared/FoodLogForm";
 import { FoodLogManualForm } from "@/components/shared/FoodLogManualForm";
 import { QuickAddButton } from "@/components/shared/QuickAddButton";
@@ -59,6 +61,7 @@ function foodLogEntryToFormData(log: FoodLogEntry): FoodLogFormData {
 export function TodayContent({ email, role, calorieTarget, weightTargetKg }: TodayContentProps) {
   const currentDate = todayDate();
   const { logs, summary, loading, error, reload } = useSummary({ date: currentDate });
+  const { data: profileData } = useProfile();
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
   const [recentFoods, setRecentFoods] = useState<FoodLogFormData[]>([]);
@@ -176,6 +179,8 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
   const fat = parseFloat(summary?.totalFatG ?? "0");
   const remaining = summary?.remainingKcal ?? calorieTarget - netKcal;
   const targets = macroTargets(calorieTarget);
+  const aiAdviceEnabled = profileData?.profile.aiAdviceEnabled ?? true;
+  const shouldShowAiAdvice = logs.length > 0 || !aiAdviceEnabled;
 
   return (
     <div className="stack page-enter">
@@ -258,6 +263,17 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
         <WeightCard currentDate={currentDate} weightTargetKg={weightTargetKg} />
         <ExerciseCard currentDate={currentDate} onChanged={reload} />
       </div>
+
+      {shouldShowAiAdvice && (
+        <AiAdviceCard
+          title="AI 今日建议"
+          type="daily_diet"
+          icon="✨"
+          enabled={aiAdviceEnabled && logs.length > 0}
+          disabledText={aiAdviceEnabled ? "记录一条饮食后，即可生成今日 AI 建议。" : "AI 建议已关闭，可在个人资料中开启。"}
+          emptyText="暂无今日建议，点击生成后获取基于今日记录的饮食提示。"
+        />
+      )}
 
       {/* Recent foods with quick add */}
       {recentFoods.length > 0 && (

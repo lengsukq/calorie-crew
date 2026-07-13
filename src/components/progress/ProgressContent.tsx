@@ -9,6 +9,7 @@ import { ExerciseStatsPanel } from "@/components/progress/ExerciseStatsPanel";
 import { MacroDonut } from "@/components/progress/MacroDonut";
 import { WeightTrendChart } from "@/components/progress/WeightTrendChart";
 import { MiniStatCard } from "@/components/shared/MiniStatCard";
+import { AiAdviceCard } from "@/components/shared/AiAdviceCard";
 import { addDays, todayDate } from "@/lib/date";
 import type { HistoryDay } from "@/shared/types";
 
@@ -168,6 +169,8 @@ export function ProgressContent({ weightTargetKg }: ProgressContentProps) {
         <MiniStatCard label="达标率" value={`${onTargetRate}%`} />
         <MiniStatCard label="最长连续" value={streak} unit="天" />
       </div>
+
+      <AiAdviceCard title="AI 健康周报" type="weekly_summary" icon="📊" autoGenerate />
 
       {/* Week-over-week comparison */}
       {weekComparison && (

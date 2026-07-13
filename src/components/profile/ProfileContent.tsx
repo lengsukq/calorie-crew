@@ -5,7 +5,9 @@ import { useUserTarget } from "@/hooks/useUserTarget";
 import { TargetSetting } from "@/components/profile/TargetSetting";
 import { AdminPanel } from "@/components/profile/AdminPanel";
 import { AiConfigPanel } from "@/components/profile/AiConfigPanel";
-import { WeightTargetForm } from "@/components/profile/WeightTargetForm";
+import { HealthMetricsCard } from "@/components/profile/HealthMetricsCard";
+import { PersonalProfilePanel } from "@/components/profile/PersonalProfilePanel";
+import { AiAdvicePreferencePanel } from "@/components/profile/AiAdvicePreferencePanel";
 
 interface ProfileContentProps {
   email: string;
@@ -60,7 +62,7 @@ function CollapsibleSection({
 }
 
 export function ProfileContent({ email, role, calorieTarget, weightTargetKg }: ProfileContentProps) {
-  const { updateTarget, updateWeightTarget } = useUserTarget();
+  const { updateTarget } = useUserTarget();
 
   async function handleCreateInvite(maxUses: number): Promise<string | null> {
     try {
@@ -105,7 +107,13 @@ export function ProfileContent({ email, role, calorieTarget, weightTargetKg }: P
           设置
         </p>
         <TargetSetting currentTarget={calorieTarget} onUpdate={updateTarget} />
-        <WeightTargetForm currentTarget={weightTargetKg} onUpdate={updateWeightTarget} />
+        <HealthMetricsCard />
+        <CollapsibleSection title="个人健康档案" icon="🧬" defaultOpen={!weightTargetKg}>
+          <PersonalProfilePanel />
+        </CollapsibleSection>
+        <CollapsibleSection title="AI 建议偏好" icon="✨">
+          <AiAdvicePreferencePanel />
+        </CollapsibleSection>
         <CollapsibleSection title="AI 配置" icon="🤖">
           <AiConfigPanel />
         </CollapsibleSection>

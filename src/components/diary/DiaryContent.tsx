@@ -11,6 +11,7 @@ import { ExerciseLogItem } from "@/components/diary/ExerciseLogItem";
 import { WeightLogItem } from "@/components/diary/WeightLogItem";
 import { MealGroup } from "@/components/today/MealGroup";
 import { MiniStatCard } from "@/components/shared/MiniStatCard";
+import { AiAdviceCard } from "@/components/shared/AiAdviceCard";
 import { FoodLogForm } from "@/components/shared/FoodLogForm";
 import { FoodLogManualForm } from "@/components/shared/FoodLogManualForm";
 import { QuickAddButton } from "@/components/shared/QuickAddButton";
@@ -170,6 +171,10 @@ export function DiaryContent() {
           gradient="from-teal-400 to-emerald-500"
         />
       </div>
+
+      {totalKcal > 0 && (
+        <AiAdviceCard title="AI 洞察" type="daily_diet" icon="💡" emptyText="暂无异常，继续保持。" autoGenerate />
+      )}
 
       {/* Meal groups */}
       {loading ? (
