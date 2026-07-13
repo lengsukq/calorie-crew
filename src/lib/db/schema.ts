@@ -87,6 +87,7 @@ export const userAiConfigs = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    engine: text("engine").default("siliconflow"),
     baseUrl: text("base_url"),
     model: text("model"),
     apiKey: text("api_key"),

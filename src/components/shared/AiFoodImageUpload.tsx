@@ -1,11 +1,67 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { RecognizedFood } from "@/lib/services/food-recognize.service";
 
 interface AiFoodImageUploadProps {
   onRecognized: (food: RecognizedFood) => void;
+  engine?: "siliconflow" | "boohee";
+}
+
+/**
+ * Compress an image file to fit within maxSizeMB.
+ * Returns base64 string WITHOUT the data:image/... prefix.
+ */
+function compressImage(file: File, maxSizeMB = 3): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+
+      const canvas = document.createElement("canvas");
+      let { width, height } = img;
+
+      // Ensure max dimension is 1024px (Boohee limit + good for LLM)
+      if (width > 1024) {
+        height = Math.round(height * (1024 / width));
+        width = 1024;
+      }
+      if (height > 1024) {
+        width = Math.round(width * (1024 / height));
+        height = 1024;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Compress with decreasing quality until under maxSizeMB
+      const tryCompress = (quality: number) => {
+        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+        // base64 length -> bytes: length * 3/4
+        const sizeMB = (dataUrl.length * 0.75) / (1024 * 1024);
+
+        if (sizeMB <= maxSizeMB || quality <= 0.1) {
+          resolve(dataUrl.split(",")[1]); // strip data:image/jpeg;base64,
+        } else {
+          tryCompress(quality - 0.1);
+        }
+      };
+
+      tryCompress(0.9);
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("图片加载失败"));
+    };
+
+    img.src = url;
+  });
 }
 
 export function AiFoodImageUpload({ onRecognized }: AiFoodImageUploadProps) {
@@ -14,48 +70,56 @@ export function AiFoodImageUpload({ onRecognized }: AiFoodImageUploadProps) {
   const [results, setResults] = useState<RecognizedFood[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [engine, setEngine] = useState<"siliconflow" | "boohee">("siliconflow");
 
-  function handleFileSelected(file: File | undefined) {
+  // Fetch user's engine preference
+  useEffect(() => {
+    fetch("/api/ai/config")
+      .then((r) => r.json())
+      .then((data: { engine?: string }) => {
+        if (data.engine === "boohee" || data.engine === "siliconflow") {
+          setEngine(data.engine);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  async function handleFileSelected(file: File | undefined) {
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       toast.error("请选择图片文件");
       return;
     }
 
-    // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       toast.error("图片过大，请选择 10MB 以内的图片");
       return;
     }
 
     // Show preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      setPreviewUrl(dataUrl);
-      void recognizeImage(dataUrl, file.type);
+    const previewReader = new FileReader();
+    previewReader.onload = (e) => {
+      setPreviewUrl(e.target?.result as string);
     };
-    reader.readAsDataURL(file);
-
-    // Reset input so same file can be selected again
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }
-
-  async function recognizeImage(dataUrl: string, mimeType: string) {
-    const base64 = dataUrl.split(",")[1];
-    if (!base64) return;
-
+    previewReader.readAsDataURL(file);
     setLoading(true);
     setError(null);
     setResults([]);
 
     try {
+      // Compress image
+      const compressedBase64 = await compressImage(file, 3);
+
+      // Send to recognize API
       const response = await fetch("/api/ai/recognize", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ imageBase64: base64, mimeType }),
+        body: JSON.stringify({
+          imageData: compressedBase64,
+          mimeType: "image/jpeg",
+          engine,
+        }),
       });
 
       const result = (await response.json()) as {
@@ -80,6 +144,8 @@ export function AiFoodImageUpload({ onRecognized }: AiFoodImageUploadProps) {
     } finally {
       setLoading(false);
     }
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   function handleUse(food: RecognizedFood) {
@@ -99,7 +165,6 @@ export function AiFoodImageUpload({ onRecognized }: AiFoodImageUploadProps) {
         <div className="flex gap-2">
           <button
             onClick={() => {
-              // Request camera access
               const input = fileInputRef.current;
               if (input) {
                 input.capture = "environment" as string;
@@ -145,7 +210,7 @@ export function AiFoodImageUpload({ onRecognized }: AiFoodImageUploadProps) {
         </div>
       )}
 
-      {/* Preview + reload */}
+      {/* Preview */}
       {previewUrl && (
         <div className="relative overflow-hidden rounded-2xl">
           <img
@@ -163,14 +228,16 @@ export function AiFoodImageUpload({ onRecognized }: AiFoodImageUploadProps) {
             <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm">
               <div className="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 shadow-lg">
                 <span className="y2k-spinner !h-4 !w-4 !border-slate-300 !border-t-cyan-500" />
-                <span className="text-xs font-medium text-slate-600">AI 识别中...</span>
+                <span className="text-xs font-medium text-slate-600">
+                  {engine === "boohee" ? "Boohee 识别中..." : "AI 识别中..."}
+                </span>
               </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Results list */}
+      {/* Results */}
       {results.length > 0 && (
         <div className="stack gap-1.5">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">

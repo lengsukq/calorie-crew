@@ -177,3 +177,122 @@ function sanitizeFood(item: Record<string, unknown>): RecognizedFood {
     fatG: Math.max(0, Number(item.fatG) || 0),
   };
 }
+
+// ─── Boohee API ──────────────────────────────────────────
+
+const BOOHEE_BASE_URL = "https://api.boohee.com/open-apis";
+
+interface BooheeEatingItem {
+  name: string;
+  calories: number;
+  protein: number;
+  fat: number;
+  carbohydrate: number;
+  amount: number;
+}
+
+interface BooheeSubmitResponse {
+  code: number;
+  data: { task_id: string };
+}
+
+interface BooheeDetailResponse {
+  code: number;
+  data: {
+    status: number; // 1=解析中, 2=完成, 3=未识别, 4=失败
+    err_message?: string;
+    eating_items: BooheeEatingItem[];
+  };
+}
+
+/**
+ * Recognize food using Boohee API (two-step: submit + poll).
+ * Normalizes response to RecognizedResponse format.
+ */
+export async function recognizeFoodBoohee(
+  imageData: string,
+  apiKey: string,
+): Promise<RecognizedResponse> {
+  // Step 1: Submit image
+  const submitRes = await fetch(`${BOOHEE_BASE_URL}/v1/food/image_recognize`, {
+    method: "POST",
+    headers: {
+      "X-Api-Key": apiKey,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ image_data: imageData }),
+  });
+
+  if (!submitRes.ok) {
+    const text = await submitRes.text().catch(() => "");
+    throw new Error(`Boohee 提交失败 (${submitRes.status}): ${text}`);
+  }
+
+  const submitBody = (await submitRes.json()) as BooheeSubmitResponse;
+
+  if (submitBody.code !== 0) {
+    throw new Error(`Boohee 提交失败: code=${submitBody.code}`);
+  }
+
+  const taskId = submitBody.data.task_id;
+
+  // Step 2: Poll for results (up to 30s, every 2s)
+  let attempts = 0;
+  const maxAttempts = 15;
+
+  while (attempts < maxAttempts) {
+    attempts++;
+    await sleep(2000);
+
+    const detailRes = await fetch(
+      `${BOOHEE_BASE_URL}/v1/food/image_recognize_detail?task_id=${taskId}`,
+      { headers: { "X-Api-Key": apiKey } },
+    );
+
+    if (!detailRes.ok) continue;
+
+    const detailBody = (await detailRes.json()) as BooheeDetailResponse;
+
+    if (detailBody.code !== 0) continue;
+
+    const { status, err_message, eating_items } = detailBody.data;
+
+    if (status === 2 && eating_items && eating_items.length > 0) {
+      return {
+        foods: eating_items.map(mapBooheeItem),
+      };
+    }
+
+    if (status === 3) {
+      throw new Error(err_message || "未识别到食物，请换一张图片");
+    }
+
+    if (status === 4) {
+      throw new Error(err_message || "识别失败，请重试");
+    }
+
+    // status === 1: still processing, continue polling
+  }
+
+  throw new Error("识别超时，请稍后重试");
+}
+
+/**
+ * Map Boohee eating item to unified RecognizedFood format.
+ * Boohee returns per-100g values + amount(g), we convert to actual values.
+ */
+function mapBooheeItem(item: BooheeEatingItem): RecognizedFood {
+  const ratio = item.amount / 100;
+  return {
+    foodName: item.name,
+    servingDescription: `${Math.round(item.amount)}g`,
+    calories: Math.max(0, Math.round(item.calories * ratio)),
+    proteinG: Math.max(0, parseFloat((item.protein * ratio).toFixed(1))),
+    carbsG: Math.max(0, parseFloat((item.carbohydrate * ratio).toFixed(1))),
+    fatG: Math.max(0, parseFloat((item.fat * ratio).toFixed(1))),
+  };
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}

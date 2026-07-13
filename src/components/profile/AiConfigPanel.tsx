@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+type Engine = "siliconflow" | "boohee";
+
 interface AiConfigData {
+  engine: Engine;
   baseUrl: string | null;
   model: string | null;
   hasApiKey: boolean;
@@ -11,10 +14,12 @@ interface AiConfigData {
 
 export function AiConfigPanel() {
   const [config, setConfig] = useState<AiConfigData>({
+    engine: "siliconflow",
     baseUrl: null,
     model: null,
     hasApiKey: false,
   });
+  const [engine, setEngine] = useState<Engine>("siliconflow");
   const [baseUrl, setBaseUrl] = useState("");
   const [model, setModel] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -28,6 +33,7 @@ export function AiConfigPanel() {
       const response = await fetch("/api/ai/config");
       const data = (await response.json()) as AiConfigData;
       setConfig(data);
+      setEngine(data.engine ?? "siliconflow");
       setBaseUrl(data.baseUrl ?? "");
       setModel(data.model ?? "");
     } catch {
@@ -45,8 +51,12 @@ export function AiConfigPanel() {
     setSaving(true);
     try {
       const body: Record<string, string> = {};
-      if (baseUrl !== (config.baseUrl ?? "")) body.baseUrl = baseUrl;
-      if (model !== (config.model ?? "")) body.model = model;
+      body.engine = engine;
+
+      if (engine === "siliconflow") {
+        if (baseUrl !== (config.baseUrl ?? "")) body.baseUrl = baseUrl;
+        if (model !== (config.model ?? "")) body.model = model;
+      }
       if (apiKey) body.apiKey = apiKey;
 
       if (Object.keys(body).length === 0) {
@@ -75,8 +85,8 @@ export function AiConfigPanel() {
   }
 
   const hasUnsaved =
-    baseUrl !== (config.baseUrl ?? "") ||
-    model !== (config.model ?? "") ||
+    engine !== config.engine ||
+    (engine === "siliconflow" && (baseUrl !== (config.baseUrl ?? "") || model !== (config.model ?? ""))) ||
     apiKey.length > 0;
 
   return (
@@ -91,27 +101,58 @@ export function AiConfigPanel() {
           <div className="y2k-spinner h-5 w-5" />
         </div>
       ) : (
-        <div className="stack gap-3">
-          <label className="stack gap-1">
-            <span className="glass-label">API 地址</span>
-            <input
-              value={baseUrl}
-              onChange={(e) => setBaseUrl(e.target.value)}
-              className="glass-input"
-              placeholder="https://api.siliconflow.cn/v1/chat/completions"
-            />
-          </label>
+        <div className="stack gap-4">
+          {/* Engine switch */}
+          <div>
+            <span className="glass-label">识别引擎</span>
+            <div className="mt-1.5 flex gap-2">
+              <EngineTab
+                label="SiliconFlow (LLM)"
+                active={engine === "siliconflow"}
+                onClick={() => setEngine("siliconflow")}
+              />
+              <EngineTab
+                label="Boohee (薄荷)"
+                active={engine === "boohee"}
+                onClick={() => setEngine("boohee")}
+              />
+            </div>
+          </div>
 
-          <label className="stack gap-1">
-            <span className="glass-label">模型</span>
-            <input
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              className="glass-input"
-              placeholder="Qwen/Qwen3.5-4B"
-            />
-          </label>
+          {/* SiliconFlow config */}
+          {engine === "siliconflow" && (
+            <>
+              <label className="stack gap-1">
+                <span className="glass-label">API 地址</span>
+                <input
+                  value={baseUrl}
+                  onChange={(e) => setBaseUrl(e.target.value)}
+                  className="glass-input"
+                  placeholder="https://api.siliconflow.cn/v1/chat/completions"
+                />
+              </label>
 
+              <label className="stack gap-1">
+                <span className="glass-label">模型</span>
+                <input
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                  className="glass-input"
+                  placeholder="Qwen/Qwen2.5-VL-72B-Instruct"
+                />
+              </label>
+            </>
+          )}
+
+          {/* Boohee config */}
+          {engine === "boohee" && (
+            <div className="rounded-xl bg-amber-50/50 px-4 py-3 text-xs text-slate-500 leading-relaxed">
+              Boohee 模式使用固定 API 地址 <code className="text-cyan-700">api.boohee.com/open-apis</code>
+              ，只需配置 API 密钥即可。
+            </div>
+          )}
+
+          {/* API Key (shared) */}
           <label className="stack gap-1">
             <span className="glass-label">
               API 密钥
@@ -156,5 +197,28 @@ export function AiConfigPanel() {
         </div>
       )}
     </div>
+  );
+}
+
+function EngineTab({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-full px-4 py-2 text-xs font-semibold transition-all ${
+        active
+          ? "bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-sm"
+          : "bg-white/50 text-slate-500 hover:bg-white/80"
+      }`}
+    >
+      {label}
+    </button>
   );
 }

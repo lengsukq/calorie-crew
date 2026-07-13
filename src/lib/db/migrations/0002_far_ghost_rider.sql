@@ -1,0 +1,1 @@
+ALTER TABLE "user_ai_configs" ADD COLUMN "engine" text DEFAULT 'siliconflow';

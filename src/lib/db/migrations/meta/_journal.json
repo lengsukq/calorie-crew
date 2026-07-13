@@ -15,6 +15,13 @@
       "when": 1783871589111,
       "tag": "0001_perfect_storm",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783903049921,
+      "tag": "0002_far_ghost_rider",
+      "breakpoints": true
     }
   ]
 }
