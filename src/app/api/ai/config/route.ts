@@ -6,7 +6,6 @@ import { jsonError } from "@/lib/http";
 import { z } from "zod";
 
 const updateSchema = z.object({
-  engine: z.enum(["siliconflow", "boohee"]).optional(),
   baseUrl: z.string().url().optional().or(z.literal("")),
   model: z.string().optional().or(z.literal("")),
   apiKey: z.string().optional().or(z.literal("")),
@@ -21,7 +20,6 @@ export async function GET(): Promise<Response> {
   });
 
   return Response.json({
-    engine: config?.engine ?? "siliconflow",
     baseUrl: config?.baseUrl ?? null,
     model: config?.model ?? null,
     hasApiKey: Boolean(config?.apiKey),
@@ -37,11 +35,9 @@ export async function PUT(request: Request): Promise<Response> {
     return jsonError("参数格式不正确", 400);
   }
 
-  const { engine, baseUrl, model, apiKey } = parsed.data;
+  const { baseUrl, model, apiKey } = parsed.data;
 
-  // Build update object, only include non-empty values or nullify empty strings
   const updateData: Record<string, string | null> = {};
-  if (engine !== undefined) updateData.engine = engine;
   if (baseUrl !== undefined) updateData.baseUrl = baseUrl || null;
   if (model !== undefined) updateData.model = model || null;
   if (apiKey !== undefined) updateData.apiKey = apiKey || null;
@@ -50,7 +46,6 @@ export async function PUT(request: Request): Promise<Response> {
     return jsonError("没有需要更新的字段", 400);
   }
 
-  // Upsert: insert if not exists, update if exists
   const existing = await db.query.userAiConfigs.findFirst({
     where: eq(userAiConfigs.userId, userId),
   });

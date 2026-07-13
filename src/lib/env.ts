@@ -7,7 +7,6 @@ const envSchema = z.object({
   AI_BASE_URL: z.string().url().optional(),
   AI_MODEL: z.string().optional(),
   AI_API_KEY: z.string().optional(),
-  BOOHEE_API_KEY: z.string().optional(),
 });
 
 const isBuild = process.env.NEXT_PHASE === "phase-production-build";
@@ -19,5 +18,4 @@ export const env = envSchema.parse({
   AI_BASE_URL: process.env.AI_BASE_URL,
   AI_MODEL: process.env.AI_MODEL,
   AI_API_KEY: process.env.AI_API_KEY,
-  BOOHEE_API_KEY: process.env.BOOHEE_API_KEY,
 });
