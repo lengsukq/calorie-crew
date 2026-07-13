@@ -1,4 +1,5 @@
 "use client";
+// 工具型 Hook，不遵循统一数据请求签名
 
 import { useEffect, useState } from "react";
 

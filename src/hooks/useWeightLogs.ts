@@ -11,12 +11,12 @@ interface UseWeightLogsOptions {
 }
 
 interface UseWeightLogsReturn {
-  logs: WeightLogEntry[];
+  data: WeightLogEntry[];
   loading: boolean;
   error: string | null;
+  reload: () => Promise<void>;
   saveLog: (data: WeightLogFormData) => Promise<void>;
   removeLog: (id: string) => Promise<void>;
-  reload: () => Promise<void>;
 }
 
 export function useWeightLogs({
@@ -24,7 +24,7 @@ export function useWeightLogs({
   endDate,
   enabled = true,
 }: UseWeightLogsOptions): UseWeightLogsReturn {
-  const [logs, setLogs] = useState<WeightLogEntry[]>([]);
+  const [data, setData] = useState<WeightLogEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,11 +33,11 @@ export function useWeightLogs({
     setError(null);
     try {
       const result = await fetchWeightLogs(startDate, endDate);
-      setLogs(result.logs);
+      setData(result.logs);
     } catch (err) {
       const message = err instanceof Error ? err.message : "加载体重记录失败";
       setError(message);
-      setLogs([]);
+      setData([]);
     } finally {
       setLoading(false);
     }
@@ -65,5 +65,5 @@ export function useWeightLogs({
     [load],
   );
 
-  return { logs, loading, error, saveLog, removeLog, reload: load };
+  return { data, loading, error, reload: load, saveLog, removeLog };
 }

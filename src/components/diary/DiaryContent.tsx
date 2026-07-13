@@ -20,8 +20,8 @@ import { FoodLogManualForm } from "@/components/shared/FoodLogManualForm";
 import { QuickAddButton } from "@/components/shared/QuickAddButton";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { SlideOver } from "@/components/ui/SlideOver";
-import { batchActionFoodLogs } from "@/lib/services/food-log.service";
-import { todayDate } from "@/lib/api/client";
+import { batchActionFoodLogs, createFoodLog } from "@/lib/api/food-logs";
+import { ApiError, todayDate } from "@/lib/api/client";
 import type { BodyMeasurementEntry, FoodLogEntry, FoodLogFormData } from "@/shared/types";
 
 const today = todayDate();
@@ -40,11 +40,11 @@ function foodLogEntryToFormData(log: FoodLogEntry): FoodLogFormData {
 
 export function DiaryContent() {
   const [selectedDate, setSelectedDate] = useState(today);
-  const { logs, loading, error, updateLog, removeLog, reload } = useFoodLogs({
+  const { data: logs, loading, error, updateLog, removeLog, reload } = useFoodLogs({
     date: selectedDate,
   });
   const {
-    logs: weightLogs,
+    data: weightLogs,
     loading: weightLoading,
     error: weightError,
     removeLog: removeWeightLog,
@@ -53,7 +53,7 @@ export function DiaryContent() {
     endDate: selectedDate,
   });
   const {
-    logs: exerciseLogs,
+    data: exerciseLogs,
     loading: exerciseLoading,
     error: exerciseError,
     removeLog: removeExerciseLog,
@@ -62,7 +62,7 @@ export function DiaryContent() {
     endDate: selectedDate,
   });
   const {
-    logs: waterLogs,
+    data: waterLogs,
     loading: waterLoading,
     error: waterError,
     removeLog: removeWaterLog,
@@ -71,7 +71,7 @@ export function DiaryContent() {
     endDate: selectedDate,
   });
   const {
-    logs: sleepLogs,
+    data: sleepLogs,
     loading: sleepLoading,
     error: sleepError,
     removeLog: removeSleepLog,
@@ -80,7 +80,7 @@ export function DiaryContent() {
     endDate: selectedDate,
   });
   const {
-    logs: bodyMeasurementLogs,
+    data: bodyMeasurementLogs,
     loading: bodyMeasurementLoading,
     error: bodyMeasurementError,
     removeLog: removeBodyMeasurementLog,
@@ -100,22 +100,12 @@ export function DiaryContent() {
 
   async function handleBatchSave(items: FoodLogFormData[]) {
     try {
-      const response = await fetch("/api/food-logs/batch", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          logs: items.map((item) => ({ ...item, logDate: selectedDate })),
-        }),
-      });
-      if (!response.ok) {
-        const err = (await response.json()) as { error?: string };
-        throw new Error(err.error ?? "保存失败");
-      }
+      await Promise.all(items.map((item) => createFoodLog(selectedDate, item)));
       setShowAddSheet(false);
       toast.success(`已保存 ${items.length} 条记录`);
       await reload();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "保存失败";
+      const message = err instanceof ApiError ? err.message : "保存失败";
       toast.error(message);
       throw new Error(message);
     }
@@ -280,20 +270,12 @@ export function DiaryContent() {
                     if (!confirmed) return;
                     setBatchSaving(true);
                     try {
-                      const response = await fetch("/api/food-logs/batch", {
-                        method: "POST",
-                        headers: { "content-type": "application/json" },
-                        body: JSON.stringify({ action: "delete", ids: Array.from(selectedFoodIds) }),
-                      });
-                      if (!response.ok) {
-                        const err = (await response.json()) as { error?: string };
-                        throw new Error(err.error ?? "批量删除失败");
-                      }
+                      await batchActionFoodLogs("delete", Array.from(selectedFoodIds));
                       toast.success("批量删除成功");
                       setSelectedFoodIds(new Set());
                       await reload();
                     } catch (err) {
-                      const message = err instanceof Error ? err.message : "批量删除失败";
+                      const message = err instanceof ApiError ? err.message : "批量删除失败";
                       toast.error(message);
                     } finally {
                       setBatchSaving(false);
@@ -320,21 +302,13 @@ export function DiaryContent() {
                   onClick={async () => {
                     setBatchSaving(true);
                     try {
-                      const response = await fetch("/api/food-logs/batch", {
-                        method: "POST",
-                        headers: { "content-type": "application/json" },
-                        body: JSON.stringify({ action: "copy", ids: Array.from(selectedFoodIds), targetDate: batchTargetDate }),
-                      });
-                      if (!response.ok) {
-                        const err = (await response.json()) as { error?: string };
-                        throw new Error(err.error ?? "复制失败");
-                      }
+                      await batchActionFoodLogs("copy", Array.from(selectedFoodIds), batchTargetDate);
                       toast.success("批量复制成功");
                       setSelectedFoodIds(new Set());
                       setBatchAction(null);
                       await reload();
                     } catch (err) {
-                      const message = err instanceof Error ? err.message : "复制失败";
+                      const message = err instanceof ApiError ? err.message : "复制失败";
                       toast.error(message);
                     } finally {
                       setBatchSaving(false);

@@ -2,6 +2,8 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ApiError } from "@/lib/api/client";
+import { login, register } from "@/lib/api/auth";
 
 interface AuthFormProps {
   mode: "login" | "register";
@@ -17,21 +19,21 @@ export function AuthForm({ mode }: AuthFormProps) {
     setError(null);
     setPending(true);
     const form = new FormData(event.currentTarget);
-    const response = await fetch(`/api/auth/${mode}`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        email: form.get("email"),
-        password: form.get("password"),
-        inviteCode: form.get("inviteCode"),
-      }),
-    });
-    const result = (await response.json()) as { error?: string };
-    setPending(false);
-    if (!response.ok) {
-      setError(result.error ?? "操作失败");
+    const email = String(form.get("email") ?? "");
+    const password = String(form.get("password") ?? "");
+    const inviteCode = String(form.get("inviteCode") ?? "");
+    try {
+      if (mode === "login") {
+        await login(email, password);
+      } else {
+        await register(email, password, inviteCode);
+      }
+    } catch (err) {
+      setPending(false);
+      setError(err instanceof ApiError ? err.message : "操作失败");
       return;
     }
+    setPending(false);
     router.push("/today");
     router.refresh();
   }

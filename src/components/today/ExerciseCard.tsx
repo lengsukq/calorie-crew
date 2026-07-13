@@ -12,7 +12,7 @@ interface ExerciseCardProps {
 }
 
 export function ExerciseCard({ currentDate, onChanged }: ExerciseCardProps) {
-  const { logs, loading, error, addLog, removeLog } = useExerciseLogs({
+  const { data: logs, loading, error, addLog, removeLog } = useExerciseLogs({
     startDate: currentDate,
     endDate: currentDate,
   });
@@ -71,7 +71,7 @@ export function ExerciseCard({ currentDate, onChanged }: ExerciseCardProps) {
         </button>
       </div>
 
-      {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
+      {error && <p role="alert" className="mt-3 text-xs text-red-500">{error}</p>}
 
       <div className="mt-4 space-y-2">
         {loading ? (

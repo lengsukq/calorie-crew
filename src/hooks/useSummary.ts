@@ -9,17 +9,20 @@ interface UseSummaryOptions {
   enabled?: boolean;
 }
 
-interface UseSummaryReturn {
+interface SummaryData {
   logs: FoodLogEntry[];
   summary: DailySummary | null;
+}
+
+interface UseSummaryReturn {
+  data: SummaryData | null;
   loading: boolean;
   error: string | null;
   reload: () => Promise<void>;
 }
 
 export function useSummary({ date, enabled = true }: UseSummaryOptions): UseSummaryReturn {
-  const [logs, setLogs] = useState<FoodLogEntry[]>([]);
-  const [summary, setSummary] = useState<DailySummary | null>(null);
+  const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,11 +31,11 @@ export function useSummary({ date, enabled = true }: UseSummaryOptions): UseSumm
     setError(null);
     try {
       const result = await fetchTodayData(date);
-      setLogs(result.logs);
-      setSummary(result.summary);
+      setData({ logs: result.logs, summary: result.summary });
     } catch (err) {
       const message = err instanceof Error ? err.message : "加载失败";
       setError(message);
+      setData(null);
     } finally {
       setLoading(false);
     }
@@ -44,5 +47,5 @@ export function useSummary({ date, enabled = true }: UseSummaryOptions): UseSumm
     }
   }, [load, enabled]);
 
-  return { logs, summary, loading, error, reload: load };
+  return { data, loading, error, reload: load };
 }

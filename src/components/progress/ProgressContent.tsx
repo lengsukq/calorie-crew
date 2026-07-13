@@ -98,19 +98,19 @@ export function ProgressContent({ weightTargetKg }: ProgressContentProps) {
   const { data, loading } = useHistory(period);
   const rangeStartDate = getPeriodStartDate(period);
   const rangeEndDate = todayDate();
-  const { logs: weightLogs, loading: weightLoading } = useWeightLogs({
+  const { data: weightLogs, loading: weightLoading } = useWeightLogs({
     startDate: rangeStartDate,
     endDate: rangeEndDate,
   });
-  const { logs: exerciseLogs, loading: exerciseLoading } = useExerciseLogs({
+  const { data: exerciseLogs, loading: exerciseLoading } = useExerciseLogs({
     startDate: rangeStartDate,
     endDate: rangeEndDate,
   });
-  const { logs: sleepLogs, loading: sleepLoading } = useSleepLogs({
+  const { data: sleepLogs, loading: sleepLoading } = useSleepLogs({
     startDate: rangeStartDate,
     endDate: rangeEndDate,
   });
-  const { logs: bodyMeasurementLogs, loading: bodyMeasurementLoading } = useBodyMeasurements({
+  const { data: bodyMeasurementLogs, loading: bodyMeasurementLoading } = useBodyMeasurements({
     startDate: rangeStartDate,
     endDate: rangeEndDate,
   });

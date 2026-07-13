@@ -38,9 +38,9 @@ export function AiAdviceCard({
   enabled = true,
   autoGenerate = false,
 }: AiAdviceCardProps) {
-  const { latestAdvice, loading, generating, error, generate, reload } = useAiAdvice({ type, enabled });
+  const { data: adviceData, loading, generating, error, generate, reload } = useAiAdvice({ type, enabled });
   const [expanded, setExpanded] = useState(false);
-  const displayAdvice = latestAdvice;
+  const displayAdvice = adviceData.latestAdvice;
 
   async function handleGenerate(force: boolean) {
     try {

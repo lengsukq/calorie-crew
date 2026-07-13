@@ -9,7 +9,7 @@ interface SleepCardProps {
 }
 
 export function SleepCard({ currentDate }: SleepCardProps) {
-  const { logs, loading, error, saveLog, removeLog } = useSleepLogs({
+  const { data: logs, loading, error, saveLog, removeLog } = useSleepLogs({
     startDate: currentDate,
     endDate: currentDate,
   });
@@ -55,7 +55,7 @@ export function SleepCard({ currentDate }: SleepCardProps) {
         </div>
       </div>
 
-      {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
+      {error && <p role="alert" className="mt-3 text-xs text-red-500">{error}</p>}
 
       <div className="mt-4 space-y-3">
         {loading ? (

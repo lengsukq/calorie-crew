@@ -10,7 +10,7 @@ interface WeightCardProps {
 }
 
 export function WeightCard({ currentDate, weightTargetKg }: WeightCardProps) {
-  const { logs, loading, error, saveLog } = useWeightLogs({
+  const { data: logs, loading, error, saveLog } = useWeightLogs({
     startDate: currentDate,
     endDate: currentDate,
   });
@@ -67,7 +67,7 @@ export function WeightCard({ currentDate, weightTargetKg }: WeightCardProps) {
         </button>
       </div>
 
-      {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
+      {error && <p role="alert" className="mt-3 text-xs text-red-500">{error}</p>}
 
       {loading ? (
         <div className="mt-4 flex items-center gap-2 text-sm text-slate-400">

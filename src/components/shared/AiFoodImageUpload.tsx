@@ -2,7 +2,9 @@
 
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import type { RecognizedFood } from "@/lib/services/food-recognize.service";
+import { recognizeFood } from "@/lib/api/ai-recognize";
+import { ApiError } from "@/lib/api/client";
+import type { RecognizedFood } from "@/lib/api/ai-recognize";
 
 interface AiFoodImageUploadProps {
   onRecognized: (food: RecognizedFood) => void;
@@ -92,23 +94,7 @@ export function AiFoodImageUpload({ onRecognized }: AiFoodImageUploadProps) {
     try {
       const compressedBase64 = await compressImage(file, 3);
 
-      const response = await fetch("/api/ai/recognize", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          imageData: compressedBase64,
-          mimeType: "image/jpeg",
-        }),
-      });
-
-      const result = (await response.json()) as {
-        foods?: RecognizedFood[];
-        error?: string;
-      };
-
-      if (!response.ok) {
-        throw new Error(result.error ?? "识别失败");
-      }
+      const result = await recognizeFood(compressedBase64);
 
       if (result.foods && result.foods.length > 0) {
         setResults(result.foods);
@@ -117,7 +103,7 @@ export function AiFoodImageUpload({ onRecognized }: AiFoodImageUploadProps) {
         toast.error("未识别出食物，请换一张图片");
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "识别失败";
+      const message = err instanceof ApiError ? err.message : "识别失败";
       setError(message);
       toast.error(message);
     } finally {

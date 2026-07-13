@@ -10,17 +10,17 @@ interface UseFoodLogsOptions {
 }
 
 interface UseFoodLogsReturn {
-  logs: FoodLogEntry[];
+  data: FoodLogEntry[];
   loading: boolean;
   error: string | null;
+  reload: () => Promise<void>;
   addLog: (data: FoodLogFormData) => Promise<void>;
   updateLog: (id: string, data: FoodLogFormData) => Promise<void>;
   removeLog: (id: string) => Promise<void>;
-  reload: () => Promise<void>;
 }
 
 export function useFoodLogs({ date, enabled = true }: UseFoodLogsOptions): UseFoodLogsReturn {
-  const [logs, setLogs] = useState<FoodLogEntry[]>([]);
+  const [data, setData] = useState<FoodLogEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,11 +29,11 @@ export function useFoodLogs({ date, enabled = true }: UseFoodLogsOptions): UseFo
     setError(null);
     try {
       const result = await fetchFoodLogsByDate(date);
-      setLogs(result.logs);
+      setData(result.logs);
     } catch (err) {
       const message = err instanceof Error ? err.message : "加载失败";
       setError(message);
-      setLogs([]);
+      setData([]);
     } finally {
       setLoading(false);
     }
@@ -84,5 +84,5 @@ export function useFoodLogs({ date, enabled = true }: UseFoodLogsOptions): UseFo
     [date, load],
   );
 
-  return { logs, loading, error, addLog, updateLog, removeLog, reload: load };
+  return { data, loading, error, reload: load, addLog, updateLog, removeLog };
 }

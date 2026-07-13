@@ -11,9 +11,13 @@ interface UseAiAdviceOptions {
   enabled?: boolean;
 }
 
-interface UseAiAdviceReturn {
+interface AiAdviceDataBundle {
   advices: AiAdviceData[];
   latestAdvice: AiAdviceData | null;
+}
+
+interface UseAiAdviceReturn {
+  data: AiAdviceDataBundle;
   loading: boolean;
   generating: boolean;
   error: string | null;
@@ -77,8 +81,10 @@ export function useAiAdvice({
   }, []);
 
   return {
-    advices,
-    latestAdvice: advices[0] ?? null,
+    data: {
+      advices,
+      latestAdvice: advices[0] ?? null,
+    },
     loading,
     generating,
     error,

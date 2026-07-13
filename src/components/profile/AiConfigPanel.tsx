@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { fetchAiConfig, saveAiConfig } from "@/lib/api/ai-config";
+import { ApiError } from "@/lib/api/client";
 
 interface AiConfigData {
   baseUrl: string | null;
@@ -25,8 +27,7 @@ export function AiConfigPanel() {
   const loadConfig = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/ai/config");
-      const data = (await response.json()) as AiConfigData;
+      const data = await fetchAiConfig();
       setConfig(data);
       setBaseUrl(data.baseUrl ?? "");
       setModel(data.model ?? "");
@@ -44,7 +45,7 @@ export function AiConfigPanel() {
   async function handleSave() {
     setSaving(true);
     try {
-      const body: Record<string, string> = {};
+      const body: { baseUrl?: string; model?: string; apiKey?: string } = {};
       if (baseUrl !== (config.baseUrl ?? "")) body.baseUrl = baseUrl;
       if (model !== (config.model ?? "")) body.model = model;
       if (apiKey) body.apiKey = apiKey;
@@ -54,21 +55,14 @@ export function AiConfigPanel() {
         return;
       }
 
-      const response = await fetch("/api/ai/config", {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        throw new Error("保存失败");
-      }
+      await saveAiConfig(body);
 
       toast.success("AI 配置已保存");
       setApiKey("");
       await loadConfig();
-    } catch {
-      toast.error("保存失败");
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : "保存失败";
+      toast.error(message);
     } finally {
       setSaving(false);
     }

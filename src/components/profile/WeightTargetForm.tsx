@@ -12,7 +12,7 @@ interface WeightTargetFormProps {
 
 export function WeightTargetForm({ currentTarget, onUpdate }: WeightTargetFormProps) {
   const currentDate = useMemo(() => todayDate(), []);
-  const { logs } = useWeightLogs({ startDate: currentDate, endDate: currentDate });
+  const { data: logs } = useWeightLogs({ startDate: currentDate, endDate: currentDate });
   const todayWeightLog = logs[0] ?? null;
   const [currentTargetValue, setCurrentTargetValue] = useState(currentTarget);
   const [value, setValue] = useState(currentTargetValue ? Number(currentTargetValue) : 0);

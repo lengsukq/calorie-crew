@@ -11,12 +11,12 @@ interface UseSleepLogsOptions {
 }
 
 interface UseSleepLogsReturn {
-  logs: SleepLogEntry[];
+  data: SleepLogEntry[];
   loading: boolean;
   error: string | null;
+  reload: () => Promise<void>;
   saveLog: (data: SleepLogFormData) => Promise<void>;
   removeLog: (id: string) => Promise<void>;
-  reload: () => Promise<void>;
 }
 
 export function useSleepLogs({
@@ -24,7 +24,7 @@ export function useSleepLogs({
   endDate,
   enabled = true,
 }: UseSleepLogsOptions): UseSleepLogsReturn {
-  const [logs, setLogs] = useState<SleepLogEntry[]>([]);
+  const [data, setData] = useState<SleepLogEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,11 +33,11 @@ export function useSleepLogs({
     setError(null);
     try {
       const result = await fetchSleepLogs(startDate, endDate);
-      setLogs(result.logs);
+      setData(result.logs);
     } catch (err) {
       const message = err instanceof Error ? err.message : "加载睡眠记录失败";
       setError(message);
-      setLogs([]);
+      setData([]);
     } finally {
       setLoading(false);
     }
@@ -65,5 +65,5 @@ export function useSleepLogs({
     [load],
   );
 
-  return { logs, loading, error, saveLog, removeLog, reload: load };
+  return { data, loading, error, reload: load, saveLog, removeLog };
 }

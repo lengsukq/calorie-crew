@@ -11,12 +11,12 @@ interface UseExerciseLogsOptions {
 }
 
 interface UseExerciseLogsReturn {
-  logs: ExerciseLogEntry[];
+  data: ExerciseLogEntry[];
   loading: boolean;
   error: string | null;
+  reload: () => Promise<void>;
   addLog: (data: ExerciseLogFormData) => Promise<void>;
   removeLog: (id: string) => Promise<void>;
-  reload: () => Promise<void>;
 }
 
 export function useExerciseLogs({
@@ -24,7 +24,7 @@ export function useExerciseLogs({
   endDate,
   enabled = true,
 }: UseExerciseLogsOptions): UseExerciseLogsReturn {
-  const [logs, setLogs] = useState<ExerciseLogEntry[]>([]);
+  const [data, setData] = useState<ExerciseLogEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,11 +33,11 @@ export function useExerciseLogs({
     setError(null);
     try {
       const result = await fetchExerciseLogs(startDate, endDate);
-      setLogs(result.logs);
+      setData(result.logs);
     } catch (err) {
       const message = err instanceof Error ? err.message : "加载运动记录失败";
       setError(message);
-      setLogs([]);
+      setData([]);
     } finally {
       setLoading(false);
     }
@@ -65,5 +65,5 @@ export function useExerciseLogs({
     [load],
   );
 
-  return { logs, loading, error, addLog, removeLog, reload: load };
+  return { data, loading, error, reload: load, addLog, removeLog };
 }

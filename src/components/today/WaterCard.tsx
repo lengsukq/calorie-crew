@@ -11,7 +11,7 @@ interface WaterCardProps {
 }
 
 export function WaterCard({ currentDate }: WaterCardProps) {
-  const { logs, loading, error, addLog, removeLog } = useWaterLogs({
+  const { data: logs, loading, error, addLog, removeLog } = useWaterLogs({
     startDate: currentDate,
     endDate: currentDate,
   });
@@ -46,7 +46,7 @@ export function WaterCard({ currentDate }: WaterCardProps) {
         </div>
       </div>
 
-      {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
+      {error && <p role="alert" className="mt-3 text-xs text-red-500">{error}</p>}
 
       <div className="mt-4 space-y-2">
         {loading ? (

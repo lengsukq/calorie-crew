@@ -1,8 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useUserTarget } from "@/hooks/useUserTarget";
 import { useProfile } from "@/hooks/useProfile";
+import { createInvite } from "@/lib/api/admin-invites";
+import { ApiError } from "@/lib/api/client";
+import { logout } from "@/lib/api/auth";
 import { TargetSetting } from "@/components/profile/TargetSetting";
 import { AdminPanel } from "@/components/profile/AdminPanel";
 import { AiConfigPanel } from "@/components/profile/AiConfigPanel";
@@ -17,18 +21,21 @@ interface ProfileContentProps {
   weightTargetKg: string | null;
 }
 
+interface CollapsibleSectionProps {
+  title: string;
+  icon: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}
+
 function CollapsibleSection({
   title,
   icon,
   defaultOpen = false,
   children,
-}: {
-  title: string;
-  icon: string;
-  defaultOpen?: boolean;
-  children: React.ReactNode;
-}) {
+}: CollapsibleSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const sectionId = `collapsible-${title}`;
 
   return (
     <div className="glass-card !p-0 !overflow-hidden">
@@ -36,6 +43,8 @@ function CollapsibleSection({
         onClick={() => setIsOpen(!isOpen)}
         className="flex w-full items-center justify-between px-5 py-4 text-left transition-colors hover:bg-white/30"
         type="button"
+        aria-expanded={isOpen}
+        aria-controls={sectionId}
       >
         <div className="flex items-center gap-2">
           <span className="text-base">{icon}</span>
@@ -57,7 +66,7 @@ function CollapsibleSection({
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
-      {isOpen && <div className="border-t border-slate-100/50 px-5 py-4">{children}</div>}
+      {isOpen && <div id={sectionId} className="border-t border-slate-100/50 px-5 py-4">{children}</div>}
     </div>
   );
 }
@@ -90,23 +99,17 @@ export function ProfileContent({ email, role, calorieTarget, weightTargetKg }: P
 
   async function handleCreateInvite(maxUses: number): Promise<string | null> {
     try {
-      const response = await fetch("/api/admin/invites", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ maxUses }),
-      });
-      const result = (await response.json()) as {
-        invite?: { code: string };
-        error?: string;
-      };
-      return result.invite?.code ?? null;
-    } catch {
+      const result = await createInvite({ maxUses });
+      return result.invite.code;
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : "创建邀请码失败";
+      toast.error(message);
       return null;
     }
   }
 
   async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await logout();
     window.location.href = "/login";
   }
 

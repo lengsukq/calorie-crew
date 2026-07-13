@@ -11,12 +11,12 @@ interface UseBodyMeasurementsOptions {
 }
 
 interface UseBodyMeasurementsReturn {
-  logs: BodyMeasurementEntry[];
+  data: BodyMeasurementEntry[];
   loading: boolean;
   error: string | null;
+  reload: () => Promise<void>;
   saveLog: (data: BodyMeasurementFormData) => Promise<void>;
   removeLog: (id: string) => Promise<void>;
-  reload: () => Promise<void>;
 }
 
 export function useBodyMeasurements({
@@ -24,7 +24,7 @@ export function useBodyMeasurements({
   endDate,
   enabled = true,
 }: UseBodyMeasurementsOptions): UseBodyMeasurementsReturn {
-  const [logs, setLogs] = useState<BodyMeasurementEntry[]>([]);
+  const [data, setData] = useState<BodyMeasurementEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,11 +33,11 @@ export function useBodyMeasurements({
     setError(null);
     try {
       const result = await fetchBodyMeasurements(startDate, endDate);
-      setLogs(result.logs);
+      setData(result.logs);
     } catch (err) {
       const message = err instanceof Error ? err.message : "加载围度记录失败";
       setError(message);
-      setLogs([]);
+      setData([]);
     } finally {
       setLoading(false);
     }
@@ -72,5 +72,5 @@ export function useBodyMeasurements({
     [load],
   );
 
-  return { logs, loading, error, saveLog, removeLog, reload: load };
+  return { data, loading, error, reload: load, saveLog, removeLog };
 }

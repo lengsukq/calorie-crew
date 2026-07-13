@@ -18,8 +18,8 @@ import { FoodLogManualForm } from "@/components/shared/FoodLogManualForm";
 import { QuickAddButton } from "@/components/shared/QuickAddButton";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { SlideOver } from "@/components/ui/SlideOver";
-import { deleteFoodLog, updateFoodLog } from "@/lib/api/food-logs";
-import { todayDate } from "@/lib/api/client";
+import { deleteFoodLog, updateFoodLog, createFoodLog } from "@/lib/api/food-logs";
+import { ApiError, todayDate } from "@/lib/api/client";
 import type { FoodLogEntry, FoodLogFormData } from "@/shared/types";
 
 const RECENT_FOODS_KEY = "calorie_crew_recent_foods";
@@ -62,7 +62,9 @@ function foodLogEntryToFormData(log: FoodLogEntry): FoodLogFormData {
 
 export function TodayContent({ email, role, calorieTarget, weightTargetKg }: TodayContentProps) {
   const currentDate = todayDate();
-  const { logs, summary, loading, error, reload } = useSummary({ date: currentDate });
+  const { data: summaryData, loading, error, reload } = useSummary({ date: currentDate });
+  const logs = summaryData?.logs ?? [];
+  const summary = summaryData?.summary ?? null;
   const { data: profileData } = useProfile();
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
@@ -83,17 +85,7 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
 
   async function handleBatchSave(items: FoodLogFormData[]) {
     try {
-      const response = await fetch("/api/food-logs/batch", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          logs: items.map((item) => ({ ...item, logDate: currentDate })),
-        }),
-      });
-      if (!response.ok) {
-        const err = (await response.json()) as { error?: string };
-        throw new Error(err.error ?? "保存失败");
-      }
+      await Promise.all(items.map((item) => createFoodLog(currentDate, item)));
       setShowAddSheet(false);
       toast.success(`已保存 ${items.length} 条记录`);
       await reload();
@@ -112,7 +104,7 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
       setRecentFoods(existing);
       localStorage.setItem(RECENT_FOODS_KEY, JSON.stringify(existing));
     } catch (err) {
-      const message = err instanceof Error ? err.message : "保存失败";
+      const message = err instanceof ApiError ? err.message : "保存失败";
       toast.error(message);
       throw new Error(message);
     }
@@ -121,22 +113,12 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
   async function handleQuickAdd(food: FoodLogFormData) {
     setQuickSaving(true);
     try {
-      const response = await fetch("/api/food-logs/batch", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          logs: [{ ...food, logDate: currentDate }],
-        }),
-      });
-      if (!response.ok) {
-        const err = (await response.json()) as { error?: string };
-        toast.error(err.error ?? "添加失败");
-        return;
-      }
+      await createFoodLog(currentDate, food);
       toast.success(`已添加 ${food.foodName}`);
       await reload();
-    } catch {
-      toast.error("添加失败");
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : "添加失败";
+      toast.error(message);
     } finally {
       setQuickSaving(false);
     }
