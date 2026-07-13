@@ -1,43 +1,18 @@
-import { and, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
-import { db } from "@/lib/db/client";
-import { inviteCodes, inviteUsages, users } from "@/lib/db/schema";
-import { hashPassword } from "@/lib/auth/password";
+import { parseJsonBody, withRouteError } from "@/lib/api-route";
 import { setSession } from "@/lib/auth/session";
-import { registerSchema } from "@/lib/validation/auth";
 import { jsonError } from "@/lib/http";
-import { env } from "@/lib/env";
+import { registerUser } from "@/lib/services/auth.service";
+import { registerSchema } from "@/lib/validation/auth";
 
 export async function POST(request: Request): Promise<Response> {
-  const parsed = registerSchema.safeParse(await request.json());
+  const parsed = registerSchema.safeParse(await parseJsonBody(request));
   if (!parsed.success) return jsonError("邮箱或密码格式不正确", 400);
 
-  const existingUser = await db.query.users.findFirst({ where: eq(users.email, parsed.data.email) });
-  if (existingUser) return jsonError("该邮箱已注册", 409);
+  return withRouteError(async () => {
+    const result = await registerUser(parsed.data);
+    if (!result.ok) return jsonError(result.message, result.status);
 
-  const firstUser = await db.query.users.findFirst({ columns: { id: true } });
-  const isFirstUser = !firstUser;
-  let inviterUserId: string | null = null;
-  let inviteCodeId: string | null = null;
-  if (isFirstUser) {
-    if (parsed.data.inviteCode !== env.INITIAL_INVITE_CODE) return jsonError("初始邀请码不正确", 403);
-  } else {
-    const invite = await db.query.inviteCodes.findFirst({ where: and(eq(inviteCodes.code, parsed.data.inviteCode), or(isNull(inviteCodes.expiresAt), gt(inviteCodes.expiresAt, new Date())), gt(inviteCodes.maxUses, inviteCodes.usedCount)) });
-    if (!invite) return jsonError("邀请码无效、已用完或已过期", 403);
-    inviterUserId = invite.createdByUserId;
-    inviteCodeId = invite.id;
-  }
-
-  const [user] = await db.insert(users).values({
-    email: parsed.data.email,
-    passwordHash: await hashPassword(parsed.data.password),
-    role: isFirstUser ? "admin" : "member",
-  }).returning({ id: users.id, email: users.email });
-
-  if (inviteCodeId && inviterUserId) {
-    await db.insert(inviteUsages).values({ inviteCodeId, inviterUserId, invitedUserId: user.id });
-    await db.update(inviteCodes).set({ usedCount: sql`${inviteCodes.usedCount} + 1` }).where(eq(inviteCodes.id, inviteCodeId));
-  }
-
-  await setSession(user.id);
-  return Response.json({ user: { id: user.id, email: user.email } });
+    await setSession(result.user.id);
+    return Response.json({ user: result.user });
+  }, "注册失败");
 }

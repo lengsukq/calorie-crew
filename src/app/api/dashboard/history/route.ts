@@ -1,9 +1,6 @@
-import { and, desc, eq, gte } from "drizzle-orm";
-import { getSessionUserId } from "@/lib/auth/session";
-import { db } from "@/lib/db/client";
-import { dailySummaries } from "@/lib/db/schema";
+import { requireSessionUserId, withRouteError } from "@/lib/api-route";
 import { jsonError } from "@/lib/http";
-import { addDays, todayDate } from "@/lib/date";
+import { getHistoryDashboard } from "@/lib/services/dashboard.service";
 import { z } from "zod";
 
 const historyQuerySchema = z.object({
@@ -11,31 +8,15 @@ const historyQuerySchema = z.object({
 });
 
 export async function GET(request: Request): Promise<Response> {
-  const userId = await getSessionUserId();
-  if (!userId) return jsonError("未登录", 401);
+  const userIdOrError = await requireSessionUserId();
+  if (userIdOrError instanceof Response) return userIdOrError;
 
   const daysParam = new URL(request.url).searchParams.get("days");
   const parsed = historyQuerySchema.safeParse({ days: daysParam ?? undefined });
   if (!parsed.success) return jsonError("历史查询参数不正确", 400);
-  const { days } = parsed.data;
 
-  const since = addDays(todayDate(), -days);
-
-  const summaries = await db.query.dailySummaries.findMany({
-    where: and(eq(dailySummaries.userId, userId), gte(dailySummaries.logDate, since)),
-    orderBy: [desc(dailySummaries.logDate)],
-    columns: {
-      logDate: true,
-      targetKcal: true,
-      totalKcal: true,
-      totalExerciseKcal: true,
-      netKcal: true,
-      remainingKcal: true,
-      totalProteinG: true,
-      totalCarbsG: true,
-      totalFatG: true,
-    },
-  });
-
-  return Response.json({ summaries, days });
+  return withRouteError(async () => {
+    const dashboard = await getHistoryDashboard(userIdOrError, parsed.data.days);
+    return Response.json(dashboard);
+  }, "获取历史概览失败");
 }
