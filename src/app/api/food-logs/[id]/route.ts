@@ -31,6 +31,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     ...(parsed.data.proteinG !== undefined ? { proteinG: parsed.data.proteinG.toFixed(2) } : {}),
     ...(parsed.data.carbsG !== undefined ? { carbsG: parsed.data.carbsG.toFixed(2) } : {}),
     ...(parsed.data.fatG !== undefined ? { fatG: parsed.data.fatG.toFixed(2) } : {}),
+    ...(parsed.data.note !== undefined ? { note: parsed.data.note?.trim() || null } : {}),
+    ...(parsed.data.tags !== undefined ? { tags: parsed.data.tags ?? [] } : {}),
     updatedAt: sql`now()`,
   };
 

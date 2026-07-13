@@ -4,10 +4,13 @@ import { foodLogs } from "@/lib/db/schema";
 import { jsonError } from "@/lib/http";
 import { foodLogSchema } from "@/lib/validation/food-log";
 import { recalculateDailySummary } from "@/lib/services/daily-summary.service";
+import { batchActionFoodLogs } from "@/lib/services/food-log.service";
 import { z } from "zod";
 
 const batchSchema = z.object({
-  logs: z.array(foodLogSchema).min(1).max(50),
+  action: z.enum(["delete", "copy"]),
+  ids: z.array(z.string().uuid()).min(1).max(50),
+  targetDate: z.string().optional(),
 });
 
 export async function POST(request: Request): Promise<Response> {
@@ -15,24 +18,16 @@ export async function POST(request: Request): Promise<Response> {
   if (!userId) return jsonError("未登录", 401);
 
   const parsed = batchSchema.safeParse(await request.json());
-  if (!parsed.success) return jsonError("饮食记录格式不正确", 400);
+  if (!parsed.success) return jsonError("批量操作参数不正确", 400);
 
-  const logDate = parsed.data.logs[0].logDate;
-  const allLogsAreSameDate = parsed.data.logs.every((log) => log.logDate === logDate);
-  if (!allLogsAreSameDate) return jsonError("一次批量添加只能包含同一天的记录", 400);
+  const { action, ids, targetDate } = parsed.data;
 
-  const values = parsed.data.logs.map((log) => ({
-    userId,
-    ...log,
-    proteinG: log.proteinG.toFixed(2),
-    carbsG: log.carbsG.toFixed(2),
-    fatG: log.fatG.toFixed(2),
-  }));
+  if (action === "copy" && !targetDate) return jsonError("复制操作需要 targetDate", 400);
 
-  const inserted = await db.insert(foodLogs).values(values).returning();
-
-  // Recalculate summary once for all logs in the same date
-  await recalculateDailySummary(userId, logDate);
-
-  return Response.json({ logs: inserted }, { status: 201 });
+  try {
+    const result = await batchActionFoodLogs(userId, action, ids, targetDate);
+    return Response.json({ success: true, ...result });
+  } catch {
+    return jsonError("批量操作失败", 500);
+  }
 }
