@@ -2,23 +2,28 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { Plus, Loader2 } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useSummary } from "@/hooks/useSummary";
 import { useRecentFoods } from "@/hooks/useRecentFoods";
+import { useConfirm } from "@/lib/ui/confirm";
 import { CalorieRing } from "@/components/today/CalorieRing";
 import { ExerciseCard } from "@/components/today/ExerciseCard";
 import { MealGroup } from "@/components/today/MealGroup";
 import { SleepCard } from "@/components/today/SleepCard";
 import { WaterCard } from "@/components/today/WaterCard";
 import { WeightCard } from "@/components/today/WeightCard";
-import { MiniStatCard } from "@/components/shared/MiniStatCard";
+import { StatCard } from "@/components/shared/StatCard";
 import { AiAdviceCard } from "@/components/shared/AiAdviceCard";
 import { FoodLogEditorOverlay } from "@/components/shared/FoodLogEditorOverlay";
 import { QuickAddButton } from "@/components/shared/QuickAddButton";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { createFoodLog, deleteFoodLog, updateFoodLog } from "@/lib/api/food-logs";
 import { ApiError, todayDate } from "@/lib/api/client";
 import { calculateMacroTargets } from "@/shared/constants";
-import type { FoodLogEntry, FoodLogFormData } from "@/shared/types";
+import type { FoodLogFormData } from "@/shared/types";
 
 interface TodayContentProps {
   email: string;
@@ -53,10 +58,11 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
   const summary = summaryData?.summary ?? null;
   const { data: profileData } = useProfile();
   const { recentFoods, addRecentFoods, clearRecentFoods } = useRecentFoods();
+  const confirm = useConfirm();
 
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
-  const [quickSaving, setQuickSaving] = useState(false);
+  const [quickSavingId, setQuickSavingId] = useState<string | null>(null);
 
   const editingLog = logs.find((log) => log.id === editingLogId) ?? null;
 
@@ -74,8 +80,8 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
     }
   }
 
-  async function handleQuickAdd(food: FoodLogFormData) {
-    setQuickSaving(true);
+  async function handleQuickAdd(food: FoodLogFormData, key: string) {
+    setQuickSavingId(key);
     try {
       await createFoodLog(currentDate, food);
       toast.success(`已添加 ${food.foodName}`);
@@ -84,11 +90,19 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
       const message = err instanceof ApiError ? err.message : "添加失败";
       toast.error(message);
     } finally {
-      setQuickSaving(false);
+      setQuickSavingId(null);
     }
   }
 
   async function handleDelete(id: string) {
+    const ok = await confirm({
+      title: "删除饮食记录",
+      description: "确定删除这条记录吗？",
+      confirmText: "删除",
+      destructive: true,
+    });
+    if (!ok) return;
+
     try {
       await deleteFoodLog(id);
       toast.success("已删除");
@@ -129,80 +143,85 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
     <div className="stack page-enter">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs text-slate-400">{getGreeting()}，{email}</p>
-          <h2 className="mt-0.5 text-xl font-bold text-slate-800">今日摄入概览</h2>
+          <p className="text-xs text-muted-foreground">{getGreeting()}，{email}</p>
+          <h2 className="mt-0.5 text-xl font-bold text-foreground">今日摄入概览</h2>
         </div>
-        <span className="glass-tag">{role === "admin" ? "管理员" : "会员"}</span>
+        <Badge variant={role === "admin" ? "default" : "secondary"}>
+          {role === "admin" ? "管理员" : "会员"}
+        </Badge>
       </div>
 
       {loading && (
-        <div className="glass-card flex items-center justify-center py-4" role="status">
-          <span className="y2k-spinner h-5 w-5" />
-          <span className="ml-2 text-sm text-slate-400">正在加载今日数据...</span>
-        </div>
+        <Card>
+          <CardContent className="flex items-center justify-center py-8">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-sm text-muted-foreground">正在加载今日数据...</span>
+          </CardContent>
+        </Card>
       )}
 
       {error && (
-        <div className="glass-message-error flex items-center justify-between gap-3" role="alert">
-          <span>{error}</span>
-          <button type="button" onClick={() => void reload()} className="glass-button !px-3 !py-1 text-xs">
-            重试
-          </button>
-        </div>
+        <Card>
+          <CardContent className="flex items-center justify-between gap-3 py-4">
+            <span className="text-sm text-destructive">{error}</span>
+            <Button variant="outline" size="sm" onClick={() => void reload()}>
+              重试
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
-      <div className="glass-card flex flex-col items-center">
-        <CalorieRing current={Math.max(netKcal, 0)} target={calorieTarget} />
+      <Card>
+        <CardContent className="pt-6">
+          <CalorieRing current={Math.max(netKcal, 0)} target={calorieTarget} />
 
-        <div className="mt-4 grid w-full grid-cols-3 gap-3">
-          <MiniStatCard label="摄入" value={totalKcal} unit="kcal" />
-          <MiniStatCard label="运动" value={totalExerciseKcal} unit="kcal" gradient="from-emerald-400 to-teal-500" />
-          <MiniStatCard
-            label={remaining >= 0 ? "剩余" : "超出"}
-            value={Math.abs(remaining)}
-            unit="kcal"
-            gradient={remaining >= 0 ? "from-cyan-400 to-blue-500" : "from-red-400 to-pink-500"}
-          />
-        </div>
+          <div className="mt-4 grid w-full grid-cols-3 gap-3">
+            <StatCard label="摄入" value={totalKcal} unit="kcal" />
+            <StatCard label="运动" value={totalExerciseKcal} unit="kcal" accentColor="success" />
+            <StatCard
+              label={remaining >= 0 ? "剩余" : "超出"}
+              value={Math.abs(remaining)}
+              unit="kcal"
+              accentColor={remaining >= 0 ? "primary" : "danger"}
+            />
+          </div>
 
-        <div className="mt-6 grid w-full grid-cols-3 gap-3">
-          <MiniStatCard
-            label="蛋白质"
-            value={protein.toFixed(1)}
-            unit="g"
-            icon={<span className="text-sm">🥩</span>}
-            gradient="from-purple-400 to-pink-500"
-            progress={{ current: protein, max: targets.proteinG || 1 }}
-          />
-          <MiniStatCard
-            label="碳水"
-            value={carbs.toFixed(1)}
-            unit="g"
-            icon={<span className="text-sm">🍚</span>}
-            gradient="from-amber-400 to-orange-500"
-            progress={{ current: carbs, max: targets.carbsG || 1 }}
-          />
-          <MiniStatCard
-            label="脂肪"
-            value={fat.toFixed(1)}
-            unit="g"
-            icon={<span className="text-sm">🧈</span>}
-            gradient="from-teal-400 to-emerald-500"
-            progress={{ current: fat, max: targets.fatG || 1 }}
-          />
-        </div>
+          <div className="mt-3 grid w-full grid-cols-3 gap-3">
+            <StatCard
+              label="蛋白质"
+              value={protein.toFixed(1)}
+              unit="g"
+              accentColor="purple"
+              progress={{ current: protein, max: targets.proteinG || 1 }}
+            />
+            <StatCard
+              label="碳水"
+              value={carbs.toFixed(1)}
+              unit="g"
+              accentColor="warning"
+              progress={{ current: carbs, max: targets.carbsG || 1 }}
+            />
+            <StatCard
+              label="脂肪"
+              value={fat.toFixed(1)}
+              unit="g"
+              accentColor="success"
+              progress={{ current: fat, max: targets.fatG || 1 }}
+            />
+          </div>
 
-        <p className="mt-4 text-xs text-slate-400">
-          蛋白质目标按 20%、碳水 50%、脂肪 30% 热量占比估算
-        </p>
-      </div>
+          <p className="mt-4 text-[11px] text-muted-foreground">
+            蛋白质目标按 20%、碳水 50%、脂肪 30% 热量占比估算
+          </p>
+        </CardContent>
+      </Card>
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         <WeightCard currentDate={currentDate} weightTargetKg={weightTargetKg} />
         <ExerciseCard currentDate={currentDate} onChanged={reload} />
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         <WaterCard currentDate={currentDate} />
         <SleepCard currentDate={currentDate} />
       </div>
@@ -211,7 +230,6 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
         <AiAdviceCard
           title="AI 今日建议"
           type="daily_diet"
-          icon="✨"
           enabled={aiAdviceEnabled && logs.length > 0}
           disabledText={aiAdviceEnabled ? "记录一条饮食后，即可生成今日 AI 建议。" : "AI 建议已关闭，可在个人资料中开启。"}
           emptyText="暂无今日建议，点击生成后获取基于今日记录的饮食提示。"
@@ -219,38 +237,45 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
       )}
 
       {recentFoods.length > 0 && (
-        <div className="glass-card">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-slate-800">最近添加</h2>
-            <button
-              onClick={clearRecentFoods}
-              className="rounded-lg px-2 py-1 text-[10px] text-slate-400 transition-colors hover:text-red-500"
-            >
-              清除
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {recentFoods.map((food, index) => (
-              <button
-                key={index}
-                onClick={() => handleQuickAdd(food as FoodLogFormData)}
-                disabled={quickSaving}
-                className="list-item !inline-flex !w-auto !items-center !gap-2 !px-3 !py-2 transition-all hover:border-cyan-200 hover:shadow-sm"
-              >
-                <div className="text-left">
-                  <p className="text-sm font-medium text-slate-700">{food.foodName}</p>
-                  <p className="text-[10px] text-slate-400">
-                    {food.calories} kcal · P:{food.proteinG} C:{food.carbsG} F:{food.fatG}
-                  </p>
-                </div>
-                <span className="rounded-md bg-cyan-50 px-2 py-0.5 text-[10px] font-semibold text-cyan-600">+添加</span>
-              </button>
-            ))}
-          </div>
-        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground">最近添加</h2>
+              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={clearRecentFoods}>
+                清除
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {recentFoods.map((food, index) => {
+                const key = `${food.foodName}-${index}`;
+                const isSaving = quickSavingId === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => handleQuickAdd(food as FoodLogFormData, key)}
+                    disabled={isSaving}
+                    className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-left transition-colors hover:bg-accent disabled:opacity-50"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{food.foodName}</p>
+                      <p className="text-[11px] text-muted-foreground tabular-nums">
+                        {food.calories} kcal · P{food.proteinG} C{food.carbsG} F{food.fatG}
+                      </p>
+                    </div>
+                    {isSaving ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                    ) : (
+                      <Plus className="h-3.5 w-3.5 text-primary" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      <MealGroup logs={logs} onEdit={setEditingLogId} onDelete={handleDelete} collapsible title="今日饮食" />
+      <MealGroup logs={logs} onEdit={setEditingLogId} onDelete={(id) => void handleDelete(id)} collapsible title="今日饮食" />
 
       <QuickAddButton onClick={() => setShowAddSheet(true)} />
 

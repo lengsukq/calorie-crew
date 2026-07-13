@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { KeyRound } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface AdminPanelProps {
   onCreateInvite: (maxUses: number) => Promise<string | null>;
@@ -31,63 +36,43 @@ export function AdminPanel({ onCreateInvite }: AdminPanelProps) {
   }
 
   return (
-    <div className="glass-card border-amber-200/50">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        aria-expanded={isExpanded}
-        aria-controls="admin-panel-content"
-        className="flex w-full items-center justify-between"
-      >
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
         <div className="flex items-center gap-2">
-          <span className="text-base">🔐</span>
-          <span className="text-sm font-semibold text-slate-700">邀请码管理</span>
+          <KeyRound className="h-4 w-4 text-primary" />
+          <CardTitle className="text-sm">邀请码管理</CardTitle>
         </div>
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          className={`text-slate-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </button>
-
+        <Button variant="ghost" size="sm" onClick={() => setIsExpanded(!isExpanded)}>
+          {isExpanded ? "收起" : "展开"}
+        </Button>
+      </CardHeader>
       {isExpanded && (
-        <div id="admin-panel-content" className="mt-4 space-y-4">
+        <CardContent className="space-y-3">
           <div className="flex flex-wrap items-end gap-3">
-            <label className="stack gap-1.5">
-              <span className="glass-label">可使用次数</span>
-              <input
+            <div className="space-y-1">
+              <Label htmlFor="invite-uses">可使用次数</Label>
+              <Input
+                id="invite-uses"
                 type="number"
                 min="1"
                 max="1000"
                 value={maxUses}
                 onChange={(e) => setMaxUses(Number(e.target.value))}
-                className="glass-input w-24"
+                className="w-24"
               />
-            </label>
-            <button
-              onClick={handleCreate}
-              disabled={loading}
-              className="glass-button !px-4 !py-2 text-sm"
-            >
+            </div>
+            <Button onClick={handleCreate} disabled={loading}>
               {loading ? "生成中..." : "生成邀请码"}
-            </button>
+            </Button>
           </div>
-
           {inviteCode && (
-            <div className="glass-message-success flex items-center gap-3">
-              <span className="text-sm font-medium">邀请码：</span>
-              <code className="rounded-lg bg-cyan-50 px-3 py-1 font-mono text-sm text-cyan-700">
-                {inviteCode}
-              </code>
+            <div className="rounded-lg border bg-muted/50 px-3 py-2">
+              <p className="text-xs text-muted-foreground">邀请码</p>
+              <code className="mt-1 block text-sm font-mono font-semibold text-foreground">{inviteCode}</code>
             </div>
           )}
-        </div>
+        </CardContent>
       )}
-    </div>
+    </Card>
   );
 }

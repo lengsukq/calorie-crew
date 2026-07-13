@@ -1,8 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { toast } from "sonner";
+import { Droplets, Trash2 } from "lucide-react";
 import { useWaterLogs } from "@/hooks/useWaterLogs";
+import { useResourceForm } from "@/hooks/useResourceForm";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { WaterLogFormData } from "@/shared/types";
 
 const WATER_SUGGESTIONS = [250, 500, 750];
 
@@ -15,111 +21,114 @@ export function WaterCard({ currentDate }: WaterCardProps) {
     startDate: currentDate,
     endDate: currentDate,
   });
-  const [amount, setAmount] = useState(500);
-  const [note, setNote] = useState("");
-  const [saving, setSaving] = useState(false);
   const totalMl = logs.reduce((sum, log) => sum + log.amountMl, 0);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSaving(true);
-    try {
-      await addLog({ logDate: currentDate, amountMl: amount, note });
-      toast.success("饮水已记录");
-      setNote("");
-    } catch {
-      toast.error("保存饮水失败");
-    } finally {
-      setSaving(false);
-    }
-  }
+  const form = useResourceForm<WaterLogFormData>({
+    defaultValue: { logDate: currentDate, amountMl: 500, note: "" },
+    onSubmit: async (values) => {
+      await addLog({ ...values, logDate: currentDate });
+      form.setValues({ logDate: currentDate, amountMl: values.amountMl, note: "" });
+    },
+    successMessage: "饮水已记录",
+    errorMessage: "保存饮水失败",
+  });
 
   return (
-    <div className="glass-card">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-base">💧</span>
-            <h2 className="text-sm font-bold text-slate-800">今日饮水</h2>
-          </div>
-          <p className="mt-1 text-xs text-slate-400">已记录 {totalMl} ml</p>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+        <div className="flex items-center gap-2">
+          <Droplets className="h-4 w-4 text-primary" />
+          <CardTitle className="text-sm">今日饮水</CardTitle>
         </div>
-      </div>
+        <span className="text-xs text-muted-foreground tabular-nums">{totalMl} ml</span>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
 
-      {error && <p role="alert" className="mt-3 text-xs text-red-500">{error}</p>}
-
-      <div className="mt-4 space-y-2">
         {loading ? (
-          <div className="flex items-center gap-2 text-sm text-slate-400">
-            <span className="y2k-spinner h-4 w-4" /> 正在加载饮水记录...
+          <div className="space-y-2">
+            <Skeleton className="h-12 w-full" />
           </div>
         ) : logs.length === 0 ? (
-          <div className="rounded-xl bg-white/40 px-3 py-4 text-center text-sm text-slate-400">
+          <p className="rounded-md border border-dashed py-4 text-center text-sm text-muted-foreground">
             今天还没有饮水记录
-          </div>
+          </p>
         ) : (
-          logs.map((log) => (
-            <div key={log.id} className="list-item flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-700">{log.amountMl} ml</p>
-                <p className="text-xs text-slate-400">{log.note || "无备注"}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => void removeLog(log.id)}
-                className="rounded-lg px-2 py-1 text-xs text-red-400 hover:bg-red-50 hover:text-red-500"
+          <div className="space-y-1.5">
+            {logs.map((log) => (
+              <div
+                key={log.id}
+                className="flex items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2"
               >
-                删除
-              </button>
-            </div>
-          ))
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-foreground tabular-nums">{log.amountMl} ml</p>
+                  <p className="truncate text-xs text-muted-foreground">{log.note || "无备注"}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                  onClick={() => void removeLog(log.id)}
+                  aria-label="删除饮水记录"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ))}
+          </div>
         )}
-      </div>
 
-      <form onSubmit={handleSubmit} className="mt-4 space-y-3 border-t border-slate-100/60 pt-4">
-        <div className="flex flex-wrap gap-2">
-          {WATER_SUGGESTIONS.map((suggestion) => (
-            <button
-              key={suggestion}
-              type="button"
-              onClick={() => setAmount(suggestion)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                amount === suggestion
-                  ? "bg-cyan-50 text-cyan-600"
-                  : "bg-white/60 text-slate-500 hover:bg-white/80"
-              }`}
-            >
-              {suggestion} ml
-            </button>
-          ))}
-        </div>
-        <label className="block text-xs font-semibold text-slate-500">
-          饮水量 (ml)
-          <input
-            type="number"
-            min="1"
-            max="10000"
-            value={amount}
-            onChange={(event) => setAmount(Number(event.target.value))}
-            className="goal-input mt-1"
-            required
-          />
-        </label>
-        <label className="block text-xs font-semibold text-slate-500">
-          备注
-          <input
-            type="text"
-            maxLength={300}
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-            className="goal-input mt-1"
-            placeholder="例如：晨起一杯水"
-          />
-        </label>
-        <button type="submit" disabled={saving} className="glass-button w-full !px-4 !py-2 text-xs">
-          {saving ? "保存中..." : "记录饮水"}
-        </button>
-      </form>
-    </div>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void form.handleSubmit();
+          }}
+          className="space-y-3 border-t pt-3"
+        >
+          <div className="flex flex-wrap gap-2">
+            {WATER_SUGGESTIONS.map((suggestion) => (
+              <button
+                key={suggestion}
+                type="button"
+                onClick={() => form.setValues((prev) => ({ ...prev, amountMl: suggestion }))}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  form.values.amountMl === suggestion
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                }`}
+              >
+                {suggestion} ml
+              </button>
+            ))}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor={`water-amount-${currentDate}`}>饮水量 (ml)</Label>
+            <Input
+              id={`water-amount-${currentDate}`}
+              type="number"
+              min="1"
+              max="10000"
+              value={form.values.amountMl || ""}
+              onChange={(e) => form.setValues((prev) => ({ ...prev, amountMl: Number(e.target.value) }))}
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor={`water-note-${currentDate}`}>备注</Label>
+            <Input
+              id={`water-note-${currentDate}`}
+              type="text"
+              maxLength={300}
+              value={form.values.note ?? ""}
+              onChange={(e) => form.setValues((prev) => ({ ...prev, note: e.target.value }))}
+              placeholder="例如：晨起一杯水"
+            />
+          </div>
+          <Button type="submit" disabled={form.submitting} className="w-full" size="sm">
+            {form.submitting ? "保存中..." : "记录饮水"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

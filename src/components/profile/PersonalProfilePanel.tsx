@@ -11,6 +11,11 @@ import {
 } from "@/shared/constants";
 import type { ActivityLevel, AiAdviceFrequency, HealthGoal, ProfileGender } from "@/lib/db/schema";
 import type { UserProfileData, UserProfileFormData } from "@/shared/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const GENDER_OPTIONS = Object.entries(PROFILE_GENDER_LABELS) as Array<[ProfileGender, string]>;
 const ACTIVITY_OPTIONS = Object.entries(ACTIVITY_LEVEL_LABELS) as Array<[ActivityLevel, string]>;
@@ -66,37 +71,37 @@ export function PersonalProfilePanel({ onSaved }: PersonalProfilePanelProps) {
 
   if (loading || !formData) {
     return (
-      <div className="glass-card flex items-center justify-center py-6">
-        <span className="y2k-spinner h-5 w-5" />
-        <span className="ml-2 text-sm text-slate-400">正在加载个人档案...</span>
+      <div className="flex items-center justify-center py-6">
+        <Skeleton className="h-5 w-5" />
+        <span className="ml-2 text-sm text-muted-foreground">正在加载个人档案...</span>
       </div>
     );
   }
 
   return (
-    <div className="stack gap-4">
-      {error && <p className="glass-message-error text-sm">{error}</p>}
+    <div className="space-y-4">
+      {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="stack gap-1">
-          <span className="glass-label">显示名称</span>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="display-name">显示名称</Label>
+          <Input
+            id="display-name"
             value={formData.displayName ?? ""}
             onChange={(event) => setFormData({ ...formData, displayName: event.target.value })}
-            className="glass-input"
             placeholder="可选"
           />
-        </label>
+        </div>
 
-        <label className="stack gap-1">
-          <span className="glass-label">出生日期</span>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="birth-date">出生日期</Label>
+          <Input
+            id="birth-date"
             type="date"
             value={formData.birthDate ?? ""}
             onChange={(event) => setFormData({ ...formData, birthDate: event.target.value })}
-            className="glass-input"
           />
-        </label>
+        </div>
 
         <SelectField
           label="性别"
@@ -105,18 +110,18 @@ export function PersonalProfilePanel({ onSaved }: PersonalProfilePanelProps) {
           onChange={(value) => setFormData({ ...formData, gender: value })}
         />
 
-        <label className="stack gap-1">
-          <span className="glass-label">身高（cm）</span>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="height">身高（cm）</Label>
+          <Input
+            id="height"
             type="number"
             min="80"
             max="260"
             value={formData.heightCm ?? ""}
             onChange={(event) => setFormData({ ...formData, heightCm: event.target.value ? Number(event.target.value) : null })}
-            className="glass-input"
             placeholder="例如 175"
           />
-        </label>
+        </div>
 
         <SelectField
           label="活动水平"
@@ -132,19 +137,19 @@ export function PersonalProfilePanel({ onSaved }: PersonalProfilePanelProps) {
           onChange={(value) => setFormData({ ...formData, healthGoal: value })}
         />
 
-        <label className="stack gap-1">
-          <span className="glass-label">目标体重（kg）</span>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="weight-target">目标体重（kg）</Label>
+          <Input
+            id="weight-target"
             type="number"
             min="20"
             max="500"
             step="0.1"
             value={formData.weightTargetKg ?? ""}
             onChange={(event) => setFormData({ ...formData, weightTargetKg: event.target.value ? Number(event.target.value) : null })}
-            className="glass-input"
             placeholder="可选"
           />
-        </label>
+        </div>
 
         <SelectField
           label="AI 建议频率"
@@ -154,10 +159,10 @@ export function PersonalProfilePanel({ onSaved }: PersonalProfilePanelProps) {
         />
       </div>
 
-      <label className="flex items-center justify-between rounded-2xl bg-white/50 px-4 py-3">
+      <label className="flex items-center justify-between rounded-lg border bg-card px-4 py-3">
         <div>
-          <p className="text-sm font-semibold text-slate-700">开启 AI 建议</p>
-          <p className="text-xs text-slate-400">关闭后不会自动生成新的健康建议</p>
+          <p className="text-sm font-medium text-foreground">开启 AI 建议</p>
+          <p className="text-xs text-muted-foreground">关闭后不会自动生成新的健康建议</p>
         </div>
         <input
           type="checkbox"
@@ -167,18 +172,13 @@ export function PersonalProfilePanel({ onSaved }: PersonalProfilePanelProps) {
             aiAdviceEnabled: event.target.checked,
             aiAdviceFrequency: event.target.checked ? formData.aiAdviceFrequency : "off",
           })}
-          className="h-5 w-5 accent-cyan-500"
+          className="h-4 w-4 accent-primary"
         />
       </label>
 
-      <button
-        type="button"
-        onClick={() => void handleSave()}
-        disabled={saving}
-        className="glass-button-primary w-full"
-      >
+      <Button type="button" onClick={() => void handleSave()} disabled={saving} className="w-full">
         {saving ? "保存中..." : "保存个人档案"}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -195,17 +195,18 @@ function SelectField<TValue extends string>({
   onChange: (value: TValue) => void;
 }) {
   return (
-    <label className="stack gap-1">
-      <span className="glass-label">{label}</span>
+    <div className="space-y-1.5">
+      <Label htmlFor={`select-${label}`}>{label}</Label>
       <select
+        id={`select-${label}`}
         value={value}
         onChange={(event) => onChange(event.target.value as TValue)}
-        className="glass-input"
+        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {options.map(([optionValue, optionLabel]) => (
           <option key={optionValue} value={optionValue}>{optionLabel}</option>
         ))}
       </select>
-    </label>
+    </div>
   );
 }

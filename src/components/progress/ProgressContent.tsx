@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { TrendingUp, Scale, Moon, Ruler, PieChart } from "lucide-react";
 import { useBodyMeasurements } from "@/hooks/useBodyMeasurements";
 import { useExerciseLogs } from "@/hooks/useExerciseLogs";
 import { useHistory } from "@/hooks/useHistory";
@@ -11,8 +12,10 @@ import { ExerciseStatsPanel } from "@/components/progress/ExerciseStatsPanel";
 import { MacroDonut } from "@/components/progress/MacroDonut";
 import { WeightTrendChart } from "@/components/progress/WeightTrendChart";
 import { EmptyState, PeriodButton, StatBox } from "@/components/progress/ProgressParts";
-import { MiniStatCard } from "@/components/shared/MiniStatCard";
+import { StatCard } from "@/components/shared/StatCard";
 import { AiAdviceCard } from "@/components/shared/AiAdviceCard";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { addDays, todayDate } from "@/lib/date";
 import {
   calculateOnTargetRate,
@@ -69,180 +72,204 @@ export function ProgressContent({ weightTargetKg }: ProgressContentProps) {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <MiniStatCard label="日均热量" value={avgKcal} unit="kcal" />
-        <MiniStatCard label="日均蛋白质" value={avgProtein} unit="g" />
-        <MiniStatCard label="达标率" value={`${onTargetRate}%`} />
-        <MiniStatCard label="最长连续" value={streak} unit="天" />
+        <StatCard label="日均热量" value={avgKcal} unit="kcal" accentColor="primary" />
+        <StatCard label="日均蛋白质" value={avgProtein} unit="g" accentColor="purple" />
+        <StatCard label="达标率" value={`${onTargetRate}%`} accentColor="success" />
+        <StatCard label="最长连续" value={streak} unit="天" accentColor="warning" />
       </div>
 
-      <AiAdviceCard title="AI 健康周报" type="weekly_summary" icon="📊" autoGenerate />
+      <AiAdviceCard title="AI 健康周报" type="weekly_summary" autoGenerate />
 
       {weekComparison && (
-        <div className="glass-card">
-          <h2 className="mb-3 text-slate-800">热量对比</h2>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="text-center">
-              <p className="text-[10px] font-medium text-slate-400">上周日均</p>
-              <p className="mt-1 text-xl font-bold text-slate-600">{weekComparison.previousAvg}</p>
-              <p className="text-[10px] text-slate-400">kcal</p>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">热量对比</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center">
+                <p className="text-[11px] font-medium text-muted-foreground">上周日均</p>
+                <p className="mt-1 text-xl font-bold text-muted-foreground tabular-nums">{weekComparison.previousAvg}</p>
+                <p className="text-[11px] text-muted-foreground">kcal</p>
+              </div>
+              <div className="flex items-center justify-center">
+                <span
+                  className={`inline-flex items-center gap-1 rounded-md px-3 py-1 text-xs font-semibold ${
+                    weekComparison.diff <= 0
+                      ? "bg-emerald-50 text-emerald-600"
+                      : "bg-red-50 text-red-600"
+                  }`}
+                >
+                  {weekComparison.diff <= 0 ? "↓" : "↑"} {Math.abs(weekComparison.diff)} kcal
+                </span>
+              </div>
+              <div className="text-center">
+                <p className="text-[11px] font-medium text-muted-foreground">本周日均</p>
+                <p className="mt-1 text-xl font-bold text-foreground tabular-nums">{weekComparison.currentAvg}</p>
+                <p className="text-[11px] text-muted-foreground">kcal</p>
+              </div>
             </div>
-            <div className="flex items-center justify-center">
-              <span
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
-                  weekComparison.diff <= 0 ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"
-                }`}
-              >
-                {weekComparison.diff <= 0 ? "↓" : "↑"} {Math.abs(weekComparison.diff)} kcal
-              </span>
-            </div>
-            <div className="text-center">
-              <p className="text-[10px] font-medium text-slate-400">本周日均</p>
-              <p className="mt-1 text-xl font-bold text-slate-800">{weekComparison.currentAvg}</p>
-              <p className="text-[10px] text-slate-400">kcal</p>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
-      <div className="glass-card">
-        <h2 className="mb-4 text-slate-800">热量趋势</h2>
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="y2k-spinner h-6 w-6" />
-          </div>
-        ) : data.length === 0 ? (
-          <EmptyState icon="📈" text="暂无足够数据，多记录几天再来看看吧" />
-        ) : (
-          <CalorieChart data={sortedData} />
-        )}
-      </div>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">热量趋势</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <Skeleton className="h-48 w-full" />
+          ) : data.length === 0 ? (
+            <EmptyState icon={<TrendingUp className="h-8 w-8" />} text="暂无足够数据，多记录几天再来看看吧" />
+          ) : (
+            <CalorieChart data={sortedData} />
+          )}
+        </CardContent>
+      </Card>
 
-      <div className="glass-card">
-        <h2 className="mb-4 text-slate-800">体重趋势</h2>
-        {weightLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="y2k-spinner h-6 w-6" />
-          </div>
-        ) : weightLogs.length === 0 ? (
-          <EmptyState icon="⚖️" text="暂无体重记录，先在今日页面记录一次吧" />
-        ) : (
-          <>
-            <WeightTrendChart logs={weightLogs} weightTargetKg={weightTargetKg} />
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <StatBox label="起始体重" value={Number(weightLogs[0].weightKg).toFixed(1)} unit="kg" />
-              <StatBox label="当前体重" value={Number(weightLogs[weightLogs.length - 1].weightKg).toFixed(1)} unit="kg" />
-              <StatBox
-                label="变化"
-                value={(Number(weightLogs[weightLogs.length - 1].weightKg) - Number(weightLogs[0].weightKg)).toFixed(1)}
-                unit="kg"
-              />
-              <StatBox
-                label="目标体重"
-                value={weightTargetKg ? Number(weightTargetKg).toFixed(1) : "未设置"}
-                unit={weightTargetKg ? "kg" : ""}
-              />
-            </div>
-            {!weightTargetKg && (
-              <p className="mt-3 text-center text-xs text-slate-400">可在个人资料中设置体重目标，趋势图会显示目标线。</p>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">体重趋势</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {weightLoading ? (
+            <Skeleton className="h-48 w-full" />
+          ) : weightLogs.length === 0 ? (
+            <EmptyState icon={<Scale className="h-8 w-8" />} text="暂无体重记录，先在今日页面记录一次吧" />
+          ) : (
+            <>
+              <WeightTrendChart logs={weightLogs} weightTargetKg={weightTargetKg} />
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <StatBox label="起始体重" value={Number(weightLogs[0].weightKg).toFixed(1)} unit="kg" />
+                <StatBox label="当前体重" value={Number(weightLogs[weightLogs.length - 1].weightKg).toFixed(1)} unit="kg" />
+                <StatBox
+                  label="变化"
+                  value={(Number(weightLogs[weightLogs.length - 1].weightKg) - Number(weightLogs[0].weightKg)).toFixed(1)}
+                  unit="kg"
+                />
+                <StatBox
+                  label="目标体重"
+                  value={weightTargetKg ? Number(weightTargetKg).toFixed(1) : "未设置"}
+                  unit={weightTargetKg ? "kg" : ""}
+                />
+              </div>
+              {!weightTargetKg && (
+                <p className="mt-3 text-center text-xs text-muted-foreground">
+                  可在个人资料中设置体重目标，趋势图会显示目标线。
+                </p>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">运动统计</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {exerciseLoading ? (
+            <Skeleton className="h-32 w-full" />
+          ) : (
+            <ExerciseStatsPanel logs={exerciseLogs} />
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">睡眠统计</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {sleepLoading ? (
+              <Skeleton className="h-24 w-full" />
+            ) : sleepLogs.length === 0 ? (
+              <EmptyState icon={<Moon className="h-8 w-8" />} text="暂无睡眠记录" />
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <StatBox
+                  label="平均时长"
+                  value={`${Math.round(sleepLogs.reduce((sum, log) => sum + log.sleepMinutes, 0) / sleepLogs.length / 60 * 10) / 10}`}
+                  unit="小时"
+                />
+                <StatBox
+                  label="平均质量"
+                  value={`${(sleepLogs.reduce((sum, log) => sum + log.quality, 0) / sleepLogs.length).toFixed(1)}`}
+                  unit="/ 5"
+                />
+              </div>
             )}
-          </>
-        )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">身体数据</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {bodyMeasurementLoading ? (
+              <Skeleton className="h-24 w-full" />
+            ) : bodyMeasurementLogs.length === 0 ? (
+              <EmptyState icon={<Ruler className="h-8 w-8" />} text="暂无身体数据记录" />
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <StatBox
+                  label="最新腰围"
+                  value={bodyMeasurementLogs[0].waistCm ? Number(bodyMeasurementLogs[0].waistCm).toFixed(1) : "未记录"}
+                  unit="cm"
+                />
+                <StatBox label="记录次数" value={`${bodyMeasurementLogs.length}`} unit="次" />
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="glass-card">
-        <h2 className="mb-4 text-slate-800">运动统计</h2>
-        {exerciseLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="y2k-spinner h-6 w-6" />
-          </div>
-        ) : (
-          <ExerciseStatsPanel logs={exerciseLogs} />
-        )}
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-2">
-        <div className="glass-card">
-          <h2 className="mb-3 text-slate-800">睡眠统计</h2>
-          {sleepLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="y2k-spinner h-5 w-5" />
-            </div>
-          ) : sleepLogs.length === 0 ? (
-            <EmptyState icon="😴" text="暂无睡眠记录" />
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">营养素分布</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <Skeleton className="h-48 w-full" />
+          ) : data.length === 0 ? (
+            <EmptyState icon={<PieChart className="h-8 w-8" />} text="暂无营养素数据" />
           ) : (
-            <div className="grid grid-cols-2 gap-3">
-              <StatBox
-                label="平均时长"
-                value={`${Math.round(sleepLogs.reduce((sum, log) => sum + log.sleepMinutes, 0) / sleepLogs.length / 60 * 10) / 10}`}
-                unit="小时"
-              />
-              <StatBox
-                label="平均质量"
-                value={`${(sleepLogs.reduce((sum, log) => sum + log.quality, 0) / sleepLogs.length).toFixed(1)}`}
-                unit="/ 5"
-              />
-            </div>
+            <>
+              <MacroDonut proteinG={totalProtein} carbsG={totalCarbs} fatG={totalFat} />
+              <div className="mt-4 grid grid-cols-3 gap-3">
+                <div className="text-center">
+                  <p className="text-[11px] text-muted-foreground">蛋白质</p>
+                  <p className="text-sm font-bold text-purple-600 tabular-nums">{totalProtein.toFixed(1)} g</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[11px] text-muted-foreground">碳水</p>
+                  <p className="text-sm font-bold text-amber-600 tabular-nums">{totalCarbs.toFixed(1)} g</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[11px] text-muted-foreground">脂肪</p>
+                  <p className="text-sm font-bold text-emerald-600 tabular-nums">{totalFat.toFixed(1)} g</p>
+                </div>
+              </div>
+            </>
           )}
-        </div>
+        </CardContent>
+      </Card>
 
-        <div className="glass-card">
-          <h2 className="mb-3 text-slate-800">身体数据</h2>
-          {bodyMeasurementLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="y2k-spinner h-5 w-5" />
-            </div>
-          ) : bodyMeasurementLogs.length === 0 ? (
-            <EmptyState icon="📏" text="暂无身体数据记录" />
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              <StatBox
-                label="最新腰围"
-                value={bodyMeasurementLogs[0].waistCm ? Number(bodyMeasurementLogs[0].waistCm).toFixed(1) : "未记录"}
-                unit="cm"
-              />
-              <StatBox label="记录次数" value={`${bodyMeasurementLogs.length}`} unit="次" />
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="glass-card">
-        <h2 className="mb-4 text-slate-800">营养素分布</h2>
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="y2k-spinner h-6 w-6" />
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">数据摘要</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-3">
+            <StatBox label="日均热量" value={`${avgKcal}`} unit="kcal" />
+            <StatBox label="日均蛋白质" value={avgProtein} unit="g" />
+            <StatBox label="达标天数" value={`${onTargetDays}`} unit={`/ ${data.length}`} />
           </div>
-        ) : data.length === 0 ? (
-          <EmptyState icon="🥗" text="暂无营养素数据" />
-        ) : (
-          <>
-            <MacroDonut proteinG={totalProtein} carbsG={totalCarbs} fatG={totalFat} />
-            <div className="mt-4 grid grid-cols-3 gap-3">
-              <div className="text-center">
-                <p className="text-2xs text-slate-400">蛋白质</p>
-                <p className="text-sm font-bold text-purple-600">{totalProtein.toFixed(1)} g</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xs text-slate-400">碳水</p>
-                <p className="text-sm font-bold text-amber-600">{totalCarbs.toFixed(1)} g</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xs text-slate-400">脂肪</p>
-                <p className="text-sm font-bold text-teal-600">{totalFat.toFixed(1)} g</p>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-
-      <div className="glass-card">
-        <h2 className="mb-4 text-slate-800">数据摘要</h2>
-        <div className="grid grid-cols-3 gap-3">
-          <StatBox label="日均热量" value={`${avgKcal}`} unit="kcal" />
-          <StatBox label="日均蛋白质" value={avgProtein} unit="g" />
-          <StatBox label="达标天数" value={`${onTargetDays}`} unit={`/ ${data.length}`} />
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

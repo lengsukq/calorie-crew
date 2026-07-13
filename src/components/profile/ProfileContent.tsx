@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { toast } from "sonner";
+import { Target, HeartPulse, User, Sparkles, Bot, KeyRound, Info, LogOut } from "lucide-react";
 import { useUserTarget } from "@/hooks/useUserTarget";
 import { useProfile } from "@/hooks/useProfile";
 import { createInvite } from "@/lib/api/admin-invites";
@@ -13,6 +14,12 @@ import { AiConfigPanel } from "@/components/profile/AiConfigPanel";
 import { HealthMetricsCard } from "@/components/profile/HealthMetricsCard";
 import { PersonalProfilePanel } from "@/components/profile/PersonalProfilePanel";
 import { AiAdvicePreferencePanel } from "@/components/profile/AiAdvicePreferencePanel";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ProfileContentProps {
   email: string;
@@ -21,79 +28,19 @@ interface ProfileContentProps {
   weightTargetKg: string | null;
 }
 
-interface CollapsibleSectionProps {
-  title: string;
-  icon: string;
-  defaultOpen?: boolean;
-  children: React.ReactNode;
-}
-
-function CollapsibleSection({
-  title,
-  icon,
-  defaultOpen = false,
-  children,
-}: CollapsibleSectionProps) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-  const sectionId = `collapsible-${title}`;
-
-  return (
-    <div className="glass-card !p-0 !overflow-hidden">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between px-5 py-4 text-left transition-colors hover:bg-white/30"
-        type="button"
-        aria-expanded={isOpen}
-        aria-controls={sectionId}
-      >
-        <div className="flex items-center gap-2">
-          <span className="text-base">{icon}</span>
-          <span className="text-sm font-semibold text-slate-700">{title}</span>
-        </div>
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={`text-slate-300 transition-transform duration-200 ${
-            isOpen ? "" : "-rotate-90"
-          }`}
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </button>
-      {isOpen && <div id={sectionId} className="border-t border-slate-100/50 px-5 py-4">{children}</div>}
-    </div>
-  );
-}
-
 export function ProfileContent({ email, role, calorieTarget, weightTargetKg }: ProfileContentProps) {
   const { updateTarget } = useUserTarget();
   const { data: profileData, loading: profileLoading } = useProfile();
 
-  const profileCompleteness = useMemo(() => {
-    if (!profileData?.profile) return 0;
-    const fields = [
-      profileData.profile.displayName,
-      profileData.profile.birthDate,
-      profileData.profile.heightCm,
-      profileData.profile.weightTargetKg,
-    ];
-    const filled = fields.filter((field) => field !== null && field !== undefined && field !== "").length;
-    return Math.round((filled / fields.length) * 100);
-  }, [profileData?.profile]);
-
+  const profileCompleteness = profileData?.profileCompleteness.percentage ?? 0;
   const onboardingTips = useMemo(() => {
     if (!profileData?.profile) return [];
+    const profile = profileData.profile;
     const tips: string[] = [];
-    if (!profileData.profile.displayName) tips.push("设置昵称，让记录更有归属感");
-    if (!profileData.profile.birthDate) tips.push("填写出生日期，以便计算更精准的基础代谢");
-    if (!profileData.profile.heightCm) tips.push("录入身高，系统才能计算 BMI 与推荐摄入");
-    if (!profileData.profile.weightTargetKg) tips.push("设定体重目标，方便追踪长期趋势");
+    if (!profile.displayName) tips.push("设置昵称，让记录更有归属感");
+    if (!profile.birthDate) tips.push("填写出生日期，以便计算更精准的基础代谢");
+    if (!profile.heightCm) tips.push("录入身高，系统才能计算 BMI 与推荐摄入");
+    if (!profile.weightTargetKg) tips.push("设定体重目标，方便追踪长期趋势");
     return tips;
   }, [profileData?.profile]);
 
@@ -116,94 +63,111 @@ export function ProfileContent({ email, role, calorieTarget, weightTargetKg }: P
   return (
     <div className="stack page-enter">
       {/* User card */}
-      <div className="glass-card flex flex-col items-center py-6">
-        <div className="mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 via-blue-400 to-teal-400 shadow-xl">
-          <span className="text-3xl font-bold text-white">
-            {email.charAt(0).toUpperCase()}
-          </span>
-        </div>
-        <p className="text-sm font-medium text-slate-700">{email}</p>
-        <span className="glass-tag mt-1">
-          {role === "admin" ? "管理员" : "会员"}
-        </span>
-      </div>
+      <Card>
+        <CardContent className="flex flex-col items-center py-6">
+          <div className="mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            <span className="text-3xl font-bold">{email.charAt(0).toUpperCase()}</span>
+          </div>
+          <p className="text-sm font-medium text-foreground">{email}</p>
+          <Badge variant={role === "admin" ? "default" : "secondary"} className="mt-1">
+            {role === "admin" ? "管理员" : "会员"}
+          </Badge>
+        </CardContent>
+      </Card>
 
       {/* Onboarding guidance */}
       {!profileLoading && profileData && profileCompleteness < 100 && (
-        <div className="glass-card">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-semibold text-slate-700">完善资料</p>
-            <span className="text-xs text-slate-400">{profileCompleteness}%</span>
-          </div>
-          <div className="mb-3 h-2 w-full rounded-full bg-slate-100">
-            <div
-              className="h-2 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all"
-              style={{ width: `${profileCompleteness}%` }}
-            />
-          </div>
-          <ul className="space-y-1.5">
-            {onboardingTips.map((tip) => (
-              <li key={tip} className="flex items-start gap-2 text-xs text-slate-500">
-                <span className="mt-0.5 text-cyan-500">•</span>
-                <span>{tip}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">完善资料</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">完成度</span>
+              <span className="font-medium tabular-nums">{profileCompleteness}%</span>
+            </div>
+            <Progress value={profileCompleteness} max={100} />
+            <ul className="space-y-1.5">
+              {onboardingTips.map((tip) => (
+                <li key={tip} className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <span className="mt-0.5 text-primary">•</span>
+                  <span>{tip}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
       )}
 
       {/* Settings section */}
       <div className="space-y-3">
-        <p className="px-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-          设置
-        </p>
+        <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">设置</p>
         <TargetSetting currentTarget={calorieTarget} onUpdate={updateTarget} />
         <HealthMetricsCard />
-        <CollapsibleSection title="个人健康档案" icon="🧬" defaultOpen={!weightTargetKg}>
-          <PersonalProfilePanel />
-        </CollapsibleSection>
-        <CollapsibleSection title="AI 建议偏好" icon="✨">
-          <AiAdvicePreferencePanel />
-        </CollapsibleSection>
-        <CollapsibleSection title="AI 配置" icon="🤖">
-          <AiConfigPanel />
-        </CollapsibleSection>
+        <Accordion type="multiple" defaultValue={!weightTargetKg ? ["profile"] : undefined} className="space-y-3">
+          <AccordionItem value="profile" className="rounded-lg border bg-card px-4">
+            <AccordionTrigger className="py-3">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">个人健康档案</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <PersonalProfilePanel />
+            </AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="ai-preference" className="rounded-lg border bg-card px-4">
+            <AccordionTrigger className="py-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">AI 建议偏好</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <AiAdvicePreferencePanel />
+            </AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="ai-config" className="rounded-lg border bg-card px-4">
+            <AccordionTrigger className="py-3">
+              <div className="flex items-center gap-2">
+                <Bot className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">AI 配置</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <AiConfigPanel />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </div>
 
       {/* Admin section */}
       {role === "admin" && (
         <div className="space-y-3">
-          <p className="px-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-            管理员
-          </p>
-          <CollapsibleSection title="邀请码管理" icon="🔒" defaultOpen>
-            <AdminPanel onCreateInvite={handleCreateInvite} />
-          </CollapsibleSection>
+          <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">管理员</p>
+          <AdminPanel onCreateInvite={handleCreateInvite} />
         </div>
       )}
 
       {/* About section */}
       <div className="space-y-3">
-        <p className="px-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-          关于
-        </p>
-        <div className="glass-card">
-          <div className="flex items-center justify-between">
+        <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">关于</p>
+        <Card>
+          <CardContent className="flex items-center justify-between py-4">
             <div className="flex items-center gap-2">
-              <span className="text-base">ℹ️</span>
-              <span className="text-sm font-semibold text-slate-700">
-                CalorieCrew
-              </span>
+              <Info className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-foreground">CalorieCrew</span>
             </div>
-            <span className="text-xs text-slate-400">v0.2.0</span>
-          </div>
-        </div>
+            <span className="text-xs text-muted-foreground tabular-nums">v0.2.0</span>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Logout */}
-      <button onClick={handleLogout} className="glass-button-danger w-full">
+      <Button variant="destructive" className="w-full" onClick={handleLogout}>
+        <LogOut className="h-4 w-4" />
         退出登录
-      </button>
+      </Button>
     </div>
   );
 }

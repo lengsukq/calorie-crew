@@ -2,20 +2,24 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { useFoodLogs } from "@/hooks/useFoodLogs";
 import { useExerciseLogs } from "@/hooks/useExerciseLogs";
 import { useWaterLogs } from "@/hooks/useWaterLogs";
 import { useSleepLogs } from "@/hooks/useSleepLogs";
 import { useBodyMeasurements } from "@/hooks/useBodyMeasurements";
 import { useWeightLogs } from "@/hooks/useWeightLogs";
+import { useConfirm } from "@/lib/ui/confirm";
 import { DateNavigator } from "@/components/diary/DateNavigator";
 import { FoodBatchToolbar } from "@/components/diary/FoodBatchToolbar";
 import { DiaryHealthSections } from "@/components/diary/DiaryHealthSections";
 import { MealGroup } from "@/components/today/MealGroup";
-import { MiniStatCard } from "@/components/shared/MiniStatCard";
+import { StatCard } from "@/components/shared/StatCard";
 import { AiAdviceCard } from "@/components/shared/AiAdviceCard";
 import { FoodLogEditorOverlay } from "@/components/shared/FoodLogEditorOverlay";
 import { QuickAddButton } from "@/components/shared/QuickAddButton";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { batchActionFoodLogs, createFoodLog } from "@/lib/api/food-logs";
 import { ApiError, todayDate } from "@/lib/api/client";
 import { runWithToast } from "@/lib/ui/with-toast-action";
@@ -30,6 +34,7 @@ export function DiaryContent() {
   const waterLogsHook = useWaterLogs({ startDate: selectedDate, endDate: selectedDate });
   const sleepLogsHook = useSleepLogs({ startDate: selectedDate, endDate: selectedDate });
   const bodyMeasurementsHook = useBodyMeasurements({ startDate: selectedDate, endDate: selectedDate });
+  const confirm = useConfirm();
 
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
@@ -54,6 +59,13 @@ export function DiaryContent() {
   }
 
   async function handleDelete(id: string) {
+    const ok = await confirm({
+      title: "删除饮食记录",
+      description: "确定删除这条记录吗？",
+      confirmText: "删除",
+      destructive: true,
+    });
+    if (!ok) return;
     await runWithToast(() => removeLog(id), { success: "已删除", failure: "删除失败" });
   }
 
@@ -81,8 +93,13 @@ export function DiaryContent() {
   }
 
   async function handleBatchDelete() {
-    const confirmed = window.confirm(`确定删除选中的 ${selectedFoodIds.size} 条饮食记录吗？`);
-    if (!confirmed) return;
+    const ok = await confirm({
+      title: "批量删除饮食记录",
+      description: `确定删除选中的 ${selectedFoodIds.size} 条记录吗？`,
+      confirmText: "删除",
+      destructive: true,
+    });
+    if (!ok) return;
 
     setBatchSaving(true);
     try {
@@ -136,62 +153,64 @@ export function DiaryContent() {
       <DateNavigator date={selectedDate} onChange={setSelectedDate} />
 
       {error && (
-        <div className="glass-message-error flex items-center justify-between gap-3" role="alert">
-          <span>{error}</span>
-          <button type="button" onClick={() => void reload()} className="glass-button !px-3 !py-1 text-xs">
-            重试
-          </button>
-        </div>
+        <Card>
+          <CardContent className="flex items-center justify-between gap-3 py-4">
+            <span className="text-sm text-destructive">{error}</span>
+            <Button variant="outline" size="sm" onClick={() => void reload()}>
+              重试
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <MiniStatCard label="热量" value={`${totalKcal}`} unit="kcal" />
-        <MiniStatCard label="蛋白质" value={totalProtein.toFixed(1)} unit="g" gradient="from-purple-400 to-pink-500" />
-        <MiniStatCard label="碳水" value={totalCarbs.toFixed(1)} unit="g" gradient="from-amber-400 to-orange-500" />
-        <MiniStatCard label="脂肪" value={totalFat.toFixed(1)} unit="g" gradient="from-teal-400 to-emerald-500" />
+        <StatCard label="热量" value={totalKcal} unit="kcal" accentColor="primary" />
+        <StatCard label="蛋白质" value={totalProtein.toFixed(1)} unit="g" accentColor="purple" />
+        <StatCard label="碳水" value={totalCarbs.toFixed(1)} unit="g" accentColor="warning" />
+        <StatCard label="脂肪" value={totalFat.toFixed(1)} unit="g" accentColor="success" />
       </div>
 
       {totalKcal > 0 && (
-        <AiAdviceCard title="AI 洞察" type="daily_diet" icon="💡" emptyText="暂无异常，继续保持。" autoGenerate />
+        <AiAdviceCard title="AI 洞察" type="daily_diet" emptyText="暂无异常，继续保持。" autoGenerate />
       )}
 
       {loading ? (
-        <div className="glass-card flex items-center justify-center py-8">
-          <div className="y2k-spinner h-6 w-6" />
-        </div>
+        <Card>
+          <CardContent className="flex items-center justify-center py-8">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </CardContent>
+        </Card>
       ) : logs.length === 0 ? (
-        <div className="glass-card">
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-slate-800">饮食记录</h2>
-          </div>
-          <div className="flex flex-col items-center gap-2 py-6 text-center">
-            <span className="text-3xl opacity-50">📝</span>
-            <p className="text-sm text-slate-400">这一天还没有饮食记录</p>
-          </div>
-        </div>
+        <Card>
+          <CardContent className="py-6 text-center">
+            <p className="text-sm text-muted-foreground">这一天还没有饮食记录</p>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="glass-card">
-          <FoodBatchToolbar
-            selectedCount={selectedFoodIds.size}
-            batchSaving={batchSaving}
-            batchAction={batchAction}
-            batchTargetDate={batchTargetDate}
-            onStartCopy={() => setBatchAction("copy")}
-            onCancelCopy={() => setBatchAction(null)}
-            onConfirmCopy={() => void handleBatchCopy()}
-            onBatchDelete={() => void handleBatchDelete()}
-            onBatchTargetDateChange={setBatchTargetDate}
-          />
-          <MealGroup
-            logs={logs}
-            onEdit={setEditingLogId}
-            onDelete={(id) => void handleDelete(id)}
-            collapsible
-            title=""
-            selectedIds={selectedFoodIds}
-            onToggleSelect={toggleSelectedFood}
-          />
-        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <FoodBatchToolbar
+              selectedCount={selectedFoodIds.size}
+              batchSaving={batchSaving}
+              batchAction={batchAction}
+              batchTargetDate={batchTargetDate}
+              onStartCopy={() => setBatchAction("copy")}
+              onCancelCopy={() => setBatchAction(null)}
+              onConfirmCopy={() => void handleBatchCopy()}
+              onBatchDelete={() => void handleBatchDelete()}
+              onBatchTargetDateChange={setBatchTargetDate}
+            />
+            <MealGroup
+              logs={logs}
+              onEdit={setEditingLogId}
+              onDelete={(id) => void handleDelete(id)}
+              collapsible
+              title=""
+              selectedIds={selectedFoodIds}
+              onToggleSelect={toggleSelectedFood}
+            />
+          </CardContent>
+        </Card>
       )}
 
       <DiaryHealthSections

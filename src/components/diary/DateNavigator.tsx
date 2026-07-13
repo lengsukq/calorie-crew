@@ -1,6 +1,9 @@
 "use client";
 
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { addDays, formatDisplayDate, todayDate } from "@/lib/date";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 interface DateNavigatorProps {
   date: string;
@@ -9,59 +12,47 @@ interface DateNavigatorProps {
 
 export function DateNavigator({ date, onChange }: DateNavigatorProps) {
   const today = todayDate();
-
-  const goBack = () => {
-    onChange(addDays(date, -1));
-  };
-
-  const goForward = () => {
-    onChange(addDays(date, 1));
-  };
-
-  const goToday = () => {
-    onChange(today);
-  };
-
   const isToday = date === today;
 
   return (
-    <div className="glass-card !p-3">
+    <Card className="px-4 py-3">
       <div className="flex items-center justify-between">
-        <button
-          onClick={goBack}
-          className="flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-white/50 hover:text-slate-600"
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9"
+          onClick={() => onChange(addDays(date, -1))}
           aria-label="前一天"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
 
         <div className="flex items-center gap-2">
-          <span className="text-base font-bold text-slate-700">
+          <span className="text-base font-semibold text-foreground tabular-nums">
             {formatDisplayDate(date)}
           </span>
           {!isToday && (
-            <button
-              onClick={goToday}
-              className="rounded-lg bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-600 transition-colors hover:bg-cyan-100"
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => onChange(today)}
             >
               回到今天
-            </button>
+            </Button>
           )}
         </div>
 
-        <button
-          onClick={goForward}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9"
+          onClick={() => onChange(addDays(date, 1))}
           disabled={isToday}
-          className="flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-white/50 hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
           aria-label="后一天"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
-        </button>
+          <ChevronRight className="h-5 w-5" />
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 }

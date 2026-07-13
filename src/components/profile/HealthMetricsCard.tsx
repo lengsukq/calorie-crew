@@ -1,6 +1,10 @@
 "use client";
 
+import { HeartPulse } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const BMI_COLOR_CLASSES = {
   blue: "bg-blue-50 text-blue-600",
@@ -14,39 +18,39 @@ export function HealthMetricsCard() {
   const metrics = data?.metrics ?? null;
 
   return (
-    <div className="glass-card">
-      <div className="mb-4 flex items-center justify-between">
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
         <div className="flex items-center gap-2">
-          <span className="text-base">💗</span>
-          <span className="text-sm font-semibold text-slate-700">健康指标</span>
+          <HeartPulse className="h-4 w-4 text-primary" />
+          <CardTitle className="text-sm">健康指标</CardTitle>
         </div>
-        <button type="button" onClick={() => void reload()} className="text-xs text-cyan-500 hover:text-cyan-600">
+        <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => void reload()}>
           刷新
-        </button>
-      </div>
-
-      {loading && <div className="y2k-spinner h-5 w-5" />}
-      {error && <p role="alert" className="mb-3 text-xs text-red-500">{error}</p>}
-
-      {!loading && metrics && metrics.bmi !== null ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <MetricBox label="BMI" value={metrics.bmi.toFixed(1)} badge={metrics.bmiCategory} color={metrics.bmiCategoryColor} />
-          <MetricBox label="BMR" value={String(metrics.bmr)} unit="kcal" />
-          <MetricBox label="TDEE" value={String(metrics.tdee)} unit="kcal" />
-          <MetricBox
-            label="建议摄入"
-            value={metrics.suggestedIntake ? `${metrics.suggestedIntake.min}-${metrics.suggestedIntake.max}` : "--"}
-            unit="kcal"
-          />
-        </div>
-      ) : (
-        !loading && (
-          <div className="rounded-2xl bg-white/50 px-4 py-5 text-center text-sm text-slate-400">
-            请完善出生日期、身高，并记录一次体重以查看 BMI、BMR 与 TDEE。
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {loading && <Skeleton className="h-16 w-full" />}
+        {error && <p role="alert" className="mb-3 text-xs text-destructive">{error}</p>}
+        {!loading && metrics && metrics.bmi !== null ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <MetricBox label="BMI" value={metrics.bmi.toFixed(1)} badge={metrics.bmiCategory} color={metrics.bmiCategoryColor} />
+            <MetricBox label="BMR" value={String(metrics.bmr)} unit="kcal" />
+            <MetricBox label="TDEE" value={String(metrics.tdee)} unit="kcal" />
+            <MetricBox
+              label="建议摄入"
+              value={metrics.suggestedIntake ? `${metrics.suggestedIntake.min}-${metrics.suggestedIntake.max}` : "--"}
+              unit="kcal"
+            />
           </div>
-        )
-      )}
-    </div>
+        ) : (
+          !loading && (
+            <p className="rounded-md border border-dashed py-4 text-center text-sm text-muted-foreground">
+              请完善出生日期、身高，并记录一次体重以查看 BMI、BMR 与 TDEE。
+            </p>
+          )
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -58,19 +62,13 @@ interface MetricBoxProps {
   color?: keyof typeof BMI_COLOR_CLASSES | null;
 }
 
-function MetricBox({
-  label,
-  value,
-  unit,
-  badge,
-  color,
-}: MetricBoxProps) {
+function MetricBox({ label, value, unit, badge, color }: MetricBoxProps) {
   return (
-    <div className="rounded-2xl bg-white/55 px-3 py-4 text-center">
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-xl font-black text-slate-800">
+    <div className="rounded-lg border bg-card p-3 text-center">
+      <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
+      <p className="mt-1 text-xl font-bold tabular-nums text-foreground">
         {value}
-        {unit && <span className="ml-1 text-xs font-normal text-slate-400">{unit}</span>}
+        {unit && <span className="ml-1 text-xs font-normal text-muted-foreground">{unit}</span>}
       </p>
       {badge && color && (
         <span className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${BMI_COLOR_CLASSES[color]}`}>

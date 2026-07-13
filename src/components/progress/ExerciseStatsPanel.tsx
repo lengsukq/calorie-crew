@@ -26,9 +26,9 @@ export function ExerciseStatsPanel({ logs }: ExerciseStatsPanelProps) {
       </div>
 
       {exerciseTypeStats.length === 0 ? (
-        <div className="rounded-xl bg-white/40 px-3 py-6 text-center text-sm text-slate-400">
+        <p className="rounded-md border border-dashed py-4 text-center text-sm text-muted-foreground">
           暂无运动统计数据
-        </div>
+        </p>
       ) : (
         <div className="space-y-3">
           {exerciseTypeStats.map(([exerciseType, caloriesBurned]) => {
@@ -36,12 +36,12 @@ export function ExerciseStatsPanel({ logs }: ExerciseStatsPanelProps) {
             return (
               <div key={exerciseType}>
                 <div className="mb-1 flex items-center justify-between text-xs">
-                  <span className="font-semibold text-slate-600">{exerciseType}</span>
-                  <span className="text-slate-400">{caloriesBurned} kcal</span>
+                  <span className="font-medium text-foreground">{exerciseType}</span>
+                  <span className="text-muted-foreground tabular-nums">{caloriesBurned} kcal</span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-white/60">
+                <div className="h-2 overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-500"
+                    className="h-full rounded-full bg-primary"
                     style={{ width: `${Math.max(percentage, 4)}%` }}
                   />
                 </div>
@@ -62,12 +62,12 @@ interface StatBoxProps {
 
 function StatBox({ label, value, unit }: StatBoxProps) {
   return (
-    <div className="rounded-xl bg-white/50 px-3 py-4 text-center backdrop-blur-sm">
-      <p className="text-lg font-bold text-slate-800">
+    <div className="rounded-lg border bg-card p-3 text-center">
+      <p className="text-lg font-bold text-foreground tabular-nums">
         {value}
-        <span className="ml-0.5 text-xs font-normal text-slate-400">{unit}</span>
+        <span className="ml-0.5 text-xs font-normal text-muted-foreground">{unit}</span>
       </p>
-      <p className="mt-1 text-[10px] font-medium text-slate-400">{label}</p>
+      <p className="mt-1 text-[11px] font-medium text-muted-foreground">{label}</p>
     </div>
   );
 }

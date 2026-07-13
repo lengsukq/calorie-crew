@@ -2,8 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Bot } from "lucide-react";
 import { fetchAiConfig, saveAiConfig } from "@/lib/api/ai-config";
 import { ApiError } from "@/lib/api/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface AiConfigData {
   baseUrl: string | null;
@@ -74,81 +80,76 @@ export function AiConfigPanel() {
     apiKey.length > 0;
 
   return (
-    <div className="glass-card">
-      <div className="mb-4 flex items-center gap-2">
-        <span className="text-base">🤖</span>
-        <span className="text-sm font-semibold text-slate-700">AI 识别设置</span>
-      </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center py-4">
-          <div className="y2k-spinner h-5 w-5" />
-        </div>
-      ) : (
-        <div className="stack gap-3">
-          <label className="stack gap-1">
-            <span className="glass-label">API 地址</span>
-            <input
-              value={baseUrl}
-              onChange={(e) => setBaseUrl(e.target.value)}
-              className="glass-input"
-              placeholder="https://api.siliconflow.cn/v1/chat/completions"
-            />
-          </label>
-
-          <label className="stack gap-1">
-            <span className="glass-label">模型</span>
-            <input
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              className="glass-input"
-              placeholder="Qwen/Qwen3.5-4B"
-            />
-          </label>
-
-          <label className="stack gap-1">
-            <span className="glass-label">
-              API 密钥
-              {config.hasApiKey && (
-                <span className="ml-2 text-[10px] font-normal text-emerald-500">
-                  (已配置，留空则保持原值)
-                </span>
-              )}
-            </span>
-            <div className="relative">
-              <input
-                type={showKey ? "text" : "password"}
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                className="glass-input pr-10"
-                placeholder={config.hasApiKey ? "输入新密钥以替换" : "sk-..."}
-              />
-              <button
-                type="button"
-                onClick={() => setShowKey(!showKey)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600"
-                aria-label={showKey ? "隐藏密钥" : "显示密钥"}
-              >
-                {showKey ? "隐藏" : "显示"}
-              </button>
-            </div>
-          </label>
-
-          <p className="text-[10px] text-slate-400 leading-relaxed">
-            留空则使用系统默认配置。除了已启用的 API 密钥外，其他用户均不可见。
-          </p>
-
-          <div className="flex gap-2">
-            <button
-              onClick={handleSave}
-              disabled={saving || !hasUnsaved}
-              className="glass-button-primary !px-5 !py-2 text-sm"
-            >
-              {saving ? "保存中..." : "保存配置"}
-            </button>
+    <Card>
+      <CardHeader className="flex flex-row items-center gap-2 space-y-0 pb-3">
+        <Bot className="h-4 w-4 text-primary" />
+        <CardTitle className="text-sm">AI 识别设置</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {loading ? (
+          <div className="flex items-center justify-center py-4">
+            <Skeleton className="h-5 w-5" />
           </div>
-        </div>
-      )}
-    </div>
+        ) : (
+          <>
+            <div className="space-y-1.5">
+              <Label htmlFor="ai-base-url">API 地址</Label>
+              <Input
+                id="ai-base-url"
+                value={baseUrl}
+                onChange={(e) => setBaseUrl(e.target.value)}
+                placeholder="https://api.siliconflow.cn/v1/chat/completions"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="ai-model">模型</Label>
+              <Input
+                id="ai-model"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                placeholder="Qwen/Qwen3.5-4B"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="ai-key">
+                API 密钥
+                {config.hasApiKey && (
+                  <span className="ml-2 text-[10px] font-normal text-emerald-600">(已配置，留空则保持原值)</span>
+                )}
+              </Label>
+              <div className="relative">
+                <Input
+                  id="ai-key"
+                  type={showKey ? "text" : "password"}
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder={config.hasApiKey ? "输入新密钥以替换" : "sk-..."}
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-2 text-xs text-muted-foreground"
+                  onClick={() => setShowKey(!showKey)}
+                >
+                  {showKey ? "隐藏" : "显示"}
+                </Button>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              留空则使用系统默认配置。除了已启用的 API 密钥外，其他用户均不可见。
+            </p>
+
+            <Button onClick={handleSave} disabled={saving || !hasUnsaved} className="w-full">
+              {saving ? "保存中..." : "保存配置"}
+            </Button>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }

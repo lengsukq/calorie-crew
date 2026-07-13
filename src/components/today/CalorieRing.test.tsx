@@ -14,9 +14,9 @@ describe("CalorieRing", () => {
     expect(screen.getByText("剩余 800 kcal")).toBeInTheDocument();
   });
 
-  it("should show zero remaining when current exceeds target", () => {
+  it("should show exceeded calories when current exceeds target", () => {
     render(<CalorieRing current={2500} target={2000} />);
-    expect(screen.getByText("剩余 0 kcal")).toBeInTheDocument();
+    expect(screen.getByText("超出 500 kcal")).toBeInTheDocument();
   });
 
   it("should render SVG element", () => {

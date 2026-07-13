@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { Target } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface TargetSettingProps {
   currentTarget: number;
@@ -40,57 +45,51 @@ export function TargetSetting({ currentTarget, onUpdate }: TargetSettingProps) {
   }
 
   return (
-    <div className="glass-card">
-      <div className="flex items-center justify-between">
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
         <div className="flex items-center gap-2">
-          <span className="text-base">⚡</span>
-          <span className="text-sm font-semibold text-slate-700">每日热量目标</span>
+          <Target className="h-4 w-4 text-primary" />
+          <CardTitle className="text-sm">每日热量目标</CardTitle>
         </div>
         {isEditing ? (
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleCancel}
-              className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
-            >
-              取消
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="rounded-lg bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-600 transition-colors hover:bg-cyan-100"
-            >
+            <Button variant="ghost" size="sm" onClick={handleCancel}>取消</Button>
+            <Button size="sm" disabled={saving} onClick={handleSave}>
               {saving ? "保存中..." : "保存"}
-            </button>
+            </Button>
           </div>
         ) : (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="text-xs text-cyan-500 hover:text-cyan-600 transition-colors"
-          >
+          <Button variant="ghost" size="sm" className="text-primary" onClick={() => setIsEditing(true)}>
             修改
-          </button>
+          </Button>
         )}
-      </div>
-
-      {isEditing ? (
-        <div className="mt-3">
-          <input
-            type="number"
-            min="500"
-            max="10000"
-            value={value}
-            onChange={(e) => setValue(Number(e.target.value))}
-            className="goal-input"
-            autoFocus
-          />
-          <span className="ml-2 text-sm text-slate-400">kcal</span>
-        </div>
-      ) : (
-        <p className="mt-2 text-2xl font-black text-slate-800">
-          {currentTarget}
-          <span className="ml-1 text-sm font-normal text-slate-400">kcal</span>
-        </p>
-      )}
-    </div>
+      </CardHeader>
+      <CardContent>
+        {isEditing ? (
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <Label htmlFor="calorie-target">热量目标</Label>
+              <Input
+                id="calorie-target"
+                type="number"
+                min="500"
+                max="10000"
+                value={value}
+                onChange={(e) => setValue(Number(e.target.value))}
+                autoFocus
+              />
+            </div>
+            <span className="text-sm text-muted-foreground mt-6">kcal</span>
+          </div>
+        ) : (
+          <div>
+            <p className="text-2xl font-bold tabular-nums text-foreground">
+              {currentTarget}
+              <span className="ml-1 text-sm font-normal text-muted-foreground">kcal</span>
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

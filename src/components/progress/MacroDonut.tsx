@@ -17,7 +17,7 @@ export function MacroDonut({ proteinG, carbsG, fatG }: MacroDonutProps) {
   if (total === 0) {
     return (
       <div className="flex flex-col items-center gap-2 py-6">
-        <p className="text-sm text-slate-400">暂无营养素数据</p>
+        <p className="text-sm text-muted-foreground">暂无营养素数据</p>
       </div>
     );
   }
@@ -35,10 +35,9 @@ export function MacroDonut({ proteinG, carbsG, fatG }: MacroDonutProps) {
 
   return (
     <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
-      {/* Donut */}
-      <div className="macro-donut">
+      <div className="relative flex items-center justify-center">
         <svg width="160" height="160" viewBox="0 0 160 160">
-          <circle cx="80" cy="80" r={radius} fill="none" stroke="#e2e8f0" strokeWidth="20" />
+          <circle cx="80" cy="80" r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth="20" />
           <circle
             cx="80" cy="80" r={radius}
             fill="none"
@@ -69,16 +68,15 @@ export function MacroDonut({ proteinG, carbsG, fatG }: MacroDonutProps) {
             transform="rotate(-90, 80, 80)"
             strokeLinecap="butt"
           />
-          <text x="80" y="80" textAnchor="middle" dominantBaseline="middle" fontSize="24" fontWeight="800" fill="#1e293b">
+          <text x="80" y="80" textAnchor="middle" dominantBaseline="middle" fontSize="24" fontWeight="800" fill="hsl(var(--foreground))">
             {total.toFixed(0)}
           </text>
-          <text x="80" y="96" textAnchor="middle" dominantBaseline="middle" fontSize="10" fill="#94a3b8">
+          <text x="80" y="96" textAnchor="middle" dominantBaseline="middle" fontSize="10" fill="hsl(var(--muted-foreground))">
             克
           </text>
         </svg>
       </div>
 
-      {/* Legend */}
       <div className="flex flex-col gap-2">
         <LegendItem color={COLORS.protein} label="蛋白质" value={proteinG.toFixed(1)} ratio={(proteinRatio * 100).toFixed(0)} />
         <LegendItem color={COLORS.carbs} label="碳水" value={carbsG.toFixed(1)} ratio={(carbsRatio * 100).toFixed(0)} />
@@ -95,18 +93,13 @@ interface LegendItemProps {
   ratio: string;
 }
 
-function LegendItem({
-  color,
-  label,
-  value,
-  ratio,
-}: LegendItemProps) {
+function LegendItem({ color, label, value, ratio }: LegendItemProps) {
   return (
     <div className="flex items-center gap-3">
       <span className="h-3 w-3 rounded-full" style={{ backgroundColor: color }} />
-      <span className="w-12 text-xs text-slate-500">{label}</span>
-      <span className="w-16 text-right text-sm font-semibold text-slate-700">{value}g</span>
-      <span className="w-10 text-right text-xs text-slate-400">{ratio}%</span>
+      <span className="w-12 text-xs text-muted-foreground">{label}</span>
+      <span className="w-16 text-right text-sm font-semibold text-foreground tabular-nums">{value}g</span>
+      <span className="w-10 text-right text-xs text-muted-foreground tabular-nums">{ratio}%</span>
     </div>
   );
 }
