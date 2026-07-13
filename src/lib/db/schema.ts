@@ -22,29 +22,44 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
-export const inviteCodes = pgTable("invite_codes", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  code: text("code").notNull().unique(),
-  createdByUserId: uuid("created_by_user_id").notNull().references(() => users.id),
-  maxUses: integer("max_uses").notNull(),
-  usedCount: integer("used_count").notNull().default(0),
-  expiresAt: timestamp("expires_at", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const inviteCodes = pgTable(
+  "invite_codes",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    code: text("code").notNull().unique(),
+    createdByUserId: uuid("created_by_user_id").notNull().references(() => users.id),
+    maxUses: integer("max_uses").notNull(),
+    usedCount: integer("used_count").notNull().default(0),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index("invite_codes_created_by_idx").on(table.createdByUserId)],
+);
 
-export const inviteUsages = pgTable("invite_usages", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  inviteCodeId: uuid("invite_code_id").notNull().references(() => inviteCodes.id),
-  inviterUserId: uuid("inviter_user_id").notNull().references(() => users.id),
-  invitedUserId: uuid("invited_user_id").notNull().references(() => users.id),
-  usedAt: timestamp("used_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const inviteUsages = pgTable(
+  "invite_usages",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    inviteCodeId: uuid("invite_code_id").notNull().references(() => inviteCodes.id),
+    inviterUserId: uuid("inviter_user_id").notNull().references(() => users.id),
+    invitedUserId: uuid("invited_user_id").notNull().references(() => users.id),
+    usedAt: timestamp("used_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("invite_usages_code_idx").on(table.inviteCodeId),
+    index("invite_usages_invited_idx").on(table.invitedUserId),
+  ],
+);
 
-export const sessions = pgTable("sessions", {
-  id: text("id").primaryKey(),
-  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-});
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: text("id").primaryKey(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [index("sessions_user_id_idx").on(table.userId)],
+);
 
 export const foodLogs = pgTable(
   "food_logs",
@@ -64,7 +79,10 @@ export const foodLogs = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [unique("food_logs_user_date_id_unique").on(table.userId, table.logDate, table.id)],
+  (table) => [
+    unique("food_logs_user_date_id_unique").on(table.userId, table.logDate, table.id),
+    index("food_logs_user_date_idx").on(table.userId, table.logDate),
+  ],
 );
 
 export const dailySummaries = pgTable(
@@ -81,6 +99,8 @@ export const dailySummaries = pgTable(
     totalProteinG: numeric("total_protein_g", { precision: 8, scale: 2 }).notNull().default("0"),
     totalCarbsG: numeric("total_carbs_g", { precision: 8, scale: 2 }).notNull().default("0"),
     totalFatG: numeric("total_fat_g", { precision: 8, scale: 2 }).notNull().default("0"),
+    totalWaterMl: integer("total_water_ml").default(0),
+    sleepMinutes: integer("sleep_minutes").default(0),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [unique("daily_summaries_user_date_unique").on(table.userId, table.logDate)],
@@ -197,7 +217,10 @@ export const waterLogs = pgTable(
     note: text("note"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [unique("water_logs_user_date_id_unique").on(table.userId, table.logDate, table.id)],
+  (table) => [
+    unique("water_logs_user_date_id_unique").on(table.userId, table.logDate, table.id),
+    index("water_logs_user_date_idx").on(table.userId, table.logDate),
+  ],
 );
 
 export const sleepLogs = pgTable(
@@ -212,7 +235,10 @@ export const sleepLogs = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [unique("sleep_logs_user_date_unique").on(table.userId, table.logDate)],
+  (table) => [
+    unique("sleep_logs_user_date_unique").on(table.userId, table.logDate),
+    index("sleep_logs_user_date_idx").on(table.userId, table.logDate),
+  ],
 );
 
 export const bodyMeasurements = pgTable(
@@ -230,7 +256,10 @@ export const bodyMeasurements = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [unique("body_measurements_user_date_unique").on(table.userId, table.logDate)],
+  (table) => [
+    unique("body_measurements_user_date_unique").on(table.userId, table.logDate),
+    index("body_measurements_user_date_idx").on(table.userId, table.logDate),
+  ],
 );
 
 export const mealTypes = ["breakfast", "lunch", "dinner", "snack"] as const;

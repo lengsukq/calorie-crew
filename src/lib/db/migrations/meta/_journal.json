@@ -29,6 +29,13 @@
       "when": 1783911069227,
       "tag": "0003_big_magus",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1783950981125,
+      "tag": "0004_mature_stellaris",
+      "breakpoints": true
     }
   ]
 }

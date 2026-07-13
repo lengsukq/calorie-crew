@@ -22,7 +22,7 @@ export const profileUpdateSchema = z.object({
 
 export const adviceTypeQuerySchema = z.object({
   type: z.enum(aiAdviceTypes).optional(),
-  range: z.enum(["7d", "30d", "90d"]).optional(),
+  range: z.enum(["7d", "30d", "90d"]).default("7d"),
 });
 
 export const generateAdviceSchema = z.object({

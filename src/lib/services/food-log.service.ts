@@ -36,7 +36,6 @@ export async function batchActionFoodLogs(
   }
 
   if (action === "copy" && targetDate) {
-    const sourceIds = rows.map((row) => row.id);
     const existingTargetLogs = await db.query.foodLogs.findMany({
       where: and(eq(foodLogs.userId, userId), eq(foodLogs.logDate, targetDate)),
       columns: { mealType: true, foodName: true, servingDescription: true, calories: true, proteinG: true, carbsG: true, fatG: true },
@@ -48,7 +47,7 @@ export async function batchActionFoodLogs(
       ),
     );
 
-    const values = rows
+    const copyValues = rows
       .filter((row) => !duplicateKeys.has(`${row.mealType}::${row.foodName}::${row.servingDescription}::${row.calories}::${row.proteinG}::${row.carbsG}::${row.fatG}`))
       .map((row) => ({
         userId: row.userId,
@@ -62,17 +61,24 @@ export async function batchActionFoodLogs(
         fatG: row.fatG,
       }));
 
-    if (values.length > 0) {
-      await db.insert(foodLogs).values(values);
+    if (copyValues.length > 0) {
+      await db.insert(foodLogs).values(copyValues);
       affectedDates.add(targetDate);
     }
+
+    await Promise.all(Array.from(affectedDates).map((date) => recalculateDailySummary(userId, date)));
+
+    return {
+      deletedCount: 0,
+      copiedCount: copyValues.length,
+    };
   }
 
   await Promise.all(Array.from(affectedDates).map((date) => recalculateDailySummary(userId, date)));
 
   return {
-    deletedCount: action === "delete" ? rows.length : 0,
-    copiedCount: action === "copy" ? rows.length : 0,
+    deletedCount: rows.length,
+    copiedCount: 0,
   };
 }
 
@@ -92,6 +98,8 @@ export async function createWaterLog(userId: string, logDate: string, amountMl: 
     amountMl,
     note: normalizedNote,
   }).returning();
+
+  await recalculateDailySummary(userId, logDate);
 
   return log;
 }
@@ -132,6 +140,8 @@ export async function upsertSleepLog(
       updatedAt: sql`now()`,
     },
   }).returning();
+
+  await recalculateDailySummary(userId, logDate);
 
   return log;
 }
@@ -188,6 +198,8 @@ export async function upsertBodyMeasurement(
       updatedAt: sql`now()`,
     },
   }).returning();
+
+  await recalculateDailySummary(userId, logDate);
 
   return log;
 }

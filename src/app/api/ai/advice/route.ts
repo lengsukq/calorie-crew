@@ -15,7 +15,7 @@ export async function GET(request: Request): Promise<Response> {
   if (!parsed.success) return jsonError("建议查询参数不正确", 400);
 
   try {
-    const advices = await getAdvices(userId, parsed.data.type, parsed.data.range ?? "7d");
+    const advices = await getAdvices(userId, parsed.data.type, parsed.data.range);
     return Response.json({ advices });
   } catch {
     return jsonError("获取 AI 建议失败", 500);
