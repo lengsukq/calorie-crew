@@ -14,16 +14,26 @@ const today = todayDate();
 
 export function DiaryContent() {
   const [selectedDate, setSelectedDate] = useState(today);
-  const { logs, loading, addLog, removeLog } = useFoodLogs({
+  const { logs, loading, addLog, removeLog, reload } = useFoodLogs({
     date: selectedDate,
   });
   const [showAddSheet, setShowAddSheet] = useState(false);
 
-  async function handleAddLog(data: FoodLogFormData) {
+  async function handleBatchSave(items: FoodLogFormData[]) {
     try {
-      await addLog(data);
+      const response = await fetch("/api/food-logs/batch", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ logs: items }),
+      });
+      if (!response.ok) {
+        const err = (await response.json()) as { error?: string };
+        toast.error(err.error ?? "保存失败");
+        return;
+      }
       setShowAddSheet(false);
-      toast.success("记录已保存");
+      toast.success(`已保存 ${items.length} 条记录`);
+      await reload();
     } catch {
       toast.error("保存失败");
     }
@@ -142,7 +152,7 @@ export function DiaryContent() {
         title="添加饮食记录"
       >
         <FoodLogForm
-          onSubmit={handleAddLog}
+          onSubmit={handleBatchSave}
           onCancel={() => setShowAddSheet(false)}
         />
       </BottomSheet>

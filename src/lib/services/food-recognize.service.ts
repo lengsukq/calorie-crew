@@ -19,10 +19,10 @@ interface RecognizedResponse {
   foods: RecognizedFood[];
 }
 
-const SYSTEM_PROMPT = `你是一个食物营养分析助手。用户会描述他们吃的食物，请分析营养成分并以 JSON 格式返回。
+const SYSTEM_PROMPT = `你是一个食物营养分析助手。分析图片中的食物，估算每份食物的营养成分。
 规则：
-- 根据常见的食物营养数据库估算
-- 份量要合理且具体
+- 识别图中每一种食物，估算合理的份量
+- 根据常见的食物营养数据库估算热量和三大营养素
 - 只返回 JSON，不要任何其他文字
 
 返回格式：
@@ -40,18 +40,20 @@ const SYSTEM_PROMPT = `你是一个食物营养分析助手。用户会描述他
 }
 
 示例：
-用户说："中午吃了一碗米饭和一份红烧肉"
+用户发了一张包含米饭和红烧肉的图片
 返回：{
   "foods": [
-    { "foodName": "米饭", "servingDescription": "1 碗", "calories": 200, "proteinG": 3, "carbsG": 45, "fatG": 0.5 },
-    { "foodName": "红烧肉", "servingDescription": "1 份", "calories": 350, "proteinG": 15, "carbsG": 5, "fatG": 30 }
+    { "foodName": "米饭", "servingDescription": "1 碗(200g)", "calories": 232, "proteinG": 5.2, "carbsG": 51.8, "fatG": 0.6 },
+    { "foodName": "红烧肉", "servingDescription": "1 份(150g)", "calories": 525, "proteinG": 22.5, "carbsG": 7.5, "fatG": 45 }
   ]
 }`;
 
 /**
  * Get effective AI config: user config takes precedence, falls back to env vars.
  */
-export function getEffectiveConfig(userConfig: { baseUrl?: string | null; model?: string | null; apiKey?: string | null } | null): AiConfig | null {
+export function getEffectiveConfig(
+  userConfig: { baseUrl?: string | null; model?: string | null; apiKey?: string | null } | null,
+): AiConfig | null {
   const baseUrl = userConfig?.baseUrl || env.AI_BASE_URL;
   const model = userConfig?.model || env.AI_MODEL;
   const apiKey = userConfig?.apiKey || env.AI_API_KEY;
@@ -64,28 +66,63 @@ export function getEffectiveConfig(userConfig: { baseUrl?: string | null; model?
 }
 
 /**
- * Call LLM API to recognize food from a text description.
- * Returns structured food data or throws on failure.
+ * Call LLM API with multimodal (image + text) to recognize food.
+ * If image is provided, uses vision model format.
  */
 export async function recognizeFood(
-  description: string,
+  params: {
+    imageBase64?: string;
+    mimeType?: string;
+    description?: string;
+  },
   config: AiConfig,
 ): Promise<RecognizedResponse> {
+  const userText =
+    params.description || "识别图中所有食物，按份量估算营养数据，返回JSON";
+
+  let body: Record<string, unknown>;
+
+  if (params.imageBase64) {
+    // Multimodal: image + text
+    body = {
+      model: config.model,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:${params.mimeType || "image/jpeg"};base64,${params.imageBase64}`,
+              },
+            },
+            { type: "text", text: `${SYSTEM_PROMPT}\n\n${userText}` },
+          ],
+        },
+      ],
+      temperature: 0.1,
+      max_tokens: 2048,
+    };
+  } else {
+    // Text-only fallback
+    body = {
+      model: config.model,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userText },
+      ],
+      temperature: 0.1,
+      max_tokens: 1024,
+    };
+  }
+
   const response = await fetch(config.baseUrl, {
     method: "POST",
     headers: {
       "content-type": "application/json",
       authorization: `Bearer ${config.apiKey}`,
     },
-    body: JSON.stringify({
-      model: config.model,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: description },
-      ],
-      temperature: 0.1,
-      max_tokens: 1024,
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -102,7 +139,6 @@ export async function recognizeFood(
     throw new Error("AI 返回内容为空，请重试");
   }
 
-  // Extract JSON from response (handle markdown code blocks)
   const jsonStr = extractJson(content);
   if (!jsonStr) {
     throw new Error("AI 返回格式异常，无法解析");
@@ -111,37 +147,26 @@ export async function recognizeFood(
   const parsed = JSON.parse(jsonStr) as RecognizedResponse;
 
   if (!parsed.foods || !Array.isArray(parsed.foods) || parsed.foods.length === 0) {
-    throw new Error("AI 未识别出食物，请换一种描述方式");
+    throw new Error("AI 未识别出食物，请换一张图片");
   }
 
-  // Validate and sanitize each food item
   parsed.foods = (parsed.foods as unknown as Record<string, unknown>[]).map(sanitizeFood);
 
   return parsed;
 }
 
-/**
- * Extract JSON string from AI response (handles markdown code blocks).
- */
 function extractJson(text: string): string | null {
-  // Try to extract from markdown code block first
   const blockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (blockMatch) {
     return blockMatch[1].trim();
   }
-
-  // Try to find JSON object directly
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
     return jsonMatch[0];
   }
-
   return null;
 }
 
-/**
- * Sanitize and validate a recognized food item.
- */
 function sanitizeFood(item: Record<string, unknown>): RecognizedFood {
   return {
     foodName: String(item.foodName ?? "").trim() || "未知食物",

@@ -7,7 +7,9 @@ import { getEffectiveConfig, recognizeFood } from "@/lib/services/food-recognize
 import { z } from "zod";
 
 const recognizeSchema = z.object({
-  description: z.string().trim().min(1).max(500),
+  imageBase64: z.string().optional(),
+  mimeType: z.string().optional(),
+  description: z.string().max(500).optional(),
 });
 
 export async function POST(request: Request): Promise<Response> {
@@ -16,10 +18,14 @@ export async function POST(request: Request): Promise<Response> {
 
   const parsed = recognizeSchema.safeParse(await request.json());
   if (!parsed.success) {
-    return jsonError("请输入食物描述", 400);
+    return jsonError("参数无效", 400);
   }
 
-  // Try user's AI config first
+  if (!parsed.data.imageBase64 && !parsed.data.description) {
+    return jsonError("请提供图片或文字描述", 400);
+  }
+
+  // Get user's AI config
   const userConfig = await db.query.userAiConfigs.findFirst({
     where: eq(userAiConfigs.userId, userId),
   });
@@ -33,7 +39,14 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
-    const result = await recognizeFood(parsed.data.description, effectiveConfig);
+    const result = await recognizeFood(
+      {
+        imageBase64: parsed.data.imageBase64,
+        mimeType: parsed.data.mimeType,
+        description: parsed.data.description,
+      },
+      effectiveConfig,
+    );
     return Response.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : "AI 识别失败，请重试";

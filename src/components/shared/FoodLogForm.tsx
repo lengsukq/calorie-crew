@@ -1,114 +1,164 @@
 "use client";
 
-import { useRef, type FormEvent } from "react";
+import { useState } from "react";
 import { mealTypes } from "@/lib/db/schema";
 import { MEAL_LABELS } from "@/shared/constants";
-import { AiFoodRecognizer } from "@/components/shared/AiFoodRecognizer";
+import { AiFoodImageUpload } from "@/components/shared/AiFoodImageUpload";
+import { FoodSearch } from "@/components/shared/FoodSearch";
+import { FoodItemList, type SelectedFood } from "@/components/shared/FoodItemList";
 import type { FoodLogFormData } from "@/shared/types";
+import type { FoodItem } from "@/hooks/useFoodSearch";
 import type { RecognizedFood } from "@/lib/services/food-recognize.service";
 
 interface FoodLogFormProps {
-  onSubmit: (data: FoodLogFormData) => Promise<void>;
+  onSubmit: (items: FoodLogFormData[]) => Promise<void>;
   onCancel?: () => void;
   submitLabel?: string;
-  showAi?: boolean;
 }
 
-export function FoodLogForm({ onSubmit, onCancel, submitLabel = "保存记录", showAi = true }: FoodLogFormProps) {
-  const foodNameRef = useRef<HTMLInputElement>(null);
-  const servingRef = useRef<HTMLInputElement>(null);
-  const caloriesRef = useRef<HTMLInputElement>(null);
-  const proteinRef = useRef<HTMLInputElement>(null);
-  const carbsRef = useRef<HTMLInputElement>(null);
-  const fatRef = useRef<HTMLInputElement>(null);
+let tempIdCounter = 0;
+function nextTempId(): string {
+  return `temp_${Date.now()}_${++tempIdCounter}`;
+}
 
-  function handleAiUse(food: RecognizedFood) {
-    if (foodNameRef.current) foodNameRef.current.value = food.foodName;
-    if (servingRef.current) servingRef.current.value = food.servingDescription;
-    if (caloriesRef.current) caloriesRef.current.value = String(food.calories);
-    if (proteinRef.current) proteinRef.current.value = String(food.proteinG);
-    if (carbsRef.current) carbsRef.current.value = String(food.carbsG);
-    if (fatRef.current) fatRef.current.value = String(food.fatG);
+function recognizeToFormData(food: RecognizedFood): FoodLogFormData {
+  return {
+    mealType: "breakfast",
+    foodName: food.foodName,
+    servingDescription: food.servingDescription,
+    calories: food.calories,
+    proteinG: food.proteinG,
+    carbsG: food.carbsG,
+    fatG: food.fatG,
+  };
+}
+
+function foodItemToFormData(food: FoodItem): FoodLogFormData {
+  return {
+    mealType: "breakfast",
+    foodName: food.name,
+    servingDescription: food.servingSize,
+    calories: food.calories,
+    proteinG: food.proteinG,
+    carbsG: food.carbsG,
+    fatG: food.fatG,
+  };
+}
+
+export function FoodLogForm({ onSubmit, onCancel, submitLabel = "批量保存" }: FoodLogFormProps) {
+  const [mealType, setMealType] = useState<string>("breakfast");
+  const [items, setItems] = useState<SelectedFood[]>([]);
+  const [saving, setSaving] = useState(false);
+
+  function addItem(formData: FoodLogFormData) {
+    setItems((prev) => [
+      ...prev,
+      { ...formData, mealType: mealType as FoodLogFormData["mealType"], tempId: nextTempId() },
+    ]);
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
+  function removeItem(tempId: string) {
+    setItems((prev) => prev.filter((i) => i.tempId !== tempId));
+  }
 
-    const data: FoodLogFormData = {
-      mealType: form.get("mealType") as FoodLogFormData["mealType"],
-      foodName: form.get("foodName") as string,
-      servingDescription: (form.get("servingDescription") as string) ?? "",
-      calories: Number(form.get("calories")),
-      proteinG: Number(form.get("proteinG")) || 0,
-      carbsG: Number(form.get("carbsG")) || 0,
-      fatG: Number(form.get("fatG")) || 0,
-    };
+  function updateServing(tempId: string, serving: string) {
+    setItems((prev) =>
+      prev.map((i) =>
+        i.tempId === tempId ? { ...i, servingDescription: serving } : i,
+      ),
+    );
+  }
 
-    await onSubmit(data);
-    (event.target as HTMLFormElement).reset();
+  function handleAiUse(food: RecognizedFood) {
+    addItem(recognizeToFormData(food));
+  }
+
+  function handleFoodSearchSelect(food: FoodItem) {
+    addItem(foodItemToFormData(food));
+  }
+
+  async function handleSave() {
+    if (items.length === 0) return;
+    setSaving(true);
+    try {
+      // Remove tempId before submitting
+      const data = items.map(({ tempId: _, ...rest }) => rest);
+      await onSubmit(data);
+      setItems([]);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <div className="stack">
-      {/* AI Recognition section */}
-      {showAi && <AiFoodRecognizer onUseFood={handleAiUse} />}
-
-      {/* Glass divider */}
-      {showAi && <div className="glass-divider !my-0" />}
-
-      {/* Manual form */}
-      <form className="stack" onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <label className="stack gap-1.5">
-            <span className="glass-label">餐次</span>
-            <select name="mealType" defaultValue="" required className="glass-select">
-              <option value="" disabled>选择餐次</option>
-              {mealTypes.map((type) => (
-                <option key={type} value={type}>{MEAL_LABELS[type]}</option>
-              ))}
-            </select>
-          </label>
-          <label className="stack gap-1.5">
-            <span className="glass-label">食物</span>
-            <input name="foodName" ref={foodNameRef} required className="glass-input" placeholder="例如：米饭" />
-          </label>
-          <label className="stack gap-1.5">
-            <span className="glass-label">份量</span>
-            <input name="servingDescription" ref={servingRef} className="glass-input" placeholder="1 碗" />
-          </label>
-          <label className="stack gap-1.5">
-            <span className="glass-label">热量 (kcal)</span>
-            <input name="calories" ref={caloriesRef} type="number" min="0" required className="glass-input" placeholder="200" />
-          </label>
-          <label className="stack gap-1.5">
-            <span className="glass-label">蛋白质 (g)</span>
-            <input name="proteinG" ref={proteinRef} type="number" min="0" step="0.01" defaultValue="0" className="glass-input" />
-          </label>
-          <label className="stack gap-1.5">
-            <span className="glass-label">碳水 (g)</span>
-            <input name="carbsG" ref={carbsRef} type="number" min="0" step="0.01" defaultValue="0" className="glass-input" />
-          </label>
-          <label className="stack gap-1.5">
-            <span className="glass-label">脂肪 (g)</span>
-            <input name="fatG" ref={fatRef} type="number" min="0" step="0.01" defaultValue="0" className="glass-input" />
-          </label>
-        </div>
-
-        <div className="mt-2 grid grid-cols-2 gap-3">
-          {onCancel && (
-            <button type="button" onClick={onCancel} className="glass-button">
-              取消
+      {/* Meal type selector */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">
+          餐次:
+        </span>
+        <div className="flex flex-wrap gap-1.5">
+          {mealTypes.map((type) => (
+            <button
+              key={type}
+              onClick={() => setMealType(type)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                mealType === type
+                  ? "bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-sm"
+                  : "bg-white/50 text-slate-500 hover:bg-white/80"
+              }`}
+            >
+              {MEAL_LABELS[type]}
             </button>
-          )}
-          <button
-            type="submit"
-            className={`glass-button-primary ${onCancel ? "" : "col-span-2"}`}
-          >
-            {submitLabel}
-          </button>
+          ))}
         </div>
-      </form>
+      </div>
+
+      {/* AI image upload */}
+      <AiFoodImageUpload onRecognized={handleAiUse} />
+
+      {/* Food database search */}
+      <div className="relative">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+            或从食物库搜索
+          </span>
+        </div>
+        <FoodSearch onSelect={handleFoodSearchSelect} />
+      </div>
+
+      {/* Divider */}
+      <div className="glass-divider !my-0" />
+
+      {/* Selected items */}
+      <FoodItemList
+        items={items}
+        onRemove={removeItem}
+        onUpdateServing={updateServing}
+      />
+
+      {/* Action buttons */}
+      <div className="grid grid-cols-2 gap-3">
+        {onCancel && (
+          <button type="button" onClick={onCancel} className="glass-button">
+            取消
+          </button>
+        )}
+        <button
+          onClick={handleSave}
+          disabled={items.length === 0 || saving}
+          className={`glass-button-primary ${onCancel ? "" : "col-span-2"}`}
+        >
+          {saving ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="y2k-spinner !h-4 !w-4" />
+              保存中...
+            </span>
+          ) : (
+            `${submitLabel} (${items.length})`
+          )}
+        </button>
+      </div>
     </div>
   );
 }
