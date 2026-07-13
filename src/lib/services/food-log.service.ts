@@ -4,9 +4,6 @@ import { foodLogs, type MealType } from "@/lib/db/schema";
 import { recalculateDailySummary } from "@/lib/services/daily-summary.service";
 import { selectFoodLogsToCopy } from "@/lib/services/food-log.duplicate-key";
 
-export type { FoodLogDuplicateKeyFields } from "@/lib/services/food-log.duplicate-key";
-export { buildFoodDuplicateKey, selectFoodLogsToCopy } from "@/lib/services/food-log.duplicate-key";
-
 export interface FoodLogWriteInput {
   logDate: string;
   mealType: MealType;

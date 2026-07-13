@@ -1,11 +1,22 @@
 import { getSessionUserId } from "@/lib/auth/session";
 import { jsonError } from "@/lib/http";
+import { isAdminUser } from "@/lib/services/auth.service";
 import { dateRangeQuerySchema } from "@/lib/validation/health-log";
 
 export async function requireSessionUserId(): Promise<string | Response> {
   const userId = await getSessionUserId();
   if (!userId) return jsonError("未登录", 401);
   return userId;
+}
+
+export async function requireAdminUserId(): Promise<string | Response> {
+  const userIdOrError = await requireSessionUserId();
+  if (userIdOrError instanceof Response) return userIdOrError;
+
+  const isAdmin = await isAdminUser(userIdOrError);
+  if (!isAdmin) return jsonError("无管理员权限", 403);
+
+  return userIdOrError;
 }
 
 export async function parseJsonBody(request: Request): Promise<unknown> {

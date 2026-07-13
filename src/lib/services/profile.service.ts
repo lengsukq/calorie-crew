@@ -154,6 +154,18 @@ export async function updateProfile(
   return getProfile(userId);
 }
 
+export async function updateUserTarget(
+  userId: string,
+  data: { calorieTarget?: number; weightTargetKg?: number | null },
+): Promise<void> {
+  await db.update(users).set({
+    ...(data.calorieTarget !== undefined ? { calorieTarget: data.calorieTarget } : {}),
+    ...(data.weightTargetKg !== undefined
+      ? { weightTargetKg: data.weightTargetKg === null ? null : data.weightTargetKg.toFixed(2) }
+      : {}),
+  }).where(eq(users.id, userId));
+}
+
 export async function getProfilePreferences(userId: string): Promise<{
   aiAdviceEnabled: boolean;
   aiAdviceFrequency: AiAdviceFrequency;

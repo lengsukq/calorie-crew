@@ -1,3 +1,4 @@
+import { extractJson } from "@/lib/utils/json";
 import type { AiAdviceSuggestion } from "@/lib/db/schema";
 
 export interface SanitizedAdvicePayload {
@@ -32,14 +33,6 @@ export function fallbackAdvicePayload(message = "建议暂时不可用，请稍�
 
 export function containsUnsafeContent(text: string): boolean {
   return UNSAFE_CONTENT_PATTERNS.some((pattern) => text.includes(pattern));
-}
-
-export function extractJson(text: string): string | null {
-  const blockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (blockMatch) return blockMatch[1].trim();
-
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  return jsonMatch ? jsonMatch[0] : null;
 }
 
 function normalizePriority(value: unknown): AiAdviceSuggestion["priority"] {

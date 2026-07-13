@@ -1,3 +1,4 @@
+import { extractJson } from "@/lib/utils/json";
 import { env } from "@/lib/env";
 
 export interface RecognizedFood {
@@ -143,27 +144,14 @@ export async function recognizeFood(
     throw new Error("AI 返回格式异常，无法解析");
   }
 
-  const parsed = JSON.parse(jsonStr) as RecognizedResponse;
-
-  if (!parsed.foods || !Array.isArray(parsed.foods) || parsed.foods.length === 0) {
+  // Parse unknown JSON — narrow from unknown through validated transform
+  const rawResult = JSON.parse(jsonStr) as { foods?: unknown[] };
+  if (!rawResult.foods || !Array.isArray(rawResult.foods) || rawResult.foods.length === 0) {
     throw new Error("AI 未识别出食物，请换一张图片");
   }
 
-  parsed.foods = (parsed.foods as unknown as Record<string, unknown>[]).map(sanitizeFood);
-
-  return parsed;
-}
-
-function extractJson(text: string): string | null {
-  const blockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (blockMatch) {
-    return blockMatch[1].trim();
-  }
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    return jsonMatch[0];
-  }
-  return null;
+  const foods = rawResult.foods.map((item) => sanitizeFood(item as Record<string, unknown>));
+  return { foods };
 }
 
 function sanitizeFood(item: Record<string, unknown>): RecognizedFood {

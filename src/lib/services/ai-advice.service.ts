@@ -100,7 +100,10 @@ async function requestAiAdvice(systemPrompt: string, userContext: string, taskPr
     where: eq(userAiConfigs.userId, userId),
   });
   const effectiveConfig = getEffectiveConfig(userConfig ?? null);
-  if (!effectiveConfig) return null;
+  if (!effectiveConfig) {
+    console.error("[ai-advice] AI 配置缺失：用户未配置 API 且系统环境变量未设置", { userId });
+    return null;
+  }
 
   const response = await fetch(effectiveConfig.baseUrl, {
     method: "POST",
@@ -119,10 +122,23 @@ async function requestAiAdvice(systemPrompt: string, userContext: string, taskPr
     }),
   });
 
-  if (!response.ok) return null;
+  if (!response.ok) {
+    console.error("[ai-advice] AI 请求失败", { userId, status: response.status, statusText: response.statusText });
+    return null;
+  }
 
-  const result = (await response.json().catch(() => null)) as { choices?: Array<{ message?: { content?: string } }> } | null;
-  return result?.choices?.[0]?.message?.content ?? null;
+  const result = (await response.json().catch(() => {
+    console.error("[ai-advice] AI 响应解析失败", { userId });
+    return null;
+  })) as { choices?: Array<{ message?: { content?: string } }> } | null;
+
+  const content = result?.choices?.[0]?.message?.content;
+  if (!content) {
+    console.error("[ai-advice] AI 返回内容为空", { userId });
+    return null;
+  }
+
+  return content;
 }
 
 export async function getAdvices(
@@ -213,17 +229,19 @@ export async function dismissAdvice(userId: string, id: string): Promise<boolean
 export async function reactivateAdvice(userId: string, id: string): Promise<AiAdviceData | null> {
   const existing = await db.query.aiAdvices.findFirst({
     where: and(eq(aiAdvices.userId, userId), eq(aiAdvices.id, id)),
+    columns: { type: true },
   });
 
   if (!existing) return null;
 
   const newExpiresAt = getAdviceExpiration(existing.type);
-  await db.update(aiAdvices).set({ expiresAt: newExpiresAt, dismissed: false, dismissedAt: null })
-    .where(and(eq(aiAdvices.userId, userId), eq(aiAdvices.id, id)));
-
-  const reactivated = await db.query.aiAdvices.findFirst({
-    where: and(eq(aiAdvices.userId, userId), eq(aiAdvices.id, id)),
-  });
+  const [reactivated] = await db.update(aiAdvices).set({
+    expiresAt: newExpiresAt,
+    dismissed: false,
+    dismissedAt: null,
+  })
+    .where(and(eq(aiAdvices.userId, userId), eq(aiAdvices.id, id)))
+    .returning();
 
   return reactivated ? mapAdviceRow(reactivated) : null;
 }
