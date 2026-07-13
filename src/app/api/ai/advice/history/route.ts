@@ -1,11 +1,11 @@
-import { getSessionUserId } from "@/lib/auth/session";
+import { requireSessionUserId, withRouteError } from "@/lib/api-route";
 import { jsonError } from "@/lib/http";
 import { getAdvices } from "@/lib/services/ai-advice.service";
 import { adviceTypeQuerySchema } from "@/lib/validation/profile";
 
 export async function GET(request: Request): Promise<Response> {
-  const userId = await getSessionUserId();
-  if (!userId) return jsonError("未登录", 401);
+  const userIdOrError = await requireSessionUserId();
+  if (userIdOrError instanceof Response) return userIdOrError;
 
   const searchParams = new URL(request.url).searchParams;
   const parsed = adviceTypeQuerySchema.safeParse({
@@ -14,10 +14,8 @@ export async function GET(request: Request): Promise<Response> {
   });
   if (!parsed.success) return jsonError("建议查询参数不正确", 400);
 
-  try {
-    const advices = await getAdvices(userId, parsed.data.type, parsed.data.range, { includeHistory: true, includeDismissed: true });
+  return withRouteError(async () => {
+    const advices = await getAdvices(userIdOrError, parsed.data.type, parsed.data.range, { includeHistory: true, includeDismissed: true });
     return Response.json({ advices });
-  } catch {
-    return jsonError("获取 AI 建议历史失败", 500);
-  }
+  }, "获取 AI 建议历史失败");
 }

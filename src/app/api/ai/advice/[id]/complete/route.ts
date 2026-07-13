@@ -1,18 +1,16 @@
-import { getSessionUserId } from "@/lib/auth/session";
+import { requireSessionUserId, withRouteError } from "@/lib/api-route";
 import { jsonError } from "@/lib/http";
 import { completeAdvice } from "@/lib/services/ai-advice.service";
 
 export async function POST(_: Request, context: { params: Promise<{ id: string }> }): Promise<Response> {
-  const userId = await getSessionUserId();
-  if (!userId) return jsonError("未登录", 401);
+  const userIdOrError = await requireSessionUserId();
+  if (userIdOrError instanceof Response) return userIdOrError;
 
   const { id } = await context.params;
 
-  try {
-    const updated = await completeAdvice(userId, id);
+  return withRouteError(async () => {
+    const updated = await completeAdvice(userIdOrError, id);
     if (!updated) return jsonError("AI 建议不存在", 404);
     return Response.json({ success: true });
-  } catch {
-    return jsonError("标记完成失败", 500);
-  }
+  }, "标记完成失败");
 }
