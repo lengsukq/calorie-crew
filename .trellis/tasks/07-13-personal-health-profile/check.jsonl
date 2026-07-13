@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "验证 users 表扩展或 profile 表迁移、约束与索引"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "验证 profile/advice API 错误码与校验一致性"}
+{"file": ".trellis/spec/backend/auth-guidelines.md", "reason": "验证档案与建议接口的用户隔离"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "验证响应式、横向溢出、类型安全与测试"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "验证档案→指标→AI 建议的数据流闭环"}
+{"file": "src/lib/db/schema.ts", "reason": "验证新增字段与现有 schema 的一致性"}
+{"file": "src/app/api/ai/recognize/route.ts", "reason": "验证 AI 服务调用与降级逻辑一致"}
+{"file": "src/app/api/users/target/route.ts", "reason": "验证 profile 更新接口遵循现有用户写入规范"}

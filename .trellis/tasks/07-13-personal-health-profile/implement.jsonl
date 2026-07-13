@@ -1,0 +1,15 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "后端开发规范入口，包含数据库、错误处理、质量规范"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "用户表扩展或新增 profile 表时必须遵循的迁移与索引规范"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "profile/advice 新 API 的错误响应与校验规范"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "后端 Service 层与 API 质量约束"}
+{"file": ".trellis/spec/backend/auth-guidelines.md", "reason": "档案与建议接口的用户会话校验规范"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "前端开发规范入口，包含组件、Hook、状态管理"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Profile/Today/Progress 新增组件的结构约束"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "新增 useProfile / useAiAdvice 等 Hook 的约定"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Server Component 与客户端表单状态边界"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "响应式、类型安全、测试覆盖要求"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "个人档案→指标计算→AI 建议的数据流契约"}
+{"file": "src/lib/db/schema.ts", "reason": "当前 users / user_ai_configs 表结构，扩展档案字段的依据"}
+{"file": "src/lib/services/daily-summary.service.ts", "reason": "现有每日汇总逻辑，后续 AI 建议需读取汇总数据"}
+{"file": "src/app/api/users/target/route.ts", "reason": "现有用户目标写入接口，可复用为 profile 更新参考"}
+{"file": "src/app/api/ai/recognize/route.ts", "reason": "现有 AI 配置读取与调用模式，建议服务可复用"}

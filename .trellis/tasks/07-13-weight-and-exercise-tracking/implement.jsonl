@@ -1,0 +1,13 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "后端开发规范入口，包含数据库规范、错误处理、质量规范"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "数据库ORM模式、查询、迁移规范，新增表时必须遵循"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "API错误处理规范，统一错误响应格式"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "后端代码质量规范"}
+{"file": ".trellis/spec/backend/auth-guidelines.md", "reason": "鉴权规范，确保新API端点通过会话校验"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "前端开发规范入口，包含组件、Hook、状态管理规范"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "前端组件规范，新增页面的组件结构"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "自定义Hook约定，新增useWeightLogs/useExerciseLogs等"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "状态管理规范，Server Component与本地state边界"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端质量检查，包含响应式、类型安全、测试"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "跨层思考指南，数据模型到API到前端的契约设计"}
+{"file": "src/lib/db/schema.ts", "reason": "当前数据库schema，新增表需要参考现有模式"}
+{"file": "src/lib/services/daily-summary.service.ts", "reason": "当前daily_summary重算逻辑，需要扩展以纳入运动消耗"}

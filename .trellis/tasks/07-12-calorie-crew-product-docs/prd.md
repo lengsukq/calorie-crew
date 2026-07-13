@@ -17,10 +17,11 @@
 * 仓库已有架构文档明确划分：第一阶段手动记录，第二阶段 AI 拍照识别，第三阶段历史快照与趋势，第四阶段小队功能。
 * 第一阶段交付物包含产品文档、可运行页面/API 骨架和数据库迁移文件。
 * 当前迁移文件已生成，但尚未执行到 Neon 数据库。
+* 本轮补齐了编辑记录、日期校验/本地日期工具、批量同日约束、保存失败保留输入、基础错误状态和关键测试。
 
 ## Open Questions
 
-* [ ] 用户填写 `.env.local` 后，确认是否执行 `npm run db:push` 到 Neon。
+* [x] 用户已确认 `.env.local`，并已成功执行 `npm run db:push` 到 Neon。
 
 ## Requirements (evolving)
 
@@ -43,9 +44,9 @@
 ### Included
 
 * 手动新增一条饮食记录：餐次、食物名称、份量、热量、蛋白质、碳水、脂肪。
-* 查看今日的早餐、午餐、晚餐、零食四个餐次及各自记录；日期切换列入下一步。
+* 查看今日的早餐、午餐、晚餐、零食四个餐次及各自记录；Diary 页面支持日期切换。
 * 展示每日总热量、剩余热量和三大营养素汇总。
-* 删除饮食记录，并在每次新增/删除后重算每日汇总；编辑接口列入下一步补齐项。
+* 新增、编辑和删除饮食记录，并在每次变更后重算每日汇总。
 * 使用 `food_logs` 作为事实来源，使用 `daily_summaries` 作为可重算的实时汇总。
 
 ### User flow
@@ -53,7 +54,7 @@
 1. 用户打开今日 Dashboard，看到四餐为空状态和每日汇总。
 2. 用户选择餐次并填写食物与营养数据，提交后看到记录出现在对应餐次。
 3. Dashboard 的每日总量、剩余热量和营养素同步更新。
-4. 用户删除记录后，页面显示更新后的结果；保存失败时展示可理解的错误。
+4. 用户编辑或删除记录后，页面显示更新后的结果；保存失败时展示可理解的错误并保留输入。
 
 ### Explicitly out of Phase 1
 
@@ -76,7 +77,8 @@
 3. ✅ 实现登录、注册、邀请码、手动新增和删除记录。
 4. ✅ 实现 `recalculateDailySummary(userId, date)`，写入/删除后幂等重算。
 5. ✅ 实现今日 Dashboard 和响应式布局。
-6. ⏳ 补齐编辑接口、日期切换、自动化测试和真实数据库迁移。
+6. ✅ 补齐编辑接口、日期切换、日期校验和自动化测试。
+7. ✅ 用户确认 `.env.local` 后，已执行真实数据库同步。
 
 ## Technical contract for Phase 2
 
@@ -86,6 +88,8 @@
 * 热量使用整数 kcal；蛋白质、碳水、脂肪使用克数并保留合理精度。
 * 所有表单和 API 输入都必须做 schema 校验；当前错误响应为 `{ error: string }`。
 * Dashboard 和登录/注册页面采用响应式布局：手机单列、平板双列、PC 多列；不依赖固定宽度或横向滚动。
+* 本地业务日期统一使用 `src/lib/date.ts`，不得用 UTC `toISOString().slice(0, 10)` 生成业务日期。
+* 批量新增接口仅接受同一天的记录；跨日期批量请求返回 400。
 
 ## Acceptance Criteria (evolving)
 
@@ -97,7 +101,8 @@
 * [x] 用户确认需要登录；首个用户为管理员，后续用户通过可追溯邀请码加入。
 * [x] 用户确认本地数据库通过 `DATABASE_URL` 环境变量接入。
 * [x] 代码规范已根据当前实现同步到 `.trellis/spec/`。
-* [ ] 编辑记录、日期切换、自动化测试和 Neon 迁移已完成。
+* [x] 编辑记录、日期切换和自动化测试已完成。
+* [x] Neon 数据库同步已在用户确认 `.env.local` 后执行。
 
 ## Definition of Done (team quality bar)
 
@@ -117,3 +122,7 @@
 * 当前仓库基线：`fbde303 Initial commit: project scaffolding`。
 * 相关规范入口：`.trellis/spec/backend/index.md`、`.trellis/spec/frontend/index.md`、`.trellis/spec/guides/index.md`。
 * 当前工作树包含首版代码、迁移、环境变量示例和同步后的 Trellis 规范文档。
+* 本轮未修改数据库 schema，因此未生成新的 Drizzle 迁移文件。
+* `drizzle.config.ts` 已显式加载 `.env.local`，确保 Drizzle Kit 本地命令可以读取 `DATABASE_URL`。
+* 用户确认 `.env.local` 后，`npm run db:push` 已成功执行到 Neon。
+* 本轮质量检查：`npm run typecheck` 通过；`npm run lint` 通过但存在 2 个既有 warning；`npm test` 通过 7 个测试文件、31 个测试；`npm run build` 编译通过但在 page data 收集阶段失败，Next 报告 `/login`、`/api/auth/logout`、`/api/auth/me` PageNotFoundError，需后续单独排查构建路由产物问题。

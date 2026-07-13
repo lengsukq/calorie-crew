@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "迁移文件检查、表约束、索引、upsert模式验证"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "验证错误响应格式、状态码、校验矩阵"}
+{"file": ".trellis/spec/backend/auth-guidelines.md", "reason": "验证新API端点会话校验和用户隔离"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "验证响应式布局、横向溢出、类型安全、测试覆盖"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "验证数据流从DB到API到前端的一致性"}
+{"file": "src/lib/services/daily-summary.service.ts", "reason": "验证daily_summary聚合逻辑正确纳入exercise_logs"}
+{"file": "src/lib/db/schema.ts", "reason": "验证新增表与现有schema的一致性"}
