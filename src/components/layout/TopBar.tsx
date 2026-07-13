@@ -1,47 +1,77 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useSelectedLayoutSegment } from "next/navigation";
+import { LogOut, User as UserIcon } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { TAB_TITLES } from "@/components/layout/nav-items";
+import { logout } from "@/lib/api/auth";
 
-const TAB_TITLES: Record<string, string> = {
-  today: "今日",
-  diary: "饮食日记",
-  progress: "进度",
-  profile: "我的",
-};
-
-function formatDateString(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  const day = now.getDate();
-  const weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
-  const weekday = weekdays[now.getDay()];
-  return `${year}年${month}月${day}日 ${weekday}`;
+interface TopBarProps {
+  email?: string;
+  role?: string;
 }
 
-export function TopBar() {
+export function TopBar({ email, role }: TopBarProps) {
   const segment = useSelectedLayoutSegment();
   const title = TAB_TITLES[segment ?? "today"] ?? "CalorieCrew";
-  const isToday = segment === "today" || !segment;
-  const dateString = formatDateString();
+  const router = useRouter();
+
+  async function handleLogout() {
+    try {
+      await logout();
+    } finally {
+      router.push("/login");
+    }
+  }
+
+  const initial = email ? email.charAt(0).toUpperCase() : "?";
 
   return (
-    <header className="top-bar">
-      <div className="mx-auto flex h-full max-w-5xl items-center justify-between px-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-bold text-slate-800">{title}</h1>
-          {isToday && (
-            <span className="hidden text-xs text-slate-400 sm:inline">
-              {dateString}
-            </span>
-          )}
-        </div>
-        {isToday && (
-          <span className="text-xs text-slate-400 sm:hidden">
-            {dateString}
-          </span>
-        )}
-      </div>
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 px-4 backdrop-blur lg:px-8">
+      <h1 className="text-lg font-semibold text-foreground">{title}</h1>
+
+      {email && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+              aria-label="用户菜单"
+            >
+              {initial}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">{email}</p>
+                {role && (
+                  <p className="text-xs text-muted-foreground">
+                    {role === "admin" ? "管理员" : "会员"}
+                  </p>
+                )}
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => router.push("/profile")}>
+              <UserIcon className="h-4 w-4" />
+              <span>个人资料</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+              <LogOut className="h-4 w-4" />
+              <span>退出登录</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </header>
   );
 }
