@@ -1,7 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { completeAiAdvice, deleteAiAdvice, dismissAiAdvice, feedbackAiAdvice, fetchAiAdvices, generateAiAdvice } from "@/lib/api/ai-advice";
+import {
+  completeAiAdvice,
+  deleteAiAdvice,
+  dismissAiAdvice,
+  feedbackAiAdvice,
+  fetchAiAdvices,
+  generateAiAdvice,
+  reactivateAiAdvice,
+} from "@/lib/api/ai-advice";
 import type { AiAdviceType } from "@/lib/db/schema";
 import type { AiAdviceData } from "@/shared/types";
 
@@ -24,6 +32,18 @@ interface UseAiAdviceReturn {
   reload: () => Promise<void>;
   generate: (force?: boolean) => Promise<AiAdviceData>;
   remove: (id: string) => Promise<void>;
+  complete: (id: string) => Promise<void>;
+  dismiss: (id: string) => Promise<void>;
+  feedback: (id: string, value: "helpful" | "not_helpful") => Promise<void>;
+  reactivate: (id: string) => Promise<void>;
+}
+
+function toErrorMessage(error: unknown, fallbackMessage: string): string {
+  return error instanceof Error ? error.message : fallbackMessage;
+}
+
+function replaceAdvice(advices: AiAdviceData[], nextAdvice: AiAdviceData): AiAdviceData[] {
+  return [nextAdvice, ...advices.filter((advice) => advice.id !== nextAdvice.id)];
 }
 
 export function useAiAdvice({
@@ -42,9 +62,8 @@ export function useAiAdvice({
     try {
       const response = await fetchAiAdvices(type, range);
       setAdvices(response.advices);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "加载 AI 建议失败";
-      setError(message);
+    } catch (loadError) {
+      setError(toErrorMessage(loadError, "加载 AI 建议失败"));
       setAdvices([]);
     } finally {
       setLoading(false);
@@ -57,27 +76,96 @@ export function useAiAdvice({
     }
   }, [enabled, load]);
 
-  const generate = useCallback(async (force = false) => {
-    if (!type) throw new Error("缺少建议类型");
+  const generate = useCallback(
+    async (force = false) => {
+      if (!type) throw new Error("缺少建议类型");
 
-    setGenerating(true);
-    setError(null);
-    try {
-      const advice = await generateAiAdvice(type, force);
-      setAdvices((currentAdvices) => [advice, ...currentAdvices.filter((item) => item.id !== advice.id)]);
-      return advice;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "生成 AI 建议失败";
-      setError(message);
-      throw new Error(message);
-    } finally {
-      setGenerating(false);
-    }
-  }, [type]);
+      setGenerating(true);
+      setError(null);
+      try {
+        const advice = await generateAiAdvice(type, force);
+        setAdvices((currentAdvices) => replaceAdvice(currentAdvices, advice));
+        return advice;
+      } catch (generateError) {
+        const message = toErrorMessage(generateError, "生成 AI 建议失败");
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setGenerating(false);
+      }
+    },
+    [type],
+  );
 
   const remove = useCallback(async (id: string) => {
-    await deleteAiAdvice(id);
-    setAdvices((currentAdvices) => currentAdvices.filter((advice) => advice.id !== id));
+    try {
+      await deleteAiAdvice(id);
+      setAdvices((currentAdvices) => currentAdvices.filter((advice) => advice.id !== id));
+    } catch (removeError) {
+      throw new Error(toErrorMessage(removeError, "删除 AI 建议失败"));
+    }
+  }, []);
+
+  const complete = useCallback(async (id: string) => {
+    try {
+      await completeAiAdvice(id);
+      setAdvices((currentAdvices) =>
+        currentAdvices.map((advice) =>
+          advice.id === id
+            ? { ...advice, completedAt: advice.completedAt ?? new Date().toISOString() }
+            : advice,
+        ),
+      );
+    } catch (completeError) {
+      throw new Error(toErrorMessage(completeError, "标记完成失败"));
+    }
+  }, []);
+
+  const dismiss = useCallback(async (id: string) => {
+    try {
+      await dismissAiAdvice(id);
+      setAdvices((currentAdvices) =>
+        currentAdvices.map((advice) =>
+          advice.id === id
+            ? {
+                ...advice,
+                dismissed: true,
+                dismissedAt: advice.dismissedAt ?? new Date().toISOString(),
+              }
+            : advice,
+        ),
+      );
+    } catch (dismissError) {
+      throw new Error(toErrorMessage(dismissError, "屏蔽失败"));
+    }
+  }, []);
+
+  const feedback = useCallback(async (id: string, value: "helpful" | "not_helpful") => {
+    try {
+      await feedbackAiAdvice(id, value);
+      setAdvices((currentAdvices) =>
+        currentAdvices.map((advice) =>
+          advice.id === id
+            ? {
+                ...advice,
+                feedback: value,
+                feedbackAt: new Date().toISOString(),
+              }
+            : advice,
+        ),
+      );
+    } catch (feedbackError) {
+      throw new Error(toErrorMessage(feedbackError, "反馈失败"));
+    }
+  }, []);
+
+  const reactivate = useCallback(async (id: string) => {
+    try {
+      const response = await reactivateAiAdvice(id);
+      setAdvices((currentAdvices) => replaceAdvice(currentAdvices, response.advice));
+    } catch (reactivateError) {
+      throw new Error(toErrorMessage(reactivateError, "重新激活失败"));
+    }
   }, []);
 
   return {
@@ -91,5 +179,9 @@ export function useAiAdvice({
     reload: load,
     generate,
     remove,
+    complete,
+    dismiss,
+    feedback,
+    reactivate,
   };
 }

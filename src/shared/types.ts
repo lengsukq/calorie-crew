@@ -107,9 +107,16 @@ export interface HealthMetricsData {
   bmiCategoryColor: "blue" | "green" | "orange" | "red" | null;
 }
 
+export interface ProfileCompleteness {
+  completedFields: string[];
+  missingFields: string[];
+  percentage: number;
+}
+
 export interface ProfileResponseData {
   profile: UserProfileData;
   metrics: HealthMetricsData;
+  profileCompleteness: ProfileCompleteness;
 }
 
 export interface UserProfileFormData {

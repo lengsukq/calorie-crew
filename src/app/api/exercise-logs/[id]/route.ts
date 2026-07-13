@@ -1,18 +1,16 @@
-import { getSessionUserId } from "@/lib/auth/session";
+import { requireSessionUserId, withRouteError } from "@/lib/api-route";
 import { jsonError } from "@/lib/http";
 import { deleteExerciseLog } from "@/lib/services/exercise-log.service";
 
 export async function DELETE(_: Request, context: { params: Promise<{ id: string }> }): Promise<Response> {
-  const userId = await getSessionUserId();
-  if (!userId) return jsonError("未登录", 401);
+  const userIdOrError = await requireSessionUserId();
+  if (userIdOrError instanceof Response) return userIdOrError;
 
   const { id } = await context.params;
 
-  try {
-    const deletedLog = await deleteExerciseLog(userId, id);
+  return withRouteError(async () => {
+    const deletedLog = await deleteExerciseLog(userIdOrError, id);
     if (!deletedLog) return jsonError("运动记录不存在", 404);
     return Response.json({ ok: true });
-  } catch {
-    return jsonError("删除运动记录失败", 500);
-  }
+  }, "删除运动记录失败");
 }

@@ -1,7 +1,13 @@
 import { apiFetch } from "@/lib/api/client";
 import type {
+  BodyMeasurementEntry,
+  BodyMeasurementFormData,
   ExerciseLogEntry,
   ExerciseLogFormData,
+  SleepLogEntry,
+  SleepLogFormData,
+  WaterLogEntry,
+  WaterLogFormData,
   WeightLogEntry,
   WeightLogFormData,
 } from "@/shared/types";
@@ -22,58 +28,28 @@ interface ExerciseLogResponse {
   log: ExerciseLogEntry;
 }
 
-interface WaterLogEntry {
-  id: string;
-  logDate: string;
-  amountMl: number;
-  note: string | null;
-  createdAt: string;
+interface WaterLogsResponse {
+  logs: WaterLogEntry[];
 }
 
 interface WaterLogResponse {
   log: WaterLogEntry;
 }
 
-interface WaterLogsResponse {
-  logs: WaterLogEntry[];
-}
-
-interface SleepLogEntry {
-  id: string;
-  logDate: string;
-  sleepMinutes: number;
-  quality: number;
-  note: string | null;
-  createdAt: string;
-  updatedAt: string;
+interface SleepLogsResponse {
+  logs: SleepLogEntry[];
 }
 
 interface SleepLogResponse {
   log: SleepLogEntry;
 }
 
-interface SleepLogsResponse {
-  logs: SleepLogEntry[];
-}
-
-interface BodyMeasurementEntry {
-  id: string;
-  logDate: string;
-  chestCm: string | null;
-  waistCm: string | null;
-  hipCm: string | null;
-  armCm: string | null;
-  legCm: string | null;
-  note: string | null;
-  createdAt: string;
+interface BodyMeasurementsResponse {
+  logs: BodyMeasurementEntry[];
 }
 
 interface BodyMeasurementResponse {
   log: BodyMeasurementEntry;
-}
-
-interface BodyMeasurementsResponse {
-  logs: BodyMeasurementEntry[];
 }
 
 interface UpdateTargetResponse {
@@ -119,10 +95,10 @@ export function fetchWaterLogs(startDate: string, endDate: string): Promise<Wate
   return apiFetch<WaterLogsResponse>(`/api/water-logs?${buildRangeQuery(startDate, endDate)}`);
 }
 
-export function createWaterLog(logDate: string, amountMl: number, note?: string | null): Promise<WaterLogResponse> {
+export function createWaterLog(data: WaterLogFormData): Promise<WaterLogResponse> {
   return apiFetch<WaterLogResponse>("/api/water-logs", {
     method: "POST",
-    body: JSON.stringify({ logDate, amountMl, note }),
+    body: JSON.stringify(data),
   });
 }
 
@@ -134,10 +110,10 @@ export function fetchSleepLogs(startDate: string, endDate: string): Promise<Slee
   return apiFetch<SleepLogsResponse>(`/api/sleep-logs?${buildRangeQuery(startDate, endDate)}`);
 }
 
-export function upsertSleepLog(logDate: string, sleepMinutes: number, quality: number, note?: string | null): Promise<SleepLogResponse> {
+export function upsertSleepLog(data: SleepLogFormData): Promise<SleepLogResponse> {
   return apiFetch<SleepLogResponse>("/api/sleep-logs", {
     method: "POST",
-    body: JSON.stringify({ logDate, sleepMinutes, quality, note }),
+    body: JSON.stringify(data),
   });
 }
 
@@ -149,20 +125,10 @@ export function fetchBodyMeasurements(startDate: string, endDate: string): Promi
   return apiFetch<BodyMeasurementsResponse>(`/api/body-measurements?${buildRangeQuery(startDate, endDate)}`);
 }
 
-export function upsertBodyMeasurement(
-  logDate: string,
-  data: {
-    chestCm?: number | null;
-    waistCm?: number | null;
-    hipCm?: number | null;
-    armCm?: number | null;
-    legCm?: number | null;
-    note?: string | null;
-  },
-): Promise<BodyMeasurementResponse> {
+export function upsertBodyMeasurement(data: BodyMeasurementFormData): Promise<BodyMeasurementResponse> {
   return apiFetch<BodyMeasurementResponse>("/api/body-measurements", {
     method: "POST",
-    body: JSON.stringify({ logDate, ...data }),
+    body: JSON.stringify(data),
   });
 }
 

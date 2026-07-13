@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAiAdvice } from "@/hooks/useAiAdvice";
-import { completeAiAdvice, dismissAiAdvice, feedbackAiAdvice } from "@/lib/api/ai-advice";
 import type { AiAdviceType } from "@/lib/db/schema";
+import { runWithToast } from "@/lib/ui/with-toast-action";
 import type { AiAdviceData } from "@/shared/types";
 
 const PRIORITY_LABELS = {
@@ -38,7 +38,7 @@ export function AiAdviceCard({
   enabled = true,
   autoGenerate = false,
 }: AiAdviceCardProps) {
-  const { data: adviceData, loading, generating, error, generate, reload } = useAiAdvice({ type, enabled });
+  const { data: adviceData, loading, generating, error, generate, complete, dismiss, feedback, reload } = useAiAdvice({ type, enabled });
   const [expanded, setExpanded] = useState(false);
   const displayAdvice = adviceData.latestAdvice;
 
@@ -82,7 +82,14 @@ export function AiAdviceCard({
           <span className="y2k-spinner h-5 w-5" />
         </div>
       ) : displayAdvice ? (
-        <AdviceContent advice={displayAdvice} expanded={expanded} onToggle={() => setExpanded(!expanded)} />
+        <AdviceContent
+          advice={displayAdvice}
+          expanded={expanded}
+          onToggle={() => setExpanded(!expanded)}
+          onComplete={complete}
+          onDismiss={dismiss}
+          onFeedback={feedback}
+        />
       ) : (
         <div className="rounded-2xl bg-white/50 px-4 py-5 text-center text-sm text-slate-400">
           {error ?? emptyText}
@@ -92,47 +99,42 @@ export function AiAdviceCard({
   );
 }
 
-function AdviceContent({
-  advice,
-  expanded,
-  onToggle,
-}: {
+interface AdviceContentProps {
   advice: AiAdviceData;
   expanded: boolean;
   onToggle: () => void;
-}) {
-  const [feedback, setFeedback] = useState<"helpful" | "not_helpful" | null>(advice.feedback ?? null);
+  onComplete: (id: string) => Promise<void>;
+  onDismiss: (id: string) => Promise<void>;
+  onFeedback: (id: string, value: "helpful" | "not_helpful") => Promise<void>;
+}
+
+function AdviceContent({ advice, expanded, onToggle, onComplete, onDismiss, onFeedback }: AdviceContentProps) {
+  const [feedbackValue, setFeedbackValue] = useState<"helpful" | "not_helpful" | null>(advice.feedback ?? null);
   const [completed, setCompleted] = useState(advice.completedAt !== null);
   const [dismissed, setDismissed] = useState(advice.dismissed);
 
   async function handleFeedback(value: "helpful" | "not_helpful") {
-    try {
-      await feedbackAiAdvice(advice.id, value);
-      setFeedback(value);
-      toast.success("感谢反馈，我们会优化后续建议");
-    } catch {
-      toast.error("反馈失败");
-    }
+    const succeeded = await runWithToast(
+      () => onFeedback(advice.id, value),
+      { success: "感谢反馈，我们会优化后续建议", failure: "反馈失败" },
+    );
+    if (succeeded) setFeedbackValue(value);
   }
 
   async function handleComplete() {
-    try {
-      await completeAiAdvice(advice.id);
-      setCompleted(true);
-      toast.success("已标记为完成");
-    } catch {
-      toast.error("标记完成失败");
-    }
+    const succeeded = await runWithToast(
+      () => onComplete(advice.id),
+      { success: "已标记为完成", failure: "标记完成失败" },
+    );
+    if (succeeded) setCompleted(true);
   }
 
   async function handleDismiss() {
-    try {
-      await dismissAiAdvice(advice.id);
-      setDismissed(true);
-      toast.success("建议已屏蔽");
-    } catch {
-      toast.error("屏蔽失败");
-    }
+    const succeeded = await runWithToast(
+      () => onDismiss(advice.id),
+      { success: "建议已屏蔽", failure: "屏蔽失败" },
+    );
+    if (succeeded) setDismissed(true);
   }
 
   if (dismissed) {
@@ -170,7 +172,7 @@ function AdviceContent({
             <button
               type="button"
               onClick={() => void handleFeedback("helpful")}
-              disabled={feedback === "helpful"}
+              disabled={feedbackValue === "helpful"}
               className="rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               有用
@@ -178,7 +180,7 @@ function AdviceContent({
             <button
               type="button"
               onClick={() => void handleFeedback("not_helpful")}
-              disabled={feedback === "not_helpful"}
+              disabled={feedbackValue === "not_helpful"}
               className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               无用

@@ -1,36 +1,30 @@
-import { getSessionUserId } from "@/lib/auth/session";
+import { parseDateRangeSearchParams, parseJsonBody, requireSessionUserId, withRouteError } from "@/lib/api-route";
 import { jsonError } from "@/lib/http";
-import { dateRangeQuerySchema, bodyMeasurementSchema } from "@/lib/validation/health-log";
-import { deleteBodyMeasurement, getBodyMeasurements, upsertBodyMeasurement } from "@/lib/services/food-log.service";
+import { getBodyMeasurements, upsertBodyMeasurement } from "@/lib/services/body-measurement.service";
+import { bodyMeasurementSchema } from "@/lib/validation/health-log";
 
 export async function GET(request: Request): Promise<Response> {
-  const userId = await getSessionUserId();
-  if (!userId) return jsonError("未登录", 401);
+  const userIdOrError = await requireSessionUserId();
+  if (userIdOrError instanceof Response) return userIdOrError;
 
-  const searchParams = new URL(request.url).searchParams;
-  const parsed = dateRangeQuerySchema.safeParse({
-    startDate: searchParams.get("startDate") ?? undefined,
-    endDate: searchParams.get("endDate") ?? undefined,
-  });
-  if (!parsed.success) return jsonError("日期范围格式不正确", 400);
+  const range = parseDateRangeSearchParams(request.url);
+  if (!range.success) return range.response;
 
-  try {
-    const logs = await getBodyMeasurements(userId, parsed.data.startDate, parsed.data.endDate);
+  return withRouteError(async () => {
+    const logs = await getBodyMeasurements(userIdOrError, range.data.startDate, range.data.endDate);
     return Response.json({ logs });
-  } catch {
-    return jsonError("获取围度记录失败", 500);
-  }
+  }, "获取围度记录失败");
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const userId = await getSessionUserId();
-  if (!userId) return jsonError("未登录", 401);
+  const userIdOrError = await requireSessionUserId();
+  if (userIdOrError instanceof Response) return userIdOrError;
 
-  const parsed = bodyMeasurementSchema.safeParse(await request.json().catch(() => null));
+  const parsed = bodyMeasurementSchema.safeParse(await parseJsonBody(request));
   if (!parsed.success) return jsonError("围度记录格式不正确", 400);
 
-  try {
-    const log = await upsertBodyMeasurement(userId, parsed.data.logDate, {
+  return withRouteError(async () => {
+    const log = await upsertBodyMeasurement(userIdOrError, parsed.data.logDate, {
       chestCm: parsed.data.chestCm ?? null,
       waistCm: parsed.data.waistCm ?? null,
       hipCm: parsed.data.hipCm ?? null,
@@ -39,7 +33,5 @@ export async function POST(request: Request): Promise<Response> {
       note: parsed.data.note,
     });
     return Response.json({ log }, { status: 201 });
-  } catch {
-    return jsonError("保存围度记录失败", 500);
-  }
+  }, "保存围度记录失败");
 }

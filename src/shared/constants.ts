@@ -43,3 +43,28 @@ export const AI_ADVICE_FREQUENCY_LABELS: Record<AiAdviceFrequency, string> = {
   weekly: "每周",
   off: "关闭",
 };
+
+/** Default macro calorie split used for progress bars when no personal targets exist. */
+export const DEFAULT_MACRO_CALORIE_RATIOS = {
+  protein: 0.2,
+  carbs: 0.5,
+  fat: 0.3,
+} as const;
+
+export const KCAL_PER_GRAM = {
+  protein: 4,
+  carbs: 4,
+  fat: 9,
+} as const;
+
+export function calculateMacroTargets(totalKcal: number): {
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+} {
+  return {
+    proteinG: Math.round((totalKcal * DEFAULT_MACRO_CALORIE_RATIOS.protein) / KCAL_PER_GRAM.protein),
+    carbsG: Math.round((totalKcal * DEFAULT_MACRO_CALORIE_RATIOS.carbs) / KCAL_PER_GRAM.carbs),
+    fatG: Math.round((totalKcal * DEFAULT_MACRO_CALORIE_RATIOS.fat) / KCAL_PER_GRAM.fat),
+  };
+}

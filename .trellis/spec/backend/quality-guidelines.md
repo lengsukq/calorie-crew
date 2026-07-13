@@ -4,17 +4,23 @@
 
 * TypeScript 使用 `strict: true`，质量门禁是 `npm run lint`、`npm run typecheck`、`npm run build`。
 * 输入边界使用 Zod；数据库访问使用 Drizzle 参数化表达式。
-* 当前 API 路由仍直接调用 Drizzle 查询；这是首版现状。后续新增复杂业务应抽到 `src/lib/services/`，并逐步收敛现有路由。
-* 当前没有业务测试套件，不能把“构建通过”当成数据库/鉴权行为已被集成验证。
+* API 路由不直接调用 `db`：鉴权、入参解析走 `src/lib/api-route.ts`（`requireSessionUserId` / `parseJsonBody` / `parseDateRangeSearchParams` / `withRouteError`），业务逻辑走 `src/lib/services/`。food/weight/exercise/water/sleep/body 路由均已收敛到此模式。
+* health logs（water/sleep/body）的 service 文件按资源拆分：`water-log.service.ts`、`sleep-log.service.ts`、`body-measurement.service.ts`，不再塞进 `food-log.service.ts`。
+* 当前业务测试覆盖纯函数（duplicate key、history stats、mapper、constants）；DB/鉴权行为仍需集成测试补充。
 
 ## 当前代码示例
 
 ```typescript
-const userId = await getSessionUserId();
-if (!userId) return jsonError("未登录", 401);
+const userIdOrError = await requireSessionUserId();
+if (userIdOrError instanceof Response) return userIdOrError;
 
-const parsed = foodLogSchema.safeParse(await request.json());
+const parsed = foodLogSchema.safeParse(await parseJsonBody(request));
 if (!parsed.success) return jsonError("饮食记录格式不正确", 400);
+
+return withRouteError(async () => {
+  const log = await createFoodLog(userIdOrError, parsed.data);
+  return Response.json({ log }, { status: 201 });
+}, "保存饮食记录失败");
 ```
 
 ## 禁止
@@ -23,7 +29,10 @@ if (!parsed.success) return jsonError("饮食记录格式不正确", 400);
 * 输出密码、哈希、JWT、数据库连接串、邀请码源值。
 * 拼接 SQL 或省略 `userId` 过滤。
 * 用 200 表示鉴权、校验或资源错误。
-* 新增 `console.log` 调试代码。
+* 新增 `console.log` 调试代码（`withRouteError` 内部的 `console.error` 是允许的服务端错误记录例外，仅记 error name/message，不记堆栈与机密）。
+* API 路由直接调用 `db.*`：新增路由必须走 service；重构旧路由时同步迁移。
+* 批量按 ID 查询/删除使用多个 `eq(id)` 经 `and` 组合（语义错误），必须使用 `inArray`。
+* service 文件名与职责不符（例如把 water/sleep/body 塞进 `food-log.service.ts`）。
 
 ## 质量检查
 

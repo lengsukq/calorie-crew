@@ -1,7 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { fetchFoodLogsByDate, createFoodLog, deleteFoodLog, updateFoodLog } from "@/lib/api/food-logs";
+import {
+  createFoodLog,
+  deleteFoodLog,
+  fetchFoodLogsByDate,
+  updateFoodLog,
+} from "@/lib/api/food-logs";
 import type { FoodLogEntry, FoodLogFormData } from "@/shared/types";
 
 interface UseFoodLogsOptions {
@@ -19,6 +24,10 @@ interface UseFoodLogsReturn {
   removeLog: (id: string) => Promise<void>;
 }
 
+function toErrorMessage(error: unknown, fallbackMessage: string): string {
+  return error instanceof Error ? error.message : fallbackMessage;
+}
+
 export function useFoodLogs({ date, enabled = true }: UseFoodLogsOptions): UseFoodLogsReturn {
   const [data, setData] = useState<FoodLogEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -30,9 +39,8 @@ export function useFoodLogs({ date, enabled = true }: UseFoodLogsOptions): UseFo
     try {
       const result = await fetchFoodLogsByDate(date);
       setData(result.logs);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "加载失败";
-      setError(message);
+    } catch (loadError) {
+      setError(toErrorMessage(loadError, "加载失败"));
       setData([]);
     } finally {
       setLoading(false);
@@ -43,16 +51,15 @@ export function useFoodLogs({ date, enabled = true }: UseFoodLogsOptions): UseFo
     if (enabled) {
       void load();
     }
-  }, [load, enabled]);
+  }, [enabled, load]);
 
   const addLog = useCallback(
-    async (data: FoodLogFormData) => {
+    async (formData: FoodLogFormData) => {
       try {
-        await createFoodLog(date, data);
+        await createFoodLog(date, formData);
         await load();
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "保存失败";
-        throw new Error(message);
+      } catch (saveError) {
+        throw new Error(toErrorMessage(saveError, "保存失败"));
       }
     },
     [date, load],
@@ -63,22 +70,20 @@ export function useFoodLogs({ date, enabled = true }: UseFoodLogsOptions): UseFo
       try {
         await deleteFoodLog(id);
         await load();
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "删除失败";
-        throw new Error(message);
+      } catch (removeError) {
+        throw new Error(toErrorMessage(removeError, "删除失败"));
       }
     },
     [load],
   );
 
   const updateLog = useCallback(
-    async (id: string, data: FoodLogFormData) => {
+    async (id: string, formData: FoodLogFormData) => {
       try {
-        await updateFoodLog(id, date, data);
+        await updateFoodLog(id, date, formData);
         await load();
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "更新失败";
-        throw new Error(message);
+      } catch (updateError) {
+        throw new Error(toErrorMessage(updateError, "更新失败"));
       }
     },
     [date, load],

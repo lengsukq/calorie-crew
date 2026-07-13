@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { useProfile } from "@/hooks/useProfile";
 import { useSummary } from "@/hooks/useSummary";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useRecentFoods } from "@/hooks/useRecentFoods";
 import { CalorieRing } from "@/components/today/CalorieRing";
 import { ExerciseCard } from "@/components/today/ExerciseCard";
 import { MealGroup } from "@/components/today/MealGroup";
@@ -13,32 +13,18 @@ import { WaterCard } from "@/components/today/WaterCard";
 import { WeightCard } from "@/components/today/WeightCard";
 import { MiniStatCard } from "@/components/shared/MiniStatCard";
 import { AiAdviceCard } from "@/components/shared/AiAdviceCard";
-import { FoodLogForm } from "@/components/shared/FoodLogForm";
-import { FoodLogManualForm } from "@/components/shared/FoodLogManualForm";
+import { FoodLogEditorOverlay } from "@/components/shared/FoodLogEditorOverlay";
 import { QuickAddButton } from "@/components/shared/QuickAddButton";
-import { BottomSheet } from "@/components/ui/BottomSheet";
-import { SlideOver } from "@/components/ui/SlideOver";
-import { deleteFoodLog, updateFoodLog, createFoodLog } from "@/lib/api/food-logs";
+import { createFoodLog, deleteFoodLog, updateFoodLog } from "@/lib/api/food-logs";
 import { ApiError, todayDate } from "@/lib/api/client";
+import { calculateMacroTargets } from "@/shared/constants";
 import type { FoodLogEntry, FoodLogFormData } from "@/shared/types";
-
-const RECENT_FOODS_KEY = "calorie_crew_recent_foods";
-const MAX_RECENT = 6;
 
 interface TodayContentProps {
   email: string;
   role: string;
   calorieTarget: number;
   weightTargetKg: string | null;
-}
-
-/** Calculate a reasonable macro target based on total calorie target */
-function macroTargets(totalKcal: number) {
-  return {
-    proteinG: Math.round((totalKcal * 0.2) / 4),   // 20% from protein, 4 kcal/g
-    carbsG: Math.round((totalKcal * 0.5) / 4),      // 50% from carbs, 4 kcal/g
-    fatG: Math.round((totalKcal * 0.3) / 9),         // 30% from fat, 9 kcal/g
-  };
 }
 
 function getGreeting(): string {
@@ -48,16 +34,16 @@ function getGreeting(): string {
   return "晚上好";
 }
 
-function foodLogEntryToFormData(log: FoodLogEntry): FoodLogFormData {
-  return {
-    mealType: log.mealType,
-    foodName: log.foodName,
-    servingDescription: log.servingDescription,
-    calories: log.calories,
-    proteinG: Number(log.proteinG),
-    carbsG: Number(log.carbsG),
-    fatG: Number(log.fatG),
-  };
+function toMacroLite(items: FoodLogFormData[]) {
+  return items.map((item) => ({
+    mealType: item.mealType,
+    foodName: item.foodName,
+    servingDescription: item.servingDescription,
+    calories: item.calories,
+    proteinG: item.proteinG,
+    carbsG: item.carbsG,
+    fatG: item.fatG,
+  }));
 }
 
 export function TodayContent({ email, role, calorieTarget, weightTargetKg }: TodayContentProps) {
@@ -66,43 +52,21 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
   const logs = summaryData?.logs ?? [];
   const summary = summaryData?.summary ?? null;
   const { data: profileData } = useProfile();
+  const { recentFoods, addRecentFoods, clearRecentFoods } = useRecentFoods();
+
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
-  const [recentFoods, setRecentFoods] = useState<FoodLogFormData[]>([]);
   const [quickSaving, setQuickSaving] = useState(false);
 
-  const isDesktop = useMediaQuery("(min-width: 768px)");
   const editingLog = logs.find((log) => log.id === editingLogId) ?? null;
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(RECENT_FOODS_KEY);
-      if (raw) setRecentFoods(JSON.parse(raw) as FoodLogFormData[]);
-    } catch {
-      // ignore
-    }
-  }, []);
 
   async function handleBatchSave(items: FoodLogFormData[]) {
     try {
       await Promise.all(items.map((item) => createFoodLog(currentDate, item)));
       setShowAddSheet(false);
       toast.success(`已保存 ${items.length} 条记录`);
+      addRecentFoods(toMacroLite(items));
       await reload();
-
-      // Update recent foods
-      const names = items.map((i) => ({
-        mealType: i.mealType,
-        foodName: i.foodName,
-        servingDescription: i.servingDescription,
-        calories: i.calories,
-        proteinG: i.proteinG,
-        carbsG: i.carbsG,
-        fatG: i.fatG,
-      }));
-      const existing = [...names, ...recentFoods].slice(0, MAX_RECENT);
-      setRecentFoods(existing);
-      localStorage.setItem(RECENT_FOODS_KEY, JSON.stringify(existing));
     } catch (err) {
       const message = err instanceof ApiError ? err.message : "保存失败";
       toast.error(message);
@@ -150,11 +114,6 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
     }
   }
 
-  function handleClearRecent() {
-    localStorage.removeItem(RECENT_FOODS_KEY);
-    setRecentFoods([]);
-  }
-
   const totalKcal = summary?.totalKcal ?? 0;
   const totalExerciseKcal = summary?.totalExerciseKcal ?? 0;
   const netKcal = summary?.netKcal ?? totalKcal;
@@ -162,19 +121,16 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
   const carbs = parseFloat(summary?.totalCarbsG ?? "0");
   const fat = parseFloat(summary?.totalFatG ?? "0");
   const remaining = summary?.remainingKcal ?? calorieTarget - netKcal;
-  const targets = macroTargets(calorieTarget);
+  const targets = calculateMacroTargets(calorieTarget);
   const aiAdviceEnabled = profileData?.profile.aiAdviceEnabled ?? true;
   const shouldShowAiAdvice = logs.length > 0 || !aiAdviceEnabled;
 
   return (
     <div className="stack page-enter">
-      {/* Greeting section */}
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs text-slate-400">{getGreeting()}，{email}</p>
-          <h2 className="mt-0.5 text-xl font-bold text-slate-800">
-            今日摄入概览
-          </h2>
+          <h2 className="mt-0.5 text-xl font-bold text-slate-800">今日摄入概览</h2>
         </div>
         <span className="glass-tag">{role === "admin" ? "管理员" : "会员"}</span>
       </div>
@@ -195,7 +151,6 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
         </div>
       )}
 
-      {/* Calorie ring + macro cards */}
       <div className="glass-card flex flex-col items-center">
         <CalorieRing current={Math.max(netKcal, 0)} target={calorieTarget} />
 
@@ -210,7 +165,6 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
           />
         </div>
 
-        {/* Macro stats with progress bars */}
         <div className="mt-6 grid w-full grid-cols-3 gap-3">
           <MiniStatCard
             label="蛋白质"
@@ -264,13 +218,12 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
         />
       )}
 
-      {/* Recent foods with quick add */}
       {recentFoods.length > 0 && (
         <div className="glass-card">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-800">最近添加</h2>
             <button
-              onClick={handleClearRecent}
+              onClick={clearRecentFoods}
               className="rounded-lg px-2 py-1 text-[10px] text-slate-400 transition-colors hover:text-red-500"
             >
               清除
@@ -280,96 +233,35 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
             {recentFoods.map((food, index) => (
               <button
                 key={index}
-                onClick={() => handleQuickAdd(food)}
+                onClick={() => handleQuickAdd(food as FoodLogFormData)}
                 disabled={quickSaving}
                 className="list-item !inline-flex !w-auto !items-center !gap-2 !px-3 !py-2 transition-all hover:border-cyan-200 hover:shadow-sm"
               >
                 <div className="text-left">
-                  <p className="text-sm font-medium text-slate-700">
-                    {food.foodName}
-                  </p>
+                  <p className="text-sm font-medium text-slate-700">{food.foodName}</p>
                   <p className="text-[10px] text-slate-400">
-                    {food.calories} kcal · P:{food.proteinG} C:{food.carbsG} F:
-                    {food.fatG}
+                    {food.calories} kcal · P:{food.proteinG} C:{food.carbsG} F:{food.fatG}
                   </p>
                 </div>
-                <span className="rounded-md bg-cyan-50 px-2 py-0.5 text-[10px] font-semibold text-cyan-600">
-                  +添加
-                </span>
+                <span className="rounded-md bg-cyan-50 px-2 py-0.5 text-[10px] font-semibold text-cyan-600">+添加</span>
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Collapsible meal groups */}
-      <MealGroup
-        logs={logs}
-        onEdit={setEditingLogId}
-        onDelete={handleDelete}
-        collapsible
-        title="今日饮食"
-      />
+      <MealGroup logs={logs} onEdit={setEditingLogId} onDelete={handleDelete} collapsible title="今日饮食" />
 
-      {/* FAB for adding food */}
       <QuickAddButton onClick={() => setShowAddSheet(true)} />
 
-      {/* Add food panel: SlideOver on desktop, BottomSheet on mobile */}
-      {isDesktop ? (
-        <SlideOver
-          isOpen={showAddSheet}
-          onClose={() => setShowAddSheet(false)}
-          title="添加饮食记录"
-        >
-          <FoodLogForm
-            onSubmit={handleBatchSave}
-            onCancel={() => setShowAddSheet(false)}
-          />
-        </SlideOver>
-      ) : (
-        <BottomSheet
-          isOpen={showAddSheet}
-          onClose={() => setShowAddSheet(false)}
-          title="添加饮食记录"
-        >
-          <FoodLogForm
-            onSubmit={handleBatchSave}
-            onCancel={() => setShowAddSheet(false)}
-          />
-        </BottomSheet>
-      )}
-
-      {isDesktop ? (
-        <SlideOver
-          isOpen={Boolean(editingLog)}
-          onClose={() => setEditingLogId(null)}
-          title="编辑饮食记录"
-        >
-          {editingLog && (
-            <FoodLogManualForm
-              key={editingLog.id}
-              initialValue={foodLogEntryToFormData(editingLog)}
-              onSubmit={handleEditSave}
-              onCancel={() => setEditingLogId(null)}
-            />
-          )}
-        </SlideOver>
-      ) : (
-        <BottomSheet
-          isOpen={Boolean(editingLog)}
-          onClose={() => setEditingLogId(null)}
-          title="编辑饮食记录"
-        >
-          {editingLog && (
-            <FoodLogManualForm
-              key={editingLog.id}
-              initialValue={foodLogEntryToFormData(editingLog)}
-              onSubmit={handleEditSave}
-              onCancel={() => setEditingLogId(null)}
-            />
-          )}
-        </BottomSheet>
-      )}
+      <FoodLogEditorOverlay
+        isOpenForAdd={showAddSheet}
+        editingLog={editingLog}
+        onAddSubmit={handleBatchSave}
+        onEditSubmit={handleEditSave}
+        onCloseAdd={() => setShowAddSheet(false)}
+        onCloseEdit={() => setEditingLogId(null)}
+      />
     </div>
   );
 }

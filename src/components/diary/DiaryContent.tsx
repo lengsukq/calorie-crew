@@ -4,90 +4,33 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useFoodLogs } from "@/hooks/useFoodLogs";
 import { useExerciseLogs } from "@/hooks/useExerciseLogs";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useWaterLogs } from "@/hooks/useWaterLogs";
 import { useSleepLogs } from "@/hooks/useSleepLogs";
 import { useBodyMeasurements } from "@/hooks/useBodyMeasurements";
 import { useWeightLogs } from "@/hooks/useWeightLogs";
 import { DateNavigator } from "@/components/diary/DateNavigator";
-import { ExerciseLogItem } from "@/components/diary/ExerciseLogItem";
-import { WeightLogItem } from "@/components/diary/WeightLogItem";
+import { FoodBatchToolbar } from "@/components/diary/FoodBatchToolbar";
+import { DiaryHealthSections } from "@/components/diary/DiaryHealthSections";
 import { MealGroup } from "@/components/today/MealGroup";
 import { MiniStatCard } from "@/components/shared/MiniStatCard";
 import { AiAdviceCard } from "@/components/shared/AiAdviceCard";
-import { FoodLogForm } from "@/components/shared/FoodLogForm";
-import { FoodLogManualForm } from "@/components/shared/FoodLogManualForm";
+import { FoodLogEditorOverlay } from "@/components/shared/FoodLogEditorOverlay";
 import { QuickAddButton } from "@/components/shared/QuickAddButton";
-import { BottomSheet } from "@/components/ui/BottomSheet";
-import { SlideOver } from "@/components/ui/SlideOver";
 import { batchActionFoodLogs, createFoodLog } from "@/lib/api/food-logs";
 import { ApiError, todayDate } from "@/lib/api/client";
-import type { BodyMeasurementEntry, FoodLogEntry, FoodLogFormData } from "@/shared/types";
+import { runWithToast } from "@/lib/ui/with-toast-action";
 
 const today = todayDate();
 
-function foodLogEntryToFormData(log: FoodLogEntry): FoodLogFormData {
-  return {
-    mealType: log.mealType,
-    foodName: log.foodName,
-    servingDescription: log.servingDescription,
-    calories: log.calories,
-    proteinG: Number(log.proteinG),
-    carbsG: Number(log.carbsG),
-    fatG: Number(log.fatG),
-  };
-}
-
 export function DiaryContent() {
   const [selectedDate, setSelectedDate] = useState(today);
-  const { data: logs, loading, error, updateLog, removeLog, reload } = useFoodLogs({
-    date: selectedDate,
-  });
-  const {
-    data: weightLogs,
-    loading: weightLoading,
-    error: weightError,
-    removeLog: removeWeightLog,
-  } = useWeightLogs({
-    startDate: selectedDate,
-    endDate: selectedDate,
-  });
-  const {
-    data: exerciseLogs,
-    loading: exerciseLoading,
-    error: exerciseError,
-    removeLog: removeExerciseLog,
-  } = useExerciseLogs({
-    startDate: selectedDate,
-    endDate: selectedDate,
-  });
-  const {
-    data: waterLogs,
-    loading: waterLoading,
-    error: waterError,
-    removeLog: removeWaterLog,
-  } = useWaterLogs({
-    startDate: selectedDate,
-    endDate: selectedDate,
-  });
-  const {
-    data: sleepLogs,
-    loading: sleepLoading,
-    error: sleepError,
-    removeLog: removeSleepLog,
-  } = useSleepLogs({
-    startDate: selectedDate,
-    endDate: selectedDate,
-  });
-  const {
-    data: bodyMeasurementLogs,
-    loading: bodyMeasurementLoading,
-    error: bodyMeasurementError,
-    removeLog: removeBodyMeasurementLog,
-  } = useBodyMeasurements({
-    startDate: selectedDate,
-    endDate: selectedDate,
-  });
+  const { data: logs, loading, error, updateLog, removeLog, reload } = useFoodLogs({ date: selectedDate });
+  const weightLogsHook = useWeightLogs({ startDate: selectedDate, endDate: selectedDate });
+  const exerciseLogsHook = useExerciseLogs({ startDate: selectedDate, endDate: selectedDate });
+  const waterLogsHook = useWaterLogs({ startDate: selectedDate, endDate: selectedDate });
+  const sleepLogsHook = useSleepLogs({ startDate: selectedDate, endDate: selectedDate });
+  const bodyMeasurementsHook = useBodyMeasurements({ startDate: selectedDate, endDate: selectedDate });
+
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
   const [selectedFoodIds, setSelectedFoodIds] = useState<Set<string>>(new Set());
@@ -95,10 +38,9 @@ export function DiaryContent() {
   const [batchTargetDate, setBatchTargetDate] = useState(selectedDate);
   const [batchSaving, setBatchSaving] = useState(false);
 
-  const isDesktop = useMediaQuery("(min-width: 768px)");
   const editingLog = logs.find((log) => log.id === editingLogId) ?? null;
 
-  async function handleBatchSave(items: FoodLogFormData[]) {
+  async function handleBatchSave(items: Parameters<typeof createFoodLog>[1][]) {
     try {
       await Promise.all(items.map((item) => createFoodLog(selectedDate, item)));
       setShowAddSheet(false);
@@ -112,66 +54,19 @@ export function DiaryContent() {
   }
 
   async function handleDelete(id: string) {
-    try {
-      await removeLog(id);
-      toast.success("已删除");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "删除失败";
-      toast.error(message);
-    }
+    await runWithToast(() => removeLog(id), { success: "已删除", failure: "删除失败" });
   }
 
-  async function handleDeleteWeightLog(id: string) {
-    try {
-      await removeWeightLog(id);
-      toast.success("体重记录已删除");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "删除体重记录失败";
-      toast.error(message);
-    }
+  async function handleDeleteHealthLog(
+    action: (id: string) => Promise<void>,
+    id: string,
+    successMessage: string,
+    failureMessage: string,
+  ) {
+    await runWithToast(() => action(id), { success: successMessage, failure: failureMessage });
   }
 
-  async function handleDeleteExerciseLog(id: string) {
-    try {
-      await removeExerciseLog(id);
-      toast.success("运动记录已删除");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "删除运动记录失败";
-      toast.error(message);
-    }
-  }
-
-  async function handleDeleteWaterLog(id: string) {
-    try {
-      await removeWaterLog(id);
-      toast.success("饮水记录已删除");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "删除饮水记录失败";
-      toast.error(message);
-    }
-  }
-
-  async function handleDeleteSleepLog(id: string) {
-    try {
-      await removeSleepLog(id);
-      toast.success("睡眠记录已删除");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "删除睡眠记录失败";
-      toast.error(message);
-    }
-  }
-
-  async function handleDeleteBodyMeasurementLog(id: string) {
-    try {
-      await removeBodyMeasurementLog(id);
-      toast.success("身体数据记录已删除");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "删除身体数据记录失败";
-      toast.error(message);
-    }
-  }
-
-  async function handleEditSave(data: FoodLogFormData) {
+  async function handleEditSave(data: Parameters<typeof updateLog>[1]) {
     if (!editingLog) return;
 
     try {
@@ -185,14 +80,59 @@ export function DiaryContent() {
     }
   }
 
-  const totalKcal = logs.reduce((s, l) => s + l.calories, 0);
-  const totalProtein = logs.reduce((s, l) => s + parseFloat(l.proteinG || "0"), 0);
-  const totalCarbs = logs.reduce((s, l) => s + parseFloat(l.carbsG || "0"), 0);
-  const totalFat = logs.reduce((s, l) => s + parseFloat(l.fatG || "0"), 0);
+  async function handleBatchDelete() {
+    const confirmed = window.confirm(`确定删除选中的 ${selectedFoodIds.size} 条饮食记录吗？`);
+    if (!confirmed) return;
+
+    setBatchSaving(true);
+    try {
+      await batchActionFoodLogs("delete", Array.from(selectedFoodIds));
+      toast.success("批量删除成功");
+      setSelectedFoodIds(new Set());
+      await reload();
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : "批量删除失败";
+      toast.error(message);
+    } finally {
+      setBatchSaving(false);
+    }
+  }
+
+  async function handleBatchCopy() {
+    setBatchSaving(true);
+    try {
+      await batchActionFoodLogs("copy", Array.from(selectedFoodIds), batchTargetDate);
+      toast.success("批量复制成功");
+      setSelectedFoodIds(new Set());
+      setBatchAction(null);
+      await reload();
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : "复制失败";
+      toast.error(message);
+    } finally {
+      setBatchSaving(false);
+    }
+  }
+
+  function toggleSelectedFood(id: string) {
+    setSelectedFoodIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  const totalKcal = logs.reduce((sum, log) => sum + log.calories, 0);
+  const totalProtein = logs.reduce((sum, log) => sum + parseFloat(log.proteinG || "0"), 0);
+  const totalCarbs = logs.reduce((sum, log) => sum + parseFloat(log.carbsG || "0"), 0);
+  const totalFat = logs.reduce((sum, log) => sum + parseFloat(log.fatG || "0"), 0);
 
   return (
     <div className="stack page-enter">
-      {/* Date navigator */}
       <DateNavigator date={selectedDate} onChange={setSelectedDate} />
 
       {error && (
@@ -204,34 +144,17 @@ export function DiaryContent() {
         </div>
       )}
 
-      {/* Daily summary mini cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <MiniStatCard label="热量" value={`${totalKcal}`} unit="kcal" />
-        <MiniStatCard
-          label="蛋白质"
-          value={totalProtein.toFixed(1)}
-          unit="g"
-          gradient="from-purple-400 to-pink-500"
-        />
-        <MiniStatCard
-          label="碳水"
-          value={totalCarbs.toFixed(1)}
-          unit="g"
-          gradient="from-amber-400 to-orange-500"
-        />
-        <MiniStatCard
-          label="脂肪"
-          value={totalFat.toFixed(1)}
-          unit="g"
-          gradient="from-teal-400 to-emerald-500"
-        />
+        <MiniStatCard label="蛋白质" value={totalProtein.toFixed(1)} unit="g" gradient="from-purple-400 to-pink-500" />
+        <MiniStatCard label="碳水" value={totalCarbs.toFixed(1)} unit="g" gradient="from-amber-400 to-orange-500" />
+        <MiniStatCard label="脂肪" value={totalFat.toFixed(1)} unit="g" gradient="from-teal-400 to-emerald-500" />
       </div>
 
       {totalKcal > 0 && (
         <AiAdviceCard title="AI 洞察" type="daily_diet" icon="💡" emptyText="暂无异常，继续保持。" autoGenerate />
       )}
 
-      {/* Meal groups */}
       {loading ? (
         <div className="glass-card flex items-center justify-center py-8">
           <div className="y2k-spinner h-6 w-6" />
@@ -247,326 +170,103 @@ export function DiaryContent() {
           </div>
         </div>
       ) : (
-        <>
-          <div className="glass-card">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h2 className="text-slate-800">饮食记录</h2>
-                <span className="text-xs text-slate-400">已选 {selectedFoodIds.size} 项</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setBatchAction("copy")}
-                  disabled={selectedFoodIds.size === 0}
-                  className="rounded-lg bg-white/70 px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  复制到其他日期
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const confirmed = window.confirm(`确定删除选中的 ${selectedFoodIds.size} 条饮食记录吗？`);
-                    if (!confirmed) return;
-                    setBatchSaving(true);
-                    try {
-                      await batchActionFoodLogs("delete", Array.from(selectedFoodIds));
-                      toast.success("批量删除成功");
-                      setSelectedFoodIds(new Set());
-                      await reload();
-                    } catch (err) {
-                      const message = err instanceof ApiError ? err.message : "批量删除失败";
-                      toast.error(message);
-                    } finally {
-                      setBatchSaving(false);
-                    }
-                  }}
-                  disabled={selectedFoodIds.size === 0 || batchSaving}
-                  className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-500 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  批量删除
-                </button>
-              </div>
-            </div>
-            {batchAction === "copy" && (
-              <div className="mb-3 flex items-center gap-2 rounded-lg bg-white/60 p-3">
-                <input
-                  type="date"
-                  value={batchTargetDate}
-                  onChange={(event) => setBatchTargetDate(event.target.value)}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600"
-                />
-                <button
-                  type="button"
-                  disabled={batchSaving}
-                  onClick={async () => {
-                    setBatchSaving(true);
-                    try {
-                      await batchActionFoodLogs("copy", Array.from(selectedFoodIds), batchTargetDate);
-                      toast.success("批量复制成功");
-                      setSelectedFoodIds(new Set());
-                      setBatchAction(null);
-                      await reload();
-                    } catch (err) {
-                      const message = err instanceof ApiError ? err.message : "复制失败";
-                      toast.error(message);
-                    } finally {
-                      setBatchSaving(false);
-                    }
-                  }}
-                  className="rounded-lg bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-600 transition-colors hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  确认复制
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBatchAction(null)}
-                  className="rounded-lg bg-white/70 px-3 py-1.5 text-xs font-semibold text-slate-500 transition-colors hover:bg-white"
-                >
-                  取消
-                </button>
-              </div>
-            )}
-            <MealGroup
-              logs={logs}
-              onEdit={setEditingLogId}
-              onDelete={handleDelete}
-              collapsible
-              title=""
-              selectedIds={selectedFoodIds}
-              onToggleSelect={(id) =>
-                setSelectedFoodIds((prev) => {
-                  const next = new Set(prev);
-                  if (next.has(id)) {
-                    next.delete(id);
-                  } else {
-                    next.add(id);
-                  }
-                  return next;
-                })
-              }
-            />
-          </div>
-        </>
+        <div className="glass-card">
+          <FoodBatchToolbar
+            selectedCount={selectedFoodIds.size}
+            batchSaving={batchSaving}
+            batchAction={batchAction}
+            batchTargetDate={batchTargetDate}
+            onStartCopy={() => setBatchAction("copy")}
+            onCancelCopy={() => setBatchAction(null)}
+            onConfirmCopy={() => void handleBatchCopy()}
+            onBatchDelete={() => void handleBatchDelete()}
+            onBatchTargetDateChange={setBatchTargetDate}
+          />
+          <MealGroup
+            logs={logs}
+            onEdit={setEditingLogId}
+            onDelete={(id) => void handleDelete(id)}
+            collapsible
+            title=""
+            selectedIds={selectedFoodIds}
+            onToggleSelect={toggleSelectedFood}
+          />
+        </div>
       )}
 
-      <div className="grid gap-3 md:grid-cols-2">
-        <div className="glass-card">
-          <h2 className="mb-3 text-sm font-bold text-slate-800">体重记录</h2>
-          {weightError && <p className="mb-3 text-xs text-red-500">{weightError}</p>}
-          {weightLoading ? (
-            <div className="flex items-center gap-2 py-4 text-sm text-slate-400">
-              <span className="y2k-spinner h-4 w-4" /> 正在加载体重记录...
-            </div>
-          ) : weightLogs.length === 0 ? (
-            <div className="rounded-xl bg-white/40 px-3 py-4 text-center text-sm text-slate-400">
-              这一天还没有体重记录
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {weightLogs.map((log) => (
-                <WeightLogItem
-                  key={log.id}
-                  log={log}
-                  onDelete={(id) => void handleDeleteWeightLog(id)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+      <DiaryHealthSections
+        weight={{
+          id: "weight",
+          data: weightLogsHook.data,
+          loading: weightLogsHook.loading,
+          error: weightLogsHook.error,
+          onRemove: (id) => void handleDeleteHealthLog(
+            weightLogsHook.removeLog,
+            id,
+            "体重记录已删除",
+            "删除体重记录失败",
+          ),
+        }}
+        exercise={{
+          id: "exercise",
+          data: exerciseLogsHook.data,
+          loading: exerciseLogsHook.loading,
+          error: exerciseLogsHook.error,
+          onRemove: (id) => void handleDeleteHealthLog(
+            exerciseLogsHook.removeLog,
+            id,
+            "运动记录已删除",
+            "删除运动记录失败",
+          ),
+        }}
+        water={{
+          id: "water",
+          data: waterLogsHook.data,
+          loading: waterLogsHook.loading,
+          error: waterLogsHook.error,
+          onRemove: (id) => void handleDeleteHealthLog(
+            waterLogsHook.removeLog,
+            id,
+            "饮水记录已删除",
+            "删除饮水记录失败",
+          ),
+        }}
+        sleep={{
+          id: "sleep",
+          data: sleepLogsHook.data,
+          loading: sleepLogsHook.loading,
+          error: sleepLogsHook.error,
+          onRemove: (id) => void handleDeleteHealthLog(
+            sleepLogsHook.removeLog,
+            id,
+            "睡眠记录已删除",
+            "删除睡眠记录失败",
+          ),
+        }}
+        bodyMeasurements={{
+          id: "body",
+          data: bodyMeasurementsHook.data,
+          loading: bodyMeasurementsHook.loading,
+          error: bodyMeasurementsHook.error,
+          onRemove: (id) => void handleDeleteHealthLog(
+            bodyMeasurementsHook.removeLog,
+            id,
+            "身体数据记录已删除",
+            "删除身体数据记录失败",
+          ),
+        }}
+      />
 
-        <div className="glass-card">
-          <h2 className="mb-3 text-sm font-bold text-slate-800">运动记录</h2>
-          {exerciseError && <p className="mb-3 text-xs text-red-500">{exerciseError}</p>}
-          {exerciseLoading ? (
-            <div className="flex items-center gap-2 py-4 text-sm text-slate-400">
-              <span className="y2k-spinner h-4 w-4" /> 正在加载运动记录...
-            </div>
-          ) : exerciseLogs.length === 0 ? (
-            <div className="rounded-xl bg-white/40 px-3 py-4 text-center text-sm text-slate-400">
-              这一天还没有运动记录
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {exerciseLogs.map((log) => (
-                <ExerciseLogItem
-                  key={log.id}
-                  log={log}
-                  onDelete={(id) => void handleDeleteExerciseLog(id)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-2">
-        <div className="glass-card">
-          <h2 className="mb-3 text-sm font-bold text-slate-800">饮水记录</h2>
-          {waterError && <p className="mb-3 text-xs text-red-500">{waterError}</p>}
-          {waterLoading ? (
-            <div className="flex items-center gap-2 py-4 text-sm text-slate-400">
-              <span className="y2k-spinner h-4 w-4" /> 正在加载饮水记录...
-            </div>
-          ) : waterLogs.length === 0 ? (
-            <div className="rounded-xl bg-white/40 px-3 py-4 text-center text-sm text-slate-400">
-              这一天还没有饮水记录
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {waterLogs.map((log) => (
-                <div key={log.id} className="list-item flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-700">{log.amountMl} ml</p>
-                    <p className="text-xs text-slate-400">{log.note || "无备注"}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => void handleDeleteWaterLog(log.id)}
-                    className="rounded-lg px-2 py-1 text-xs text-red-400 hover:bg-red-50 hover:text-red-500"
-                  >
-                    删除
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="glass-card">
-          <h2 className="mb-3 text-sm font-bold text-slate-800">睡眠记录</h2>
-          {sleepError && <p className="mb-3 text-xs text-red-500">{sleepError}</p>}
-          {sleepLoading ? (
-            <div className="flex items-center gap-2 py-4 text-sm text-slate-400">
-              <span className="y2k-spinner h-4 w-4" /> 正在加载睡眠记录...
-            </div>
-          ) : sleepLogs.length === 0 ? (
-            <div className="rounded-xl bg-white/40 px-3 py-4 text-center text-sm text-slate-400">
-              这一天还没有睡眠记录
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {sleepLogs.map((log) => {
-                const hours = Math.floor(log.sleepMinutes / 60);
-                const minutes = log.sleepMinutes % 60;
-                return (
-                  <div key={log.id} className="list-item flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-700">{hours} 小时 {minutes} 分钟</p>
-                      <p className="text-xs text-slate-400">质量 {log.quality} / 5 · {log.note || "无备注"}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => void handleDeleteSleepLog(log.id)}
-                      className="rounded-lg px-2 py-1 text-xs text-red-400 hover:bg-red-50 hover:text-red-500"
-                    >
-                      删除
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="glass-card">
-        <h2 className="mb-3 text-sm font-bold text-slate-800">身体围度</h2>
-        {bodyMeasurementError && <p className="mb-3 text-xs text-red-500">{bodyMeasurementError}</p>}
-        {bodyMeasurementLoading ? (
-          <div className="flex items-center gap-2 py-4 text-sm text-slate-400">
-            <span className="y2k-spinner h-4 w-4" /> 正在加载身体数据...
-          </div>
-        ) : bodyMeasurementLogs.length === 0 ? (
-          <div className="rounded-xl bg-white/40 px-3 py-4 text-center text-sm text-slate-400">
-            这一天还没有身体围度记录
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {bodyMeasurementLogs.map((log: BodyMeasurementEntry) => (
-              <div key={log.id} className="rounded-xl bg-white/50 px-3 py-3 backdrop-blur-sm">
-                <p className="text-[10px] font-medium text-slate-400">记录时间</p>
-                <p className="mt-1 text-sm font-semibold text-slate-700">{log.logDate}</p>
-                <div className="mt-2 space-y-1 text-xs text-slate-500">
-                  {log.chestCm && <p>胸围: {Number(log.chestCm).toFixed(1)} cm</p>}
-                  {log.waistCm && <p>腰围: {Number(log.waistCm).toFixed(1)} cm</p>}
-                  {log.hipCm && <p>臀围: {Number(log.hipCm).toFixed(1)} cm</p>}
-                  {log.armCm && <p>臂围: {Number(log.armCm).toFixed(1)} cm</p>}
-                  {log.legCm && <p>腿围: {Number(log.legCm).toFixed(1)} cm</p>}
-                  {log.note && <p className="text-slate-400">{log.note}</p>}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => void handleDeleteBodyMeasurementLog(log.id)}
-                  className="mt-2 rounded-lg px-2 py-1 text-xs text-red-400 hover:bg-red-50 hover:text-red-500"
-                >
-                  删除
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* FAB */}
       <QuickAddButton onClick={() => setShowAddSheet(true)} />
 
-      {/* Add food panel */}
-      {isDesktop ? (
-        <SlideOver
-          isOpen={showAddSheet}
-          onClose={() => setShowAddSheet(false)}
-          title="添加饮食记录"
-        >
-          <FoodLogForm
-            onSubmit={handleBatchSave}
-            onCancel={() => setShowAddSheet(false)}
-          />
-        </SlideOver>
-      ) : (
-        <BottomSheet
-          isOpen={showAddSheet}
-          onClose={() => setShowAddSheet(false)}
-          title="添加饮食记录"
-        >
-          <FoodLogForm
-            onSubmit={handleBatchSave}
-            onCancel={() => setShowAddSheet(false)}
-          />
-        </BottomSheet>
-      )}
-
-      {isDesktop ? (
-        <SlideOver
-          isOpen={Boolean(editingLog)}
-          onClose={() => setEditingLogId(null)}
-          title="编辑饮食记录"
-        >
-          {editingLog && (
-            <FoodLogManualForm
-              key={editingLog.id}
-              initialValue={foodLogEntryToFormData(editingLog)}
-              onSubmit={handleEditSave}
-              onCancel={() => setEditingLogId(null)}
-            />
-          )}
-        </SlideOver>
-      ) : (
-        <BottomSheet
-          isOpen={Boolean(editingLog)}
-          onClose={() => setEditingLogId(null)}
-          title="编辑饮食记录"
-        >
-          {editingLog && (
-            <FoodLogManualForm
-              key={editingLog.id}
-              initialValue={foodLogEntryToFormData(editingLog)}
-              onSubmit={handleEditSave}
-              onCancel={() => setEditingLogId(null)}
-            />
-          )}
-        </BottomSheet>
-      )}
+      <FoodLogEditorOverlay
+        isOpenForAdd={showAddSheet}
+        editingLog={editingLog}
+        onAddSubmit={handleBatchSave}
+        onEditSubmit={handleEditSave}
+        onCloseAdd={() => setShowAddSheet(false)}
+        onCloseEdit={() => setEditingLogId(null)}
+      />
     </div>
   );
 }

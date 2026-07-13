@@ -1,43 +1,35 @@
-import { getSessionUserId } from "@/lib/auth/session";
+import { parseDateRangeSearchParams, parseJsonBody, requireSessionUserId, withRouteError } from "@/lib/api-route";
 import { jsonError } from "@/lib/http";
-import { dateRangeQuerySchema, weightLogSchema } from "@/lib/validation/health-log";
 import { getWeightLogs, upsertWeightLog } from "@/lib/services/weight-log.service";
+import { weightLogSchema } from "@/lib/validation/health-log";
 
 export async function GET(request: Request): Promise<Response> {
-  const userId = await getSessionUserId();
-  if (!userId) return jsonError("未登录", 401);
+  const userIdOrError = await requireSessionUserId();
+  if (userIdOrError instanceof Response) return userIdOrError;
 
-  const searchParams = new URL(request.url).searchParams;
-  const parsed = dateRangeQuerySchema.safeParse({
-    startDate: searchParams.get("startDate") ?? undefined,
-    endDate: searchParams.get("endDate") ?? undefined,
-  });
-  if (!parsed.success) return jsonError("日期范围格式不正确", 400);
+  const range = parseDateRangeSearchParams(request.url);
+  if (!range.success) return range.response;
 
-  try {
-    const logs = await getWeightLogs(userId, parsed.data.startDate, parsed.data.endDate);
+  return withRouteError(async () => {
+    const logs = await getWeightLogs(userIdOrError, range.data.startDate, range.data.endDate);
     return Response.json({ logs });
-  } catch {
-    return jsonError("获取体重记录失败", 500);
-  }
+  }, "获取体重记录失败");
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const userId = await getSessionUserId();
-  if (!userId) return jsonError("未登录", 401);
+  const userIdOrError = await requireSessionUserId();
+  if (userIdOrError instanceof Response) return userIdOrError;
 
-  const parsed = weightLogSchema.safeParse(await request.json().catch(() => null));
+  const parsed = weightLogSchema.safeParse(await parseJsonBody(request));
   if (!parsed.success) return jsonError("体重记录格式不正确", 400);
 
-  try {
+  return withRouteError(async () => {
     const log = await upsertWeightLog(
-      userId,
+      userIdOrError,
       parsed.data.logDate,
       parsed.data.weightKg,
       parsed.data.note,
     );
     return Response.json({ log }, { status: 201 });
-  } catch {
-    return jsonError("保存体重记录失败", 500);
-  }
+  }, "保存体重记录失败");
 }
