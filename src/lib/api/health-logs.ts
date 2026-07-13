@@ -22,6 +22,60 @@ interface ExerciseLogResponse {
   log: ExerciseLogEntry;
 }
 
+interface WaterLogEntry {
+  id: string;
+  logDate: string;
+  amountMl: number;
+  note: string | null;
+  createdAt: string;
+}
+
+interface WaterLogResponse {
+  log: WaterLogEntry;
+}
+
+interface WaterLogsResponse {
+  logs: WaterLogEntry[];
+}
+
+interface SleepLogEntry {
+  id: string;
+  logDate: string;
+  sleepMinutes: number;
+  quality: number;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface SleepLogResponse {
+  log: SleepLogEntry;
+}
+
+interface SleepLogsResponse {
+  logs: SleepLogEntry[];
+}
+
+interface BodyMeasurementEntry {
+  id: string;
+  logDate: string;
+  chestCm: string | null;
+  waistCm: string | null;
+  hipCm: string | null;
+  armCm: string | null;
+  legCm: string | null;
+  note: string | null;
+  createdAt: string;
+}
+
+interface BodyMeasurementResponse {
+  log: BodyMeasurementEntry;
+}
+
+interface BodyMeasurementsResponse {
+  logs: BodyMeasurementEntry[];
+}
+
 interface UpdateTargetResponse {
   success: boolean;
 }
@@ -59,6 +113,61 @@ export function createExerciseLog(data: ExerciseLogFormData): Promise<ExerciseLo
 
 export function deleteExerciseLog(id: string): Promise<void> {
   return apiFetch<void>(`/api/exercise-logs/${id}`, { method: "DELETE" });
+}
+
+export function fetchWaterLogs(startDate: string, endDate: string): Promise<WaterLogsResponse> {
+  return apiFetch<WaterLogsResponse>(`/api/water-logs?${buildRangeQuery(startDate, endDate)}`);
+}
+
+export function createWaterLog(logDate: string, amountMl: number, note?: string | null): Promise<WaterLogResponse> {
+  return apiFetch<WaterLogResponse>("/api/water-logs", {
+    method: "POST",
+    body: JSON.stringify({ logDate, amountMl, note }),
+  });
+}
+
+export function deleteWaterLog(id: string): Promise<void> {
+  return apiFetch<void>(`/api/water-logs/${id}`, { method: "DELETE" });
+}
+
+export function fetchSleepLogs(startDate: string, endDate: string): Promise<SleepLogsResponse> {
+  return apiFetch<SleepLogsResponse>(`/api/sleep-logs?${buildRangeQuery(startDate, endDate)}`);
+}
+
+export function upsertSleepLog(logDate: string, sleepMinutes: number, quality: number, note?: string | null): Promise<SleepLogResponse> {
+  return apiFetch<SleepLogResponse>("/api/sleep-logs", {
+    method: "POST",
+    body: JSON.stringify({ logDate, sleepMinutes, quality, note }),
+  });
+}
+
+export function deleteSleepLog(id: string): Promise<void> {
+  return apiFetch<void>(`/api/sleep-logs/${id}`, { method: "DELETE" });
+}
+
+export function fetchBodyMeasurements(startDate: string, endDate: string): Promise<BodyMeasurementsResponse> {
+  return apiFetch<BodyMeasurementsResponse>(`/api/body-measurements?${buildRangeQuery(startDate, endDate)}`);
+}
+
+export function upsertBodyMeasurement(
+  logDate: string,
+  data: {
+    chestCm?: number | null;
+    waistCm?: number | null;
+    hipCm?: number | null;
+    armCm?: number | null;
+    legCm?: number | null;
+    note?: string | null;
+  },
+): Promise<BodyMeasurementResponse> {
+  return apiFetch<BodyMeasurementResponse>("/api/body-measurements", {
+    method: "POST",
+    body: JSON.stringify({ logDate, ...data }),
+  });
+}
+
+export function deleteBodyMeasurement(id: string): Promise<void> {
+  return apiFetch<void>(`/api/body-measurements/${id}`, { method: "DELETE" });
 }
 
 export function updateWeightTarget(weightTargetKg: number | null): Promise<UpdateTargetResponse> {

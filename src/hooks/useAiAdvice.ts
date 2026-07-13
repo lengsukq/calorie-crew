@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { deleteAiAdvice, fetchAiAdvices, generateAiAdvice } from "@/lib/api/ai-advice";
+import { completeAiAdvice, deleteAiAdvice, dismissAiAdvice, feedbackAiAdvice, fetchAiAdvices, generateAiAdvice } from "@/lib/api/ai-advice";
 import type { AiAdviceType } from "@/lib/db/schema";
 import type { AiAdviceData } from "@/shared/types";
 
