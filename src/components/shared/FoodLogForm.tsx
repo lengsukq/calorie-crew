@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { mealTypes } from "@/lib/db/schema";
 import { MEAL_LABELS } from "@/shared/constants";
 import { AiFoodImageUpload } from "@/components/shared/AiFoodImageUpload";
 import { FoodSearch } from "@/components/shared/FoodSearch";
 import { FoodItemList, type SelectedFood } from "@/components/shared/FoodItemList";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import type { FoodLogFormData } from "@/shared/types";
 import type { FoodItem } from "@/hooks/useFoodSearch";
 import type { RecognizedFood } from "@/lib/services/food-recognize.service";
@@ -67,9 +70,7 @@ export function FoodLogForm({ onSubmit, onCancel, submitLabel = "批量保存" }
   function updateServing(tempId: string, serving: string) {
     setSubmitError(null);
     setItems((prev) =>
-      prev.map((i) =>
-        i.tempId === tempId ? { ...i, servingDescription: serving } : i,
-      ),
+      prev.map((i) => (i.tempId === tempId ? { ...i, servingDescription: serving } : i)),
     );
   }
 
@@ -86,8 +87,7 @@ export function FoodLogForm({ onSubmit, onCancel, submitLabel = "批量保存" }
     setSaving(true);
     setSubmitError(null);
     try {
-      // Remove tempId before submitting
-      const data = items.map(({ tempId: _, ...rest }) => rest);
+      const data = items.map(({ tempId: _tempId, ...rest }) => rest);
       await onSubmit(data);
       setItems([]);
     } catch (err) {
@@ -99,24 +99,21 @@ export function FoodLogForm({ onSubmit, onCancel, submitLabel = "批量保存" }
   }
 
   return (
-    <div className="flex flex-col gap-4" style={{ minHeight: "60dvh" }}>
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto space-y-4">
-        {/* Meal type selector */}
+    <div className="flex flex-col gap-4">
+      <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">
-            餐次:
-          </span>
+          <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">餐次</span>
           <div className="flex flex-wrap gap-1.5">
             {mealTypes.map((type) => (
               <button
                 key={type}
                 onClick={() => setMealType(type)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                className={cn(
+                  "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                   mealType === type
-                    ? "bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-sm"
-                    : "bg-white/50 text-slate-500 hover:bg-white/80"
-                }`}
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+                )}
               >
                 {MEAL_LABELS[type]}
               </button>
@@ -124,58 +121,39 @@ export function FoodLogForm({ onSubmit, onCancel, submitLabel = "批量保存" }
           </div>
         </div>
 
-        {/* AI image upload */}
         <AiFoodImageUpload onRecognized={handleAiUse} />
 
-        {/* Food database search */}
-        <div className="relative">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-              或从食物库搜索
-            </span>
-          </div>
+        <div className="space-y-1.5">
+          <span className="text-xs font-medium text-muted-foreground">或从食物库搜索</span>
           <FoodSearch onSelect={handleFoodSearchSelect} />
         </div>
 
-        {/* Divider */}
-        <div className="glass-divider !my-0" />
+        <div className="border-t" />
 
-        {/* Selected items */}
-        <FoodItemList
-          items={items}
-          onRemove={removeItem}
-          onUpdateServing={updateServing}
-        />
+        <FoodItemList items={items} onRemove={removeItem} onUpdateServing={updateServing} />
         {submitError && (
-          <div className="glass-message-error text-sm" role="alert">
+          <p className="text-sm text-destructive" role="alert">
             {submitError}
-          </div>
+          </p>
         )}
       </div>
 
-      {/* Fixed bottom buttons */}
-      <div className="sticky bottom-0 bg-white/95 pt-2 pb-1">
+      <div className="sticky bottom-0 -mx-6 border-t bg-background px-6 pt-3">
         <div className="grid grid-cols-2 gap-3">
           {onCancel && (
-            <button type="button" onClick={onCancel} className="glass-button">
+            <Button type="button" variant="outline" onClick={onCancel}>
               取消
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             type="button"
             onClick={handleSave}
             disabled={items.length === 0 || saving}
-            className={`glass-button-primary ${onCancel ? "" : "col-span-2"}`}
+            className={onCancel ? "" : "col-span-2"}
           >
-            {saving ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="y2k-spinner !h-4 !w-4" />
-                保存中...
-              </span>
-            ) : (
-              `${submitLabel} (${items.length})`
-            )}
-          </button>
+            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+            {saving ? "保存中..." : `${submitLabel} (${items.length})`}
+          </Button>
         </div>
       </div>
     </div>

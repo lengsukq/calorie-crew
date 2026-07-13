@@ -4,6 +4,10 @@ import { type FormEvent, useState } from "react";
 import { mealTypes } from "@/lib/db/schema";
 import { MEAL_LABELS } from "@/shared/constants";
 import type { FoodLogFormData } from "@/shared/types";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 interface FoodLogManualFormProps {
   initialValue: FoodLogFormData;
@@ -50,13 +54,14 @@ export function FoodLogManualForm({
   }
 
   return (
-    <form className="stack" onSubmit={handleSubmit}>
-      <label className="stack gap-1.5">
-        <span className="glass-label">餐次</span>
+    <form className="space-y-4" onSubmit={handleSubmit}>
+      <div className="space-y-1.5">
+        <Label htmlFor="mealType">餐次</Label>
         <select
+          id="mealType"
           value={formData.mealType}
           onChange={(event) => updateField("mealType", event.target.value as FoodLogFormData["mealType"])}
-          className="glass-select"
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {mealTypes.map((type) => (
             <option key={type} value={type}>
@@ -64,99 +69,96 @@ export function FoodLogManualForm({
             </option>
           ))}
         </select>
-      </label>
+      </div>
 
-      <label className="stack gap-1.5">
-        <span className="glass-label">食物名称</span>
-        <input
+      <div className="space-y-1.5">
+        <Label htmlFor="foodName">食物名称</Label>
+        <Input
+          id="foodName"
           value={formData.foodName}
           onChange={(event) => updateField("foodName", event.target.value)}
-          className="glass-input"
           required
         />
-      </label>
+      </div>
 
-      <label className="stack gap-1.5">
-        <span className="glass-label">份量</span>
-        <input
+      <div className="space-y-1.5">
+        <Label htmlFor="servingDescription">份量</Label>
+        <Input
+          id="servingDescription"
           value={formData.servingDescription}
           onChange={(event) => updateField("servingDescription", event.target.value)}
-          className="glass-input"
           required
         />
-      </label>
+      </div>
 
-      <label className="stack gap-1.5">
-        <span className="glass-label">热量 (kcal)</span>
-        <input
+      <div className="space-y-1.5">
+        <Label htmlFor="calories">热量 (kcal)</Label>
+        <Input
+          id="calories"
           value={normalizeNumber(formData.calories)}
           onChange={(event) => updateField("calories", Number(event.target.value))}
-          className="glass-input"
           type="number"
           min="0"
           max="10000"
           required
         />
-      </label>
+      </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <label className="stack gap-1.5">
-          <span className="glass-label">蛋白质 (g)</span>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="proteinG">蛋白质 (g)</Label>
+          <Input
+            id="proteinG"
             value={normalizeNumber(formData.proteinG)}
             onChange={(event) => updateField("proteinG", Number(event.target.value))}
-            className="glass-input"
             type="number"
             min="0"
             max="1000"
             step="0.01"
           />
-        </label>
-        <label className="stack gap-1.5">
-          <span className="glass-label">碳水 (g)</span>
-          <input
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="carbsG">碳水 (g)</Label>
+          <Input
+            id="carbsG"
             value={normalizeNumber(formData.carbsG)}
             onChange={(event) => updateField("carbsG", Number(event.target.value))}
-            className="glass-input"
             type="number"
             min="0"
             max="1000"
             step="0.01"
           />
-        </label>
-        <label className="stack gap-1.5">
-          <span className="glass-label">脂肪 (g)</span>
-          <input
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="fatG">脂肪 (g)</Label>
+          <Input
+            id="fatG"
             value={normalizeNumber(formData.fatG)}
             onChange={(event) => updateField("fatG", Number(event.target.value))}
-            className="glass-input"
             type="number"
             min="0"
             max="1000"
             step="0.01"
           />
-        </label>
+        </div>
       </div>
 
       {submitError && (
-        <div className="glass-message-error text-sm" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {submitError}
-        </div>
+        </p>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 pt-2">
         {onCancel && (
-          <button type="button" onClick={onCancel} className="glass-button">
+          <Button type="button" variant="outline" onClick={onCancel}>
             取消
-          </button>
+          </Button>
         )}
-        <button
-          type="submit"
-          disabled={saving}
-          className={`glass-button-primary ${onCancel ? "" : "col-span-2"}`}
-        >
+        <Button type="submit" disabled={saving} className={onCancel ? "" : "col-span-2"}>
+          {saving && <Loader2 className="h-4 w-4 animate-spin" />}
           {saving ? "保存中..." : submitLabel}
-        </button>
+        </Button>
       </div>
     </form>
   );

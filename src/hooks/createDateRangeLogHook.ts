@@ -17,7 +17,11 @@ export interface DateRangeLogHookReturn<TEntry, TFormData> {
   removeLog: (id: string) => Promise<void>;
 }
 
-interface CreateDateRangeLogHookConfig<TEntry, TFormData> {
+interface LogEntry {
+  id: string;
+}
+
+interface CreateDateRangeLogHookConfig<TEntry extends LogEntry, TFormData> {
   loadErrorMessage: string;
   saveErrorMessage: string;
   removeErrorMessage: string;
@@ -30,7 +34,7 @@ function toErrorMessage(error: unknown, fallbackMessage: string): string {
   return error instanceof Error ? error.message : fallbackMessage;
 }
 
-export function createDateRangeLogHook<TEntry, TFormData>(
+export function createDateRangeLogHook<TEntry extends LogEntry, TFormData>(
   config: CreateDateRangeLogHookConfig<TEntry, TFormData>,
 ) {
   return function useDateRangeLogs({
@@ -76,14 +80,17 @@ export function createDateRangeLogHook<TEntry, TFormData>(
 
     const removeLog = useCallback(
       async (id: string) => {
+        const snapshot = data;
+        setData((prev) => prev.filter((entry) => entry.id !== id));
         try {
           await config.removeLog(id);
           await load();
         } catch (removeError) {
+          setData(snapshot);
           throw new Error(toErrorMessage(removeError, config.removeErrorMessage));
         }
       },
-      [load],
+      [data, load],
     );
 
     return { data, loading, error, reload: load, saveLog, removeLog };

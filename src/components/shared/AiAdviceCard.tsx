@@ -2,9 +2,14 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { RefreshCw, Loader2, Sparkles, type LucideIcon } from "lucide-react";
 import { useAiAdvice } from "@/hooks/useAiAdvice";
 import type { AiAdviceType } from "@/lib/db/schema";
 import { runWithToast } from "@/lib/ui/with-toast-action";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { AiAdviceData } from "@/shared/types";
 
 const PRIORITY_LABELS = {
@@ -13,16 +18,16 @@ const PRIORITY_LABELS = {
   low: "低优先级",
 } as const;
 
-const PRIORITY_CLASSES = {
-  high: "bg-red-50 text-red-500",
-  medium: "bg-amber-50 text-amber-600",
-  low: "bg-emerald-50 text-emerald-600",
-} as const;
+const PRIORITY_VARIANTS = {
+  high: "destructive" as const,
+  medium: "warning" as const,
+  low: "success" as const,
+};
 
 interface AiAdviceCardProps {
   title: string;
   type: AiAdviceType;
-  icon?: string;
+  icon?: LucideIcon;
   emptyText?: string;
   disabledText?: string;
   enabled?: boolean;
@@ -32,7 +37,7 @@ interface AiAdviceCardProps {
 export function AiAdviceCard({
   title,
   type,
-  icon = "✨",
+  icon: Icon = Sparkles,
   emptyText = "暂无建议，记录更多数据后再来生成吧。",
   disabledText = "AI 建议已关闭，可在个人资料中开启。",
   enabled = true,
@@ -54,48 +59,53 @@ export function AiAdviceCard({
   }
 
   return (
-    <div className="glass-card">
-      <div className="mb-3 flex items-center justify-between gap-3">
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
         <div className="flex items-center gap-2">
-          <span className="text-base">{icon}</span>
-          <span className="text-sm font-semibold text-slate-700">{title}</span>
+          <Icon className="h-4 w-4 text-primary" />
+          <CardTitle className="text-sm">{title}</CardTitle>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={() => void reload()} className="text-xs text-slate-400 hover:text-slate-600">
+          <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => void reload()}>
             刷新列表
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             disabled={!enabled || generating}
             onClick={() => void handleGenerate(Boolean(displayAdvice) || autoGenerate)}
-            className="rounded-lg bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-600 transition-colors hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {generating ? "生成中..." : displayAdvice ? "刷新建议" : "生成建议"}
-          </button>
+            {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            {generating ? "生成中" : displayAdvice ? "刷新" : "生成"}
+          </Button>
         </div>
-      </div>
-
-      {!enabled ? (
-        <div className="rounded-2xl bg-white/50 px-4 py-5 text-center text-sm text-slate-400">{disabledText}</div>
-      ) : loading ? (
-        <div className="flex items-center justify-center py-5">
-          <span className="y2k-spinner h-5 w-5" />
-        </div>
-      ) : displayAdvice ? (
-        <AdviceContent
-          advice={displayAdvice}
-          expanded={expanded}
-          onToggle={() => setExpanded(!expanded)}
-          onComplete={complete}
-          onDismiss={dismiss}
-          onFeedback={feedback}
-        />
-      ) : (
-        <div className="rounded-2xl bg-white/50 px-4 py-5 text-center text-sm text-slate-400">
-          {error ?? emptyText}
-        </div>
-      )}
-    </div>
+      </CardHeader>
+      <CardContent>
+        {!enabled ? (
+          <p className="rounded-md border border-dashed py-6 text-center text-sm text-muted-foreground">
+            {disabledText}
+          </p>
+        ) : loading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        ) : displayAdvice ? (
+          <AdviceContent
+            advice={displayAdvice}
+            expanded={expanded}
+            onToggle={() => setExpanded(!expanded)}
+            onComplete={complete}
+            onDismiss={dismiss}
+            onFeedback={feedback}
+          />
+        ) : (
+          <p className="rounded-md border border-dashed py-6 text-center text-sm text-muted-foreground">
+            {error ?? emptyText}
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -139,70 +149,73 @@ function AdviceContent({ advice, expanded, onToggle, onComplete, onDismiss, onFe
 
   if (dismissed) {
     return (
-      <div className="rounded-2xl bg-white/55 p-4">
-        <p className="text-sm text-slate-400">该建议已被屏蔽，不再展示。</p>
-      </div>
+      <p className="text-sm text-muted-foreground">该建议已被屏蔽，不再展示。</p>
     );
   }
 
   return (
-    <div className="rounded-2xl bg-white/55 p-4">
-      <p className="text-sm font-medium leading-relaxed text-slate-700">{advice.summary}</p>
-      <div className="mt-3 flex items-center justify-between text-[10px] text-slate-400">
+    <div className="space-y-3">
+      <p className="text-sm font-medium leading-relaxed text-foreground">{advice.summary}</p>
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
         <span>{new Date(advice.generatedAt).toLocaleString("zh-CN")}</span>
-        <button type="button" onClick={onToggle} className="font-semibold text-cyan-500 hover:text-cyan-600">
+        <button type="button" onClick={onToggle} className="font-medium text-primary hover:underline">
           {expanded ? "收起详情" : "查看详情"}
         </button>
       </div>
 
       {expanded && (
-        <div className="mt-4 space-y-3">
+        <div className="space-y-3">
           {advice.suggestions.map((suggestion, index) => (
-            <div key={`${suggestion.title}-${index}`} className="rounded-xl bg-white/60 p-3">
+            <div key={`${suggestion.title}-${index}`} className="rounded-lg border bg-card p-3">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-slate-700">{suggestion.title}</p>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${PRIORITY_CLASSES[suggestion.priority]}`}>
+                <p className="text-sm font-semibold text-foreground">{suggestion.title}</p>
+                <Badge variant={PRIORITY_VARIANTS[suggestion.priority]}>
                   {PRIORITY_LABELS[suggestion.priority]}
-                </span>
+                </Badge>
               </div>
-              <p className="text-xs leading-relaxed text-slate-500">{suggestion.detail}</p>
+              <p className="text-xs leading-relaxed text-muted-foreground">{suggestion.detail}</p>
             </div>
           ))}
           <div className="flex flex-wrap gap-2">
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => void handleFeedback("helpful")}
               disabled={feedbackValue === "helpful"}
-              className="rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               有用
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => void handleFeedback("not_helpful")}
               disabled={feedbackValue === "not_helpful"}
-              className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               无用
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => void handleComplete()}
               disabled={completed}
-              className="rounded-lg bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {completed ? "已完成" : "标记完成"}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => void handleDismiss()}
               disabled={dismissed}
-              className="rounded-lg bg-white/70 px-3 py-1.5 text-xs font-semibold text-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="text-muted-foreground"
             >
               屏蔽
-            </button>
+            </Button>
           </div>
-          <p className="text-[10px] leading-relaxed text-slate-400">
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
             AI 建议仅供一般健康信息参考，不能替代专业医疗诊断或治疗。
           </p>
         </div>

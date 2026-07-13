@@ -67,14 +67,17 @@ export function useFoodLogs({ date, enabled = true }: UseFoodLogsOptions): UseFo
 
   const removeLog = useCallback(
     async (id: string) => {
+      const snapshot = data;
+      setData((prev) => prev.filter((log) => log.id !== id));
       try {
         await deleteFoodLog(id);
         await load();
       } catch (removeError) {
+        setData(snapshot);
         throw new Error(toErrorMessage(removeError, "删除失败"));
       }
     },
-    [load],
+    [data, load],
   );
 
   const updateLog = useCallback(

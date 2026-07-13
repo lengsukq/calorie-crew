@@ -2,8 +2,13 @@
 
 import type { FoodLogEntry, FoodLogFormData } from "@/shared/types";
 import { foodLogEntryToFormData } from "@/lib/mappers/food-log";
-import { BottomSheet } from "@/components/ui/BottomSheet";
-import { SlideOver } from "@/components/ui/SlideOver";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { FoodLogForm } from "@/components/shared/FoodLogForm";
 import { FoodLogManualForm } from "@/components/shared/FoodLogManualForm";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -27,42 +32,40 @@ export function FoodLogEditorOverlay({
 }: FoodLogEditorOverlayProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const isEditing = Boolean(editingLog);
-
-  if (isDesktop) {
-    return (
-      <>
-        <SlideOver isOpen={isOpenForAdd} onClose={onCloseAdd} title="添加饮食记录">
-          <FoodLogForm onSubmit={onAddSubmit} onCancel={onCloseAdd} />
-        </SlideOver>
-        <SlideOver isOpen={isEditing} onClose={onCloseEdit} title="编辑饮食记录">
-          {editingLog && (
-            <FoodLogManualForm
-              key={editingLog.id}
-              initialValue={foodLogEntryToFormData(editingLog)}
-              onSubmit={onEditSubmit}
-              onCancel={onCloseEdit}
-            />
-          )}
-        </SlideOver>
-      </>
-    );
-  }
+  const side = isDesktop ? "right" : "bottom";
 
   return (
     <>
-      <BottomSheet isOpen={isOpenForAdd} onClose={onCloseAdd} title="添加饮食记录">
-        <FoodLogForm onSubmit={onAddSubmit} onCancel={onCloseAdd} />
-      </BottomSheet>
-      <BottomSheet isOpen={isEditing} onClose={onCloseEdit} title="编辑饮食记录">
-        {editingLog && (
-          <FoodLogManualForm
-            key={editingLog.id}
-            initialValue={foodLogEntryToFormData(editingLog)}
-            onSubmit={onEditSubmit}
-            onCancel={onCloseEdit}
-          />
-        )}
-      </BottomSheet>
+      <Sheet open={isOpenForAdd} onOpenChange={(open) => { if (!open) onCloseAdd(); }}>
+        <SheetContent side={side} className={isDesktop ? "" : "max-h-[85dvh] overflow-y-auto"}>
+          <SheetHeader>
+            <SheetTitle>添加饮食记录</SheetTitle>
+            <SheetDescription className="sr-only">通过搜索或 AI 识别添加食物</SheetDescription>
+          </SheetHeader>
+          <div className="mt-4 flex-1 overflow-y-auto">
+            <FoodLogForm onSubmit={onAddSubmit} onCancel={onCloseAdd} />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={isEditing} onOpenChange={(open) => { if (!open) onCloseEdit(); }}>
+        <SheetContent side={side} className={isDesktop ? "" : "max-h-[85dvh] overflow-y-auto"}>
+          <SheetHeader>
+            <SheetTitle>编辑饮食记录</SheetTitle>
+            <SheetDescription className="sr-only">修改已选食物的份量或营养信息</SheetDescription>
+          </SheetHeader>
+          {editingLog && (
+            <div className="mt-4 flex-1 overflow-y-auto">
+              <FoodLogManualForm
+                key={editingLog.id}
+                initialValue={foodLogEntryToFormData(editingLog)}
+                onSubmit={onEditSubmit}
+                onCancel={onCloseEdit}
+              />
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

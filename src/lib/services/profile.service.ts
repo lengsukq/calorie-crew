@@ -17,6 +17,7 @@ import {
   getBmiCategory,
   getSuggestedIntakeRange,
 } from "@/lib/services/health-metrics.service";
+import { calculateCompleteness } from "@/lib/services/profile-completeness";
 import type { HealthMetricsData, ProfileResponseData, UserProfileData, UserProfileFormData } from "@/shared/types";
 
 const DEFAULT_PROFILE: Omit<UserProfileData, "weightTargetKg"> = {
@@ -111,8 +112,9 @@ export async function getProfile(userId: string): Promise<ProfileResponseData> {
 
   const normalizedProfile = normalizeProfileRow(profile, user?.weightTargetKg ?? null);
   const metrics = calculateMetrics(normalizedProfile, latestWeightLog?.weightKg ?? null);
+  const profileCompleteness = calculateCompleteness(normalizedProfile);
 
-  return { profile: normalizedProfile, metrics };
+  return { profile: normalizedProfile, metrics, profileCompleteness };
 }
 
 export async function updateProfile(

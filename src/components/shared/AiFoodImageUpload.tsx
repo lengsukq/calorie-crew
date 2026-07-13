@@ -1,19 +1,17 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Camera, ImagePlus, Loader2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { recognizeFood } from "@/lib/api/ai-recognize";
 import { ApiError } from "@/lib/api/client";
+import { Button } from "@/components/ui/button";
 import type { RecognizedFood } from "@/lib/api/ai-recognize";
 
 interface AiFoodImageUploadProps {
   onRecognized: (food: RecognizedFood) => void;
 }
 
-/**
- * Compress an image file to fit within maxSizeMB.
- * Returns base64 string WITHOUT the data:image/... prefix.
- */
 function compressImage(file: File, maxSizeMB = 3): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -93,7 +91,6 @@ export function AiFoodImageUpload({ onRecognized }: AiFoodImageUploadProps) {
 
     try {
       const compressedBase64 = await compressImage(file, 3);
-
       const result = await recognizeFood(compressedBase64);
 
       if (result.foods && result.foods.length > 0) {
@@ -113,10 +110,6 @@ export function AiFoodImageUpload({ onRecognized }: AiFoodImageUploadProps) {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  function handleUse(food: RecognizedFood) {
-    onRecognized(food);
-  }
-
   function handleReset() {
     setPreviewUrl(null);
     setResults([]);
@@ -124,28 +117,31 @@ export function AiFoodImageUpload({ onRecognized }: AiFoodImageUploadProps) {
   }
 
   return (
-    <div className="stack gap-3">
+    <div className="space-y-3">
       {!previewUrl && (
         <div className="flex gap-2">
-          <button
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1"
+            disabled={loading}
             onClick={() => {
               const input = fileInputRef.current;
               if (input) {
-                (input as HTMLInputElement).capture = "environment" as string;
+                input.setAttribute("capture", "environment");
                 input.accept = "image/*";
                 input.click();
               }
             }}
-            disabled={loading}
-            className="glass-button !flex-1 !gap-2 !px-4 !py-3 text-sm"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-              <circle cx="12" cy="13" r="4" />
-            </svg>
+            <Camera className="h-4 w-4" />
             拍照识别
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1"
+            disabled={loading}
             onClick={() => {
               const input = fileInputRef.current;
               if (input) {
@@ -154,16 +150,10 @@ export function AiFoodImageUpload({ onRecognized }: AiFoodImageUploadProps) {
                 input.click();
               }
             }}
-            disabled={loading}
-            className="glass-button !flex-1 !gap-2 !px-4 !py-3 text-sm"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <polyline points="21 15 16 10 5 21" />
-            </svg>
+            <ImagePlus className="h-4 w-4" />
             上传图片
-          </button>
+          </Button>
           <input
             ref={fileInputRef}
             type="file"
@@ -175,23 +165,23 @@ export function AiFoodImageUpload({ onRecognized }: AiFoodImageUploadProps) {
       )}
 
       {previewUrl && (
-        <div className="relative overflow-hidden rounded-2xl">
-          <img
-            src={previewUrl}
-            alt="食物图片预览"
-            className="max-h-48 w-full object-cover"
-          />
-          <button
+        <div className="relative overflow-hidden rounded-lg border">
+          <img src={previewUrl} alt="食物图片预览" className="max-h-48 w-full object-cover" />
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="absolute right-2 top-2 h-7 gap-1"
             onClick={handleReset}
-            className="absolute right-2 top-2 rounded-full bg-black/40 px-2.5 py-1 text-xs text-white backdrop-blur-sm transition-colors hover:bg-black/60"
           >
-            重新选择
-          </button>
+            <RotateCcw className="h-3 w-3" />
+            重选
+          </Button>
           {loading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-              <div className="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 shadow-lg">
-                <span className="y2k-spinner !h-4 !w-4 !border-slate-300 !border-t-cyan-500" />
-                <span className="text-xs font-medium text-slate-600">AI 识别中...</span>
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+              <div className="flex items-center gap-2 rounded-full bg-background px-4 py-2 shadow-lg">
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                <span className="text-xs font-medium text-foreground">AI 识别中...</span>
               </div>
             </div>
           )}
@@ -199,37 +189,37 @@ export function AiFoodImageUpload({ onRecognized }: AiFoodImageUploadProps) {
       )}
 
       {results.length > 0 && (
-        <div className="stack gap-1.5">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-            识别结果（点击添加至列表）
-          </p>
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">识别结果（点击添加）</p>
           <div className="flex flex-wrap gap-2">
             {results.map((food, index) => (
               <button
                 key={index}
-                onClick={() => handleUse(food)}
-                className="list-item !inline-flex !w-auto !items-center !gap-2 !px-3 !py-2 transition-all hover:border-cyan-200 hover:shadow-sm"
+                onClick={() => onRecognized(food)}
+                className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-left transition-colors hover:bg-accent"
               >
-                <div className="text-left">
-                  <p className="text-sm font-medium text-slate-700">{food.foodName}</p>
-                  <p className="text-[10px] text-slate-400">
+                <div>
+                  <p className="text-sm font-medium text-foreground">{food.foodName}</p>
+                  <p className="text-[11px] text-muted-foreground tabular-nums">
                     {food.servingDescription} · {food.calories} kcal
                   </p>
                 </div>
-                <span className="rounded-md bg-cyan-50 px-2 py-0.5 text-[10px] font-semibold text-cyan-600">+添加</span>
+                <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                  +添加
+                </span>
               </button>
             ))}
-            <button onClick={handleReset} className="rounded-lg px-2 py-1 text-[10px] text-slate-400 transition-colors hover:text-red-500">
+            <Button type="button" variant="ghost" size="sm" onClick={handleReset} className="text-muted-foreground">
               清除结果
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       {error && (
-        <div className="glass-message-error text-xs" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {error}
-        </div>
+        </p>
       )}
     </div>
   );

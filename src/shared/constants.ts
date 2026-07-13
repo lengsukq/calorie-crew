@@ -1,5 +1,17 @@
 import type { MealType } from "@/lib/db/schema";
-import type { ActivityLevel, AiAdviceFrequency, HealthGoal, ProfileGender } from "@/lib/db/schema";
+import type {
+  ActivityLevel,
+  AiAdviceFrequency,
+  HealthGoal,
+  ProfileGender,
+} from "@/lib/db/schema";
+import {
+  Sunrise,
+  Sun,
+  Sunset,
+  Moon,
+  type LucideIcon,
+} from "lucide-react";
 
 export const MEAL_ORDER: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
@@ -10,11 +22,11 @@ export const MEAL_LABELS: Record<MealType, string> = {
   snack: "加餐",
 };
 
-export const MEAL_ICONS: Record<MealType, string> = {
-  breakfast: "🌅",
-  lunch: "🌞",
-  dinner: "🌆",
-  snack: "🌙",
+export const MEAL_ICONS: Record<MealType, LucideIcon> = {
+  breakfast: Sunrise,
+  lunch: Sun,
+  dinner: Sunset,
+  snack: Moon,
 };
 
 export const PROFILE_GENDER_LABELS: Record<ProfileGender, string> = {
