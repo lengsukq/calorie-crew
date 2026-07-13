@@ -3,17 +3,16 @@ import { getSessionUserId } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
 import { dailySummaries } from "@/lib/db/schema";
 import { jsonError } from "@/lib/http";
+import { addDays, todayDate } from "@/lib/date";
 
 export async function GET(request: Request): Promise<Response> {
   const userId = await getSessionUserId();
   if (!userId) return jsonError("未登录", 401);
 
   const daysParam = new URL(request.url).searchParams.get("days");
-  const days = Math.min(Math.max(parseInt(daysParam ?? "7", 10) || 7, 1), 90);
+  const days = Math.min(Math.max(parseInt(daysParam ?? "7", 10) || 7, 1), 365);
 
-  const sinceDate = new Date();
-  sinceDate.setDate(sinceDate.getDate() - days);
-  const since = sinceDate.toISOString().slice(0, 10);
+  const since = addDays(todayDate(), -days);
 
   const summaries = await db.query.dailySummaries.findMany({
     where: and(eq(dailySummaries.userId, userId), gte(dailySummaries.logDate, since)),
@@ -22,6 +21,8 @@ export async function GET(request: Request): Promise<Response> {
       logDate: true,
       targetKcal: true,
       totalKcal: true,
+      totalExerciseKcal: true,
+      netKcal: true,
       remainingKcal: true,
       totalProteinG: true,
       totalCarbsG: true,

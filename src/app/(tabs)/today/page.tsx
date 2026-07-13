@@ -10,7 +10,7 @@ export default async function TodayPage() {
   if (!userId) redirect("/login");
   const user = await db.query.users.findFirst({
     where: eq(users.id, userId),
-    columns: { email: true, role: true, calorieTarget: true },
+    columns: { email: true, role: true, calorieTarget: true, weightTargetKg: true },
   });
   if (!user) redirect("/login");
 
@@ -19,6 +19,7 @@ export default async function TodayPage() {
       email={user.email}
       role={user.role}
       calorieTarget={user.calorieTarget}
+      weightTargetKg={user.weightTargetKg}
     />
   );
 }

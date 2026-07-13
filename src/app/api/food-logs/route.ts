@@ -3,17 +3,19 @@ import { getSessionUserId } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
 import { foodLogs } from "@/lib/db/schema";
 import { jsonError } from "@/lib/http";
-import { foodLogSchema } from "@/lib/validation/food-log";
+import { foodLogSchema, requiredDateQuerySchema } from "@/lib/validation/food-log";
 import { recalculateDailySummary } from "@/lib/services/daily-summary.service";
 
 export async function GET(request: Request): Promise<Response> {
   const userId = await getSessionUserId();
   if (!userId) return jsonError("未登录", 401);
-  const date = new URL(request.url).searchParams.get("date");
-  if (!date) return jsonError("缺少日期", 400);
+  const query = requiredDateQuerySchema.safeParse({
+    date: new URL(request.url).searchParams.get("date") ?? undefined,
+  });
+  if (!query.success) return jsonError("日期格式不正确", 400);
 
   const logs = await db.query.foodLogs.findMany({
-    where: and(eq(foodLogs.userId, userId), eq(foodLogs.logDate, date)),
+    where: and(eq(foodLogs.userId, userId), eq(foodLogs.logDate, query.data.date)),
     orderBy: [asc(foodLogs.createdAt)],
   });
   return Response.json({ logs });

@@ -39,6 +39,4 @@ export async function apiFetch<T>(
   return response.json() as Promise<T>;
 }
 
-export function todayDate(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+export { todayDate } from "@/lib/date";

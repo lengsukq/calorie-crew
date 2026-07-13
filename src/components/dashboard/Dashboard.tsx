@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { mealTypes, type MealType } from "@/lib/db/schema";
+import { todayDate } from "@/lib/date";
 
 interface DashboardProps {
   email: string;
@@ -24,7 +25,7 @@ interface Summary {
   totalFatG: string;
 }
 
-const today = new Date().toISOString().slice(0, 10);
+const today = todayDate();
 
 type SummaryCard = {
   label: string;

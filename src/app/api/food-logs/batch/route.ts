@@ -18,6 +18,9 @@ export async function POST(request: Request): Promise<Response> {
   if (!parsed.success) return jsonError("饮食记录格式不正确", 400);
 
   const logDate = parsed.data.logs[0].logDate;
+  const allLogsAreSameDate = parsed.data.logs.every((log) => log.logDate === logDate);
+  if (!allLogsAreSameDate) return jsonError("一次批量添加只能包含同一天的记录", 400);
+
   const values = parsed.data.logs.map((log) => ({
     userId,
     ...log,

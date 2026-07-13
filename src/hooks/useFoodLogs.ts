@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { fetchFoodLogsByDate, createFoodLog, deleteFoodLog } from "@/lib/api/food-logs";
+import { fetchFoodLogsByDate, createFoodLog, deleteFoodLog, updateFoodLog } from "@/lib/api/food-logs";
 import type { FoodLogEntry, FoodLogFormData } from "@/shared/types";
 
 interface UseFoodLogsOptions {
@@ -14,6 +14,7 @@ interface UseFoodLogsReturn {
   loading: boolean;
   error: string | null;
   addLog: (data: FoodLogFormData) => Promise<void>;
+  updateLog: (id: string, data: FoodLogFormData) => Promise<void>;
   removeLog: (id: string) => Promise<void>;
   reload: () => Promise<void>;
 }
@@ -70,5 +71,18 @@ export function useFoodLogs({ date, enabled = true }: UseFoodLogsOptions): UseFo
     [load],
   );
 
-  return { logs, loading, error, addLog, removeLog, reload: load };
+  const updateLog = useCallback(
+    async (id: string, data: FoodLogFormData) => {
+      try {
+        await updateFoodLog(id, date, data);
+        await load();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "更新失败";
+        throw new Error(message);
+      }
+    },
+    [date, load],
+  );
+
+  return { logs, loading, error, addLog, updateLog, removeLog, reload: load };
 }

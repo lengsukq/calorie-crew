@@ -1,7 +1,9 @@
 import {
   boolean,
   date,
+  index,
   integer,
+  json,
   numeric,
   pgTable,
   text,
@@ -16,6 +18,7 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   role: text("role").notNull().default("member"),
   calorieTarget: integer("calorie_target").notNull().default(2000),
+  weightTargetKg: numeric("weight_target_kg", { precision: 6, scale: 2 }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -70,6 +73,8 @@ export const dailySummaries = pgTable(
     logDate: date("log_date").notNull(),
     targetKcal: integer("target_kcal").notNull().default(2000),
     totalKcal: integer("total_kcal").notNull().default(0),
+    totalExerciseKcal: integer("total_exercise_kcal").notNull().default(0),
+    netKcal: integer("net_kcal").notNull().default(0),
     remainingKcal: integer("remaining_kcal").notNull().default(2000),
     totalProteinG: numeric("total_protein_g", { precision: 8, scale: 2 }).notNull().default("0"),
     totalCarbsG: numeric("total_carbs_g", { precision: 8, scale: 2 }).notNull().default("0"),
@@ -77,6 +82,102 @@ export const dailySummaries = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [unique("daily_summaries_user_date_unique").on(table.userId, table.logDate)],
+);
+
+export const weightLogs = pgTable(
+  "weight_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    logDate: date("log_date").notNull(),
+    weightKg: numeric("weight_kg", { precision: 6, scale: 2 }).notNull(),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    unique("weight_logs_user_date_unique").on(table.userId, table.logDate),
+    index("weight_logs_user_date_idx").on(table.userId, table.logDate),
+  ],
+);
+
+export const exerciseLogs = pgTable(
+  "exercise_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    logDate: date("log_date").notNull(),
+    exerciseType: text("exercise_type").notNull(),
+    durationMinutes: integer("duration_minutes").notNull(),
+    caloriesBurned: integer("calories_burned").notNull(),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    unique("exercise_logs_user_date_id_unique").on(table.userId, table.logDate, table.id),
+    index("exercise_logs_user_date_idx").on(table.userId, table.logDate),
+  ],
+);
+
+export const profileGenders = ["male", "female", "other"] as const;
+export type ProfileGender = (typeof profileGenders)[number];
+
+export const activityLevels = ["sedentary", "light", "moderate", "active", "very_active"] as const;
+export type ActivityLevel = (typeof activityLevels)[number];
+
+export const healthGoals = ["lose_weight", "maintain", "gain_muscle", "general_health"] as const;
+export type HealthGoal = (typeof healthGoals)[number];
+
+export const aiAdviceFrequencies = ["daily", "weekly", "off"] as const;
+export type AiAdviceFrequency = (typeof aiAdviceFrequencies)[number];
+
+export const aiAdviceTypes = ["daily_diet", "weekly_summary", "bmi_alert", "goal_reminder"] as const;
+export type AiAdviceType = (typeof aiAdviceTypes)[number];
+
+export const advicePriorities = ["high", "medium", "low"] as const;
+export type AdvicePriority = (typeof advicePriorities)[number];
+
+export interface AiAdviceSuggestion {
+  title: string;
+  detail: string;
+  priority: AdvicePriority;
+}
+
+export const userProfiles = pgTable(
+  "user_profiles",
+  {
+    userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+    displayName: text("display_name"),
+    birthDate: date("birth_date"),
+    gender: text("gender", { enum: profileGenders }).default("male"),
+    heightCm: integer("height_cm"),
+    activityLevel: text("activity_level", { enum: activityLevels }).default("sedentary"),
+    healthGoal: text("health_goal", { enum: healthGoals }).default("general_health"),
+    weightTargetKg: numeric("weight_target_kg", { precision: 6, scale: 2 }),
+    aiAdviceEnabled: boolean("ai_advice_enabled").notNull().default(true),
+    aiAdviceFrequency: text("ai_advice_frequency", { enum: aiAdviceFrequencies }).default("daily"),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index("user_profiles_updated_at_idx").on(table.updatedAt)],
+);
+
+export const aiAdvices = pgTable(
+  "ai_advices",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    type: text("type", { enum: aiAdviceTypes }).notNull(),
+    summary: text("summary").notNull(),
+    suggestions: json("suggestions").$type<AiAdviceSuggestion[]>().notNull(),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    unique("ai_advices_user_type_expires_unique").on(table.userId, table.type, table.expiresAt),
+    index("ai_advices_user_created_idx").on(table.userId, table.createdAt),
+  ],
 );
 
 export const mealTypes = ["breakfast", "lunch", "dinner", "snack"] as const;

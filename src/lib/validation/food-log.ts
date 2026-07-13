@@ -1,8 +1,13 @@
 import { z } from "zod";
 import { mealTypes } from "@/lib/db/schema";
+import { isValidLocalDateString } from "@/lib/date";
+
+export const localDateStringSchema = z
+  .string()
+  .refine(isValidLocalDateString, "日期必须是有效的 YYYY-MM-DD 格式");
 
 export const foodLogSchema = z.object({
-  logDate: z.string().date(),
+  logDate: localDateStringSchema,
   mealType: z.enum(mealTypes),
   foodName: z.string().trim().min(1).max(120),
   servingDescription: z.string().trim().min(1).max(120),
@@ -10,4 +15,17 @@ export const foodLogSchema = z.object({
   proteinG: z.number().min(0).max(1000),
   carbsG: z.number().min(0).max(1000),
   fatG: z.number().min(0).max(1000),
+});
+
+export const foodLogUpdateSchema = foodLogSchema.partial().refine(
+  (value) => Object.keys(value).length > 0,
+  "至少需要提供一个要更新的字段",
+);
+
+export const requiredDateQuerySchema = z.object({
+  date: localDateStringSchema,
+});
+
+export const optionalDateQuerySchema = z.object({
+  date: localDateStringSchema.optional(),
 });

@@ -1,52 +1,28 @@
 "use client";
 
+import { addDays, formatDisplayDate, todayDate } from "@/lib/date";
+
 interface DateNavigatorProps {
   date: string;
   onChange: (date: string) => void;
 }
 
-function formatDisplayDate(dateStr: string): string {
-  const date = new Date(dateStr + "T00:00:00");
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  const ymd = (d: Date) => d.toISOString().slice(0, 10);
-
-  if (dateStr === ymd(today)) return "今天";
-  if (dateStr === ymd(yesterday)) return "昨天";
-  if (dateStr === ymd(tomorrow)) return "明天";
-
-  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
-}
-
-function toISO(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
 export function DateNavigator({ date, onChange }: DateNavigatorProps) {
-  const current = new Date(date + "T00:00:00");
-  const today = new Date();
+  const today = todayDate();
 
   const goBack = () => {
-    const prev = new Date(current);
-    prev.setDate(prev.getDate() - 1);
-    onChange(toISO(prev));
+    onChange(addDays(date, -1));
   };
 
   const goForward = () => {
-    const next = new Date(current);
-    next.setDate(next.getDate() + 1);
-    onChange(toISO(next));
+    onChange(addDays(date, 1));
   };
 
   const goToday = () => {
-    onChange(toISO(today));
+    onChange(today);
   };
 
-  const isToday = date === toISO(today);
+  const isToday = date === today;
 
   return (
     <div className="glass-card !p-3">

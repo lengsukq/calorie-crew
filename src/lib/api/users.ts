@@ -11,6 +11,13 @@ export function updateCalorieTarget(calorieTarget: number): Promise<UpdateTarget
   });
 }
 
+export function updateUserWeightTarget(weightTargetKg: number | null): Promise<UpdateTargetResponse> {
+  return apiFetch<UpdateTargetResponse>("/api/users/target", {
+    method: "PUT",
+    body: JSON.stringify({ weightTargetKg }),
+  });
+}
+
 export function logout(): Promise<void> {
   return apiFetch<void>("/api/auth/logout", { method: "POST" });
 }

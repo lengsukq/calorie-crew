@@ -6,8 +6,12 @@ import { jsonError } from "@/lib/http";
 import { z } from "zod";
 
 const targetSchema = z.object({
-  calorieTarget: z.number().int().min(500).max(10000),
-});
+  calorieTarget: z.number().int().min(500).max(10000).optional(),
+  weightTargetKg: z.coerce.number().min(20).max(500).nullable().optional(),
+}).refine(
+  (value) => value.calorieTarget !== undefined || value.weightTargetKg !== undefined,
+  "至少需要提供一个目标值",
+);
 
 export async function PUT(request: Request): Promise<Response> {
   const userId = await getSessionUserId();
@@ -19,7 +23,12 @@ export async function PUT(request: Request): Promise<Response> {
   }
 
   await db.update(users)
-    .set({ calorieTarget: parsed.data.calorieTarget })
+    .set({
+      ...(parsed.data.calorieTarget !== undefined ? { calorieTarget: parsed.data.calorieTarget } : {}),
+      ...(parsed.data.weightTargetKg !== undefined
+        ? { weightTargetKg: parsed.data.weightTargetKg === null ? null : parsed.data.weightTargetKg.toFixed(2) }
+        : {}),
+    })
     .where(eq(users.id, userId));
 
   return Response.json({ success: true });
