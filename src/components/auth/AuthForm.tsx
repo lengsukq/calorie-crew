@@ -2,8 +2,13 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { ApiError } from "@/lib/api/client";
 import { login, register } from "@/lib/api/auth";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface AuthFormProps {
   mode: "login" | "register";
@@ -39,64 +44,71 @@ export function AuthForm({ mode }: AuthFormProps) {
   }
 
   return (
-    <form className="stack" onSubmit={submit}>
-      <label className="stack gap-1.5">
-        <span className="glass-label">邮箱</span>
-        <input
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          className="glass-input"
-          placeholder="your@email.com"
-        />
-      </label>
+    <Card className="w-full max-w-sm">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-center text-lg">{mode === "login" ? "登录" : "注册"}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form className="space-y-4" onSubmit={submit}>
+          <div className="space-y-1.5">
+            <Label htmlFor="email">邮箱</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              placeholder="your@email.com"
+            />
+          </div>
 
-      <label className="stack gap-1.5">
-        <span className="glass-label">密码</span>
-        <input
-          name="password"
-          type="password"
-          minLength={8}
-          autoComplete={mode === "login" ? "current-password" : "new-password"}
-          required
-          className="glass-input"
-          placeholder={mode === "login" ? "输入密码" : "至少 8 位密码"}
-        />
-      </label>
+          <div className="space-y-1.5">
+            <Label htmlFor="password">密码</Label>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              minLength={8}
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              required
+              placeholder={mode === "login" ? "输入密码" : "至少 8 位密码"}
+            />
+          </div>
 
-      {mode === "register" && (
-        <label className="stack gap-1.5">
-          <span className="glass-label">邀请码</span>
-          <input
-            name="inviteCode"
-            type="text"
-            autoComplete="off"
-            required
-            className="glass-input"
-            placeholder="请输入邀请码"
-          />
-        </label>
-      )}
+          {mode === "register" && (
+            <div className="space-y-1.5">
+              <Label htmlFor="inviteCode">邀请码</Label>
+              <Input
+                id="inviteCode"
+                name="inviteCode"
+                type="text"
+                autoComplete="off"
+                required
+                placeholder="请输入邀请码"
+              />
+            </div>
+          )}
 
-      {error && (
-        <p role="alert" className="glass-message-error">
-          {error}
-        </p>
-      )}
+          {error && (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          )}
 
-      <button disabled={pending} className="glass-button-primary mt-2 w-full">
-        {pending ? (
-          <span className="flex items-center gap-2">
-            <span className="y2k-spinner" />
-            处理中...
-          </span>
-        ) : mode === "login" ? (
-          "登录"
-        ) : (
-          "注册"
-        )}
-      </button>
-    </form>
+          <Button type="submit" disabled={pending} className="w-full">
+            {pending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {mode === "login" ? "登录中..." : "注册中..."}
+              </>
+            ) : mode === "login" ? (
+              "登录"
+            ) : (
+              "注册"
+            )}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

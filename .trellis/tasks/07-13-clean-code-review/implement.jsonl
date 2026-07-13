@@ -1,0 +1,15 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "后端 Clean Code 基线：禁止 any/@ts-ignore、API 路由分层、统一错误兜底、批量 inArray、日志规范"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "后端目录分层：API 路由只做鉴权/解析/调 service，禁止直接 db.*"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "后端错误矩阵：withRouteError 统一兜底、错误响应格式、禁止 200 表示错误"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "数据库规范：批量操作 inArray、日期校验、汇总重算、事务与幂等"}
+{"file": ".trellis/spec/backend/auth-guidelines.md", "reason": "鉴权与邀请码规范：会话校验、admin 权限、rate limit、CRON_SECRET"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "服务端日志规范：错误需记录可诊断信息、禁止记录堆栈与机密"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端质量规范：Hook 统一签名、可访问反馈、响应式、测试规范"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Hook 规范：数据请求型 Hook 必须返回 { data, loading, error, reload }、工厂模式"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "组件规范：Server Component 优先、Props 显式 interface、named export、响应式契约"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "类型安全：Zod 输入校验、边界处校验、禁止 any/@ts-ignore、共享类型位置"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "状态管理：Server Component 与本地 state 边界、复杂数据流走 Hook + API Client"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "跨层思考指南：数据流映射、边界校验、避免泄露抽象"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "代码复用指南：重复模式识别、DRY、抽取共享工具"}
+{"file": ".trellis/spec/frontend/styles.md", "reason": "样式规范：Tailwind + Y2K 玻璃质感设计体系、断点约定"}
+{"file": ".trellis/spec/backend/meal-recognition-snapshot.md", "reason": "餐次识别与快照架构：拍照识别跨层数据流、snapshot 幂等、Cron 流程"}

@@ -8,31 +8,37 @@
 |---|---|---|
 | `useFoodLogs` | 按日期获取饮食记录、新增/删除/更新操作 | Diary / Today |
 | `useSummary` | 获取今日汇总 + 日志列表 | Today |
-| `useHistory` | 获取历史汇总数据 (7/30天) | Progress |
+| `useHistory` | 获取历史汇总数据 (7/30/365天) | Progress |
 | `useUserTarget` | 更新每日热量目标 | Profile |
-| `useMediaQuery` | 响应媒体查询变化，用于移动端 BottomSheet 与桌面 SlideOver 切换 | Today / Diary |
+| `useMediaQuery` | 响应媒体查询变化，用于 Sheet 方向切换 | 多处 |
 | `useWeightLogs` / `useWaterLogs` / `useExerciseLogs` / `useSleepLogs` / `useBodyMeasurements` | 按日期范围获取健康日志、保存/删除 | Diary / Today / Progress |
 | `useAiAdvice` | AI 建议列表、生成、完成、屏蔽、反馈、重新激活 | 多处 |
 | `useRecentFoods` | localStorage 最近食物快增 | Today |
+| `useResourceForm` | 通用表单状态管理（提交中/错误/重置） | 多处卡片 |
+| `useConfirm` | 命令式确认弹窗 | 多处删除操作 |
 
-所有数据请求型 Hook 遵循统一规范，并明确区分为两类：
+## 数据请求型 Hook 签名规范
 
-- **数据请求型 Hook**：必须返回 `{ data, loading, error, reload }` 统一签名。`data` 为统一字段名，不再使用 `logs`/`summary`/`advices` 等业务命名。动作方法（如 `addLog`/`saveLog`/`removeLog`/`generate`/`remove`/`complete`/`dismiss`/`feedback`）作为附加字段，命名使用动词短语。当返回包含多个数据实体时，`data` 可以是对象，如 `data: { summary, logs }`。
-- **工具型 Hook**（如 `useMediaQuery`/`useFoodSearch`/`useRecentFoods`）：允许自定义签名，但必须在文件头用注释 `// 工具型 Hook，不遵循统一数据请求签名` 声明豁免。
+必须返回 `{ data, loading, error, reload }` 统一签名。`data` 为统一字段名，不再使用 `logs`/`summary`/`advices` 等业务命名。动作方法（如 `addLog`/`saveLog`/`removeLog`/`generate`/`remove`/`complete`/`dismiss`/`feedback`/`reactivate`）作为附加字段，命名使用动词短语。当返回包含多个数据实体时，`data` 可以是对象，如 `data: { summary, logs }`。
 
-两类 Hook 共同要求：
-- 通过 `src/lib/api/` 层调用后端 API，不在 Hook 中直接写 `fetch`
-- 使用 `useCallback` 包裹加载函数，`useEffect` 触发初始化加载
-- 错误状态可展示（不 throw，不 console.error 了之）
-- 变更型 Hook 方法可以向调用方 throw 可展示错误，调用方负责 toast 或表单错误；Hook 自身仍维护加载错误状态
+## 乐观更新规范
 
-## date-range Hook 工厂
+删除和快速添加使用乐观更新：
+- `removeLog`：先从 `data` 中移除该项，再调 API；失败回滚 `data` 并 toast.error
+- `addLog`/快速添加：同上乐观插入，失败回滚
+- 新增/编辑表单提交：仍 `await + reload`，不乐观（避免临时 id 与服务端 id 不一致带来的编辑冲突）
+
+## 工厂 Hook
 
 健康日志（weight/water/sleep/exercise/body）使用 `src/hooks/createDateRangeLogHook.ts` 工厂生成，避免 5 份复制粘贴。工厂统一了 load/save/remove 的错误规范化与 reload 时机。薄包装 hook 可暴露别名（如 `useWaterLogs` 暴露 `addLog = saveLog`）以兼容旧调用方。新增同类日志资源时优先用工厂，不要手写一遍 load/save/remove 模板。
 
 ## AI 建议 Hook
 
 `useAiAdvice` 是 AI 建议的唯一前端入口：`generate` / `remove` / `complete` / `dismiss` / `feedback` / `reactivate` 全部走 hook。`AiAdviceCard` 等组件不得直调 `@/lib/api/ai-advice`，避免出现「半吊子封装」——调用方不知道该走 hook 还是 api。
+
+## 工具型 Hook
+
+工具型 Hook（如 `useMediaQuery`/`useFoodSearch`/`useRecentFoods`/`useResourceForm`/`useConfirm`）允许自定义签名，但必须在文件头用注释 `// 工具型 Hook，不遵循统一数据请求签名` 声明豁免。
 
 ## 新增 Hook 的原则
 

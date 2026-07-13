@@ -1,0 +1,14 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "检查后端是否仍残留 any/@ts-ignore/console.log、API 路由是否全部走 service、错误兜底是否统一"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "检查 API 路由是否仍直接调用 db.*、service 职责是否单一"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "检查错误矩阵：输入校验是否 400、鉴权是否 401、DB 失败是否 500 且有诊断信息"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "检查批量查询是否用 inArray、日期是否校验、汇总重算是否幂等、是否有事务缺失"}
+{"file": ".trellis/spec/backend/auth-guidelines.md", "reason": "检查鉴权逻辑是否统一、admin 校验是否复用、rate limit 是否有效"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "检查服务端错误日志是否记录可诊断信息、是否泄露堆栈/机密"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "检查 Hook 签名是否统一、提交按钮是否有 loading/disabled、错误是否有可访问反馈"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "检查数据请求型 Hook 是否返回 { data, loading, error, reload }、是否复用工厂"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "检查组件是否 named export、Props 是否显式 interface、是否避免横向溢出"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "检查 Zod 输入边界是否完整、外部数据是否在边界处校验"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "检查跨层数据流：API/Service/Component 类型是否一致、userId 是否贯穿完整"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "检查重复代码是否已抽取、死代码是否清理、魔法数字是否常量化"}
+{"file": ".trellis/spec/frontend/styles.md", "reason": "检查样式是否符合 Y2K 设计体系、响应式断点是否正确"}
+{"file": ".trellis/spec/backend/meal-recognition-snapshot.md", "reason": "检查跨层流程边界契约是否保持、snapshot 生成是否幂等"}
