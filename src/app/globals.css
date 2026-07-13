@@ -366,6 +366,7 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 12px;
     transition: all 0.3s ease;
+    overflow-x: hidden;
   }
 
   .list-item:hover {
@@ -700,7 +701,7 @@
 
   /* ---- Calorie goal edit ---- */
   .goal-input {
-    @apply w-24 rounded-xl border-0 px-3 py-2 text-right text-lg font-bold;
+    @apply w-24 rounded-xl px-3 py-2 text-right text-lg font-bold;
     background: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -765,6 +766,19 @@
 
   .empty-state-text {
     @apply text-sm text-slate-400;
+  }
+
+  /* ---- Y2K Logo (auth pages) ---- */
+  .y2k-logo {
+    @apply relative mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 via-blue-400 to-teal-400 shadow-xl;
+  }
+
+  .y2k-logo > span {
+    @apply absolute text-xl font-bold text-white;
+  }
+
+  .y2k-logo > div {
+    @apply h-8 w-8 rounded-full bg-white/60 blur-sm;
   }
 }
 

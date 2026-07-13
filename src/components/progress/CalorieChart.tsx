@@ -22,12 +22,15 @@ export function CalorieChart({ data }: CalorieChartProps) {
     (a, b) => a.logDate.localeCompare(b.logDate)
   );
 
+  const chartWidth = Math.max(sorted.length * (barWidth + 12), 300);
+
   return (
-    <div className="w-full overflow-x-auto">
+    <div className="w-full">
       <svg
-        width={Math.max(sorted.length * (barWidth + 12), 300)}
+        width="100%"
         height={chartHeight + 40}
-        viewBox={`0 0 ${Math.max(sorted.length * (barWidth + 12), 300)} ${chartHeight + 40}`}
+        viewBox={`0 0 ${chartWidth} ${chartHeight + 40}`}
+        preserveAspectRatio="xMidYMid meet"
         className="mx-auto"
       >
         {/* Y-axis labels */}

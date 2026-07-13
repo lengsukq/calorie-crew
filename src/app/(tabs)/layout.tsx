@@ -2,7 +2,11 @@ import { Toaster } from "sonner";
 import { TopBar } from "@/components/layout/TopBar";
 import { TabBar } from "@/components/layout/TabBar";
 
-export default function TabsLayout({ children }: { children: React.ReactNode }) {
+interface TabsLayoutProps {
+  children: React.ReactNode;
+}
+
+export default function TabsLayout({ children }: TabsLayoutProps) {
   return (
     <div className="app-shell">
       <TopBar />

@@ -41,8 +41,8 @@ export function WeightTrendChart({ logs, weightTargetKg }: WeightTrendChartProps
   const targetLineY = targetWeight === null ? null : getYPosition(targetWeight);
 
   return (
-    <div className="w-full overflow-x-auto">
-      <svg width={chartWidth} height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="mx-auto">
+    <div className="w-full">
+      <svg width="100%" height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="xMidYMid meet" className="mx-auto">
         <text x="0" y="18" fontSize="10" fill="#94a3b8">
           {chartMaximumWeight.toFixed(1)}kg
         </text>

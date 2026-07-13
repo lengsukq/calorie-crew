@@ -26,7 +26,7 @@ export function HealthMetricsCard() {
       </div>
 
       {loading && <div className="y2k-spinner h-5 w-5" />}
-      {error && <p className="mb-3 text-xs text-red-500">{error}</p>}
+      {error && <p role="alert" className="mb-3 text-xs text-red-500">{error}</p>}
 
       {!loading && metrics && metrics.bmi !== null ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -50,19 +50,21 @@ export function HealthMetricsCard() {
   );
 }
 
+interface MetricBoxProps {
+  label: string;
+  value: string;
+  unit?: string;
+  badge?: string | null;
+  color?: keyof typeof BMI_COLOR_CLASSES | null;
+}
+
 function MetricBox({
   label,
   value,
   unit,
   badge,
   color,
-}: {
-  label: string;
-  value: string;
-  unit?: string;
-  badge?: string | null;
-  color?: keyof typeof BMI_COLOR_CLASSES | null;
-}) {
+}: MetricBoxProps) {
   return (
     <div className="rounded-2xl bg-white/55 px-3 py-4 text-center">
       <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>

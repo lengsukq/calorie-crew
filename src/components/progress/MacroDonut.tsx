@@ -88,17 +88,19 @@ export function MacroDonut({ proteinG, carbsG, fatG }: MacroDonutProps) {
   );
 }
 
+interface LegendItemProps {
+  color: string;
+  label: string;
+  value: string;
+  ratio: string;
+}
+
 function LegendItem({
   color,
   label,
   value,
   ratio,
-}: {
-  color: string;
-  label: string;
-  value: string;
-  ratio: string;
-}) {
+}: LegendItemProps) {
   return (
     <div className="flex items-center gap-3">
       <span className="h-3 w-3 rounded-full" style={{ backgroundColor: color }} />

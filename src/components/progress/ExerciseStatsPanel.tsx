@@ -54,7 +54,13 @@ export function ExerciseStatsPanel({ logs }: ExerciseStatsPanelProps) {
   );
 }
 
-function StatBox({ label, value, unit }: { label: string; value: string; unit: string }) {
+interface StatBoxProps {
+  label: string;
+  value: string;
+  unit: string;
+}
+
+function StatBox({ label, value, unit }: StatBoxProps) {
   return (
     <div className="rounded-xl bg-white/50 px-3 py-4 text-center backdrop-blur-sm">
       <p className="text-lg font-bold text-slate-800">

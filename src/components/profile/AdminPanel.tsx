@@ -34,6 +34,8 @@ export function AdminPanel({ onCreateInvite }: AdminPanelProps) {
     <div className="glass-card border-amber-200/50">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
+        aria-expanded={isExpanded}
+        aria-controls="admin-panel-content"
         className="flex w-full items-center justify-between"
       >
         <div className="flex items-center gap-2">
@@ -54,7 +56,7 @@ export function AdminPanel({ onCreateInvite }: AdminPanelProps) {
       </button>
 
       {isExpanded && (
-        <div className="mt-4 space-y-4">
+        <div id="admin-panel-content" className="mt-4 space-y-4">
           <div className="flex flex-wrap items-end gap-3">
             <label className="stack gap-1.5">
               <span className="glass-label">可使用次数</span>
