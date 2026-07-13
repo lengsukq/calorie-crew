@@ -36,7 +36,16 @@
 | `.list-item` | 列表行 | — |
 | `.progress-bar` / `.progress-fill` | 进度条 | — |
 | `.y2k-bubble` | 装饰浮动气泡 | — |
+| `.y2k-logo` | 登录/注册等页面的 logo 圆形容器 | — |
 | `.trend-up` / `.trend-down` | 趋势标签 | — |
+
+## Logo 组件类
+
+登录/注册等页面的 logo 圆形容器必须使用 `.y2k-logo` 组件类（定义在 `globals.css` 的 `@layer components`），不要在页面内重复内联一长串 Tailwind 工具类。这样可保证多个鉴权页面 logo 样式一致，并便于后续统一调整。
+
+## 图表响应式规范
+
+SVG 图表组件（如 `CalorieChart`、`WeightTrendChart`）必须使用响应式 `viewBox` + `width="100%"`，禁止用固定像素宽度配合 `overflow-x-auto` 兜底。固定宽度在长期数据（如 365 天）下会触发横向滚动，违反"不得出现横向滚动"规范。正确做法是让 SVG 通过 `viewBox` 自适应容器宽度，必要时在内部做数据抽样/聚合而非撑破容器。
 
 ## Tailwind 自定义扩展
 
@@ -71,5 +80,7 @@ Logo 气泡:    from-cyan-400 via-blue-400 to-teal-400
 - [ ] 新组件是否遵循 Y2K 玻璃质感设计语言（白色半透明、渐变、内阴影）？
 - [ ] 是否适配了 sm/640px 和 lg/1024px 两个响应式断点？
 - [ ] 表单元素是否使用了 `.glass-input` 或 `.glass-select` 类？
+- [ ] 鉴权页面的 logo 圆形容器是否使用了 `.y2k-logo` 组件类，而非内联一长串 Tailwind 工具类？
+- [ ] SVG 图表是否使用响应式 `viewBox` + `width="100%"`，未用固定像素宽度 + `overflow-x-auto` 兜底？
 - [ ] 按钮是否有 disabled/loading 状态处理？
 - [ ] 文字层级是否符合设计规范（h1/h2/label/body/value）？
