@@ -38,14 +38,14 @@ function isExpired(advice: AiAdviceData): boolean {
 export function AdviceHistoryContent() {
   const [selectedType, setSelectedType] = useState<AiAdviceType | "all">("all");
   const typeParam = selectedType === "all" ? undefined : selectedType;
-  const { advices, loading, error, reload, reactivate } = useAiAdviceHistory(typeParam);
+  const { data, loading, error, reload, reactivate } = useAiAdviceHistory(typeParam);
 
   const feedbackStats = useMemo(() => {
-    if (advices.length === 0) return null;
-    const helpful = advices.filter((advice) => advice.feedback === "helpful").length;
-    const percentage = Math.round((helpful / advices.length) * 100);
-    return { helpful, total: advices.length, percentage };
-  }, [advices]);
+    if (data.length === 0) return null;
+    const helpful = data.filter((advice) => advice.feedback === "helpful").length;
+    const percentage = Math.round((helpful / data.length) * 100);
+    return { helpful, total: data.length, percentage };
+  }, [data]);
 
   async function handleReactivate(advice: AiAdviceData) {
     try {
@@ -119,7 +119,7 @@ export function AdviceHistoryContent() {
         <div className="glass-card flex items-center justify-center py-8">
           <span className="y2k-spinner h-6 w-6" />
         </div>
-      ) : advices.length === 0 ? (
+      ) : data.length === 0 ? (
         <div className="glass-card">
           <div className="flex flex-col items-center gap-2 py-8 text-center">
             <span className="text-3xl opacity-50">📝</span>
@@ -128,7 +128,7 @@ export function AdviceHistoryContent() {
         </div>
       ) : (
         <div className="space-y-3">
-          {advices.map((advice) => {
+          {data.map((advice) => {
             const expired = isExpired(advice);
             return (
               <div key={advice.id} className="glass-card">

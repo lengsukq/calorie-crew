@@ -1,8 +1,6 @@
-import { getSessionUserId } from "@/lib/auth/session";
-import { db } from "@/lib/db/client";
-import { users } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { parseJsonBody, requireSessionUserId, withRouteError } from "@/lib/api-route";
 import { jsonError } from "@/lib/http";
+import { updateUserTarget } from "@/lib/services/profile.service";
 import { z } from "zod";
 
 const targetSchema = z.object({
@@ -14,22 +12,16 @@ const targetSchema = z.object({
 );
 
 export async function PUT(request: Request): Promise<Response> {
-  const userId = await getSessionUserId();
-  if (!userId) return jsonError("未登录", 401);
+  const userIdOrError = await requireSessionUserId();
+  if (userIdOrError instanceof Response) return userIdOrError;
 
-  const parsed = targetSchema.safeParse(await request.json());
+  const parsed = targetSchema.safeParse(await parseJsonBody(request));
   if (!parsed.success) {
     return jsonError("目标值无效（需在 500-10000 之间）", 400);
   }
 
-  await db.update(users)
-    .set({
-      ...(parsed.data.calorieTarget !== undefined ? { calorieTarget: parsed.data.calorieTarget } : {}),
-      ...(parsed.data.weightTargetKg !== undefined
-        ? { weightTargetKg: parsed.data.weightTargetKg === null ? null : parsed.data.weightTargetKg.toFixed(2) }
-        : {}),
-    })
-    .where(eq(users.id, userId));
-
-  return Response.json({ success: true });
+  return withRouteError(async () => {
+    await updateUserTarget(userIdOrError, parsed.data);
+    return Response.json({ success: true });
+  }, "保存用户目标失败");
 }

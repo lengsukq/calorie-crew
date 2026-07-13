@@ -20,15 +20,15 @@ import { FoodLogEditorOverlay } from "@/components/shared/FoodLogEditorOverlay";
 import { QuickAddButton } from "@/components/shared/QuickAddButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { batchActionFoodLogs, createFoodLog } from "@/lib/api/food-logs";
-import { ApiError, todayDate } from "@/lib/api/client";
+import { todayDate } from "@/lib/date";
 import { runWithToast } from "@/lib/ui/with-toast-action";
+import type { FoodLogFormData } from "@/shared/types";
 
 const today = todayDate();
 
 export function DiaryContent() {
   const [selectedDate, setSelectedDate] = useState(today);
-  const { data: logs, loading, error, updateLog, removeLog, reload } = useFoodLogs({ date: selectedDate });
+  const { data: logs, loading, error, addLog, updateLog, removeLog, reload, batchDelete, batchCopy } = useFoodLogs({ date: selectedDate });
   const weightLogsHook = useWeightLogs({ startDate: selectedDate, endDate: selectedDate });
   const exerciseLogsHook = useExerciseLogs({ startDate: selectedDate, endDate: selectedDate });
   const waterLogsHook = useWaterLogs({ startDate: selectedDate, endDate: selectedDate });
@@ -45,16 +45,15 @@ export function DiaryContent() {
 
   const editingLog = logs.find((log) => log.id === editingLogId) ?? null;
 
-  async function handleBatchSave(items: Parameters<typeof createFoodLog>[1][]) {
+  async function handleBatchSave(items: FoodLogFormData[]) {
     try {
-      await Promise.all(items.map((item) => createFoodLog(selectedDate, item)));
+      await Promise.all(items.map((item) => addLog(item)));
       setShowAddSheet(false);
       toast.success(`已保存 ${items.length} 条记录`);
       await reload();
-    } catch (err) {
-      const message = err instanceof ApiError ? err.message : "保存失败";
-      toast.error(message);
-      throw new Error(message);
+    } catch {
+      toast.error("保存失败");
+      throw new Error("保存失败");
     }
   }
 
@@ -78,17 +77,16 @@ export function DiaryContent() {
     await runWithToast(() => action(id), { success: successMessage, failure: failureMessage });
   }
 
-  async function handleEditSave(data: Parameters<typeof updateLog>[1]) {
+  async function handleEditSave(data: FoodLogFormData) {
     if (!editingLog) return;
 
     try {
       await updateLog(editingLog.id, data);
       toast.success("已更新");
       setEditingLogId(null);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "更新失败";
-      toast.error(message);
-      throw new Error(message);
+    } catch {
+      toast.error("更新失败");
+      throw new Error("更新失败");
     }
   }
 
@@ -103,13 +101,11 @@ export function DiaryContent() {
 
     setBatchSaving(true);
     try {
-      await batchActionFoodLogs("delete", Array.from(selectedFoodIds));
+      await batchDelete(Array.from(selectedFoodIds));
       toast.success("批量删除成功");
       setSelectedFoodIds(new Set());
-      await reload();
-    } catch (err) {
-      const message = err instanceof ApiError ? err.message : "批量删除失败";
-      toast.error(message);
+    } catch {
+      toast.error("批量删除失败");
     } finally {
       setBatchSaving(false);
     }
@@ -118,14 +114,12 @@ export function DiaryContent() {
   async function handleBatchCopy() {
     setBatchSaving(true);
     try {
-      await batchActionFoodLogs("copy", Array.from(selectedFoodIds), batchTargetDate);
+      await batchCopy(Array.from(selectedFoodIds), batchTargetDate);
       toast.success("批量复制成功");
       setSelectedFoodIds(new Set());
       setBatchAction(null);
-      await reload();
-    } catch (err) {
-      const message = err instanceof ApiError ? err.message : "复制失败";
-      toast.error(message);
+    } catch {
+      toast.error("复制失败");
     } finally {
       setBatchSaving(false);
     }

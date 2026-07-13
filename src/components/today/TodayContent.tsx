@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Plus, Loader2 } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useSummary } from "@/hooks/useSummary";
+import { useFoodLogs } from "@/hooks/useFoodLogs";
 import { useRecentFoods } from "@/hooks/useRecentFoods";
 import { useConfirm } from "@/lib/ui/confirm";
 import { CalorieRing } from "@/components/today/CalorieRing";
@@ -20,8 +21,7 @@ import { QuickAddButton } from "@/components/shared/QuickAddButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { createFoodLog, deleteFoodLog, updateFoodLog } from "@/lib/api/food-logs";
-import { ApiError, todayDate } from "@/lib/api/client";
+import { todayDate } from "@/lib/date";
 import { calculateMacroTargets } from "@/shared/constants";
 import type { FoodLogFormData } from "@/shared/types";
 
@@ -57,6 +57,7 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
   const logs = summaryData?.logs ?? [];
   const summary = summaryData?.summary ?? null;
   const { data: profileData } = useProfile();
+  const { addLog: addFoodLog, updateLog: updateFoodLog, removeLog: removeFoodLog } = useFoodLogs({ date: currentDate, enabled: false });
   const { recentFoods, addRecentFoods, clearRecentFoods } = useRecentFoods();
   const confirm = useConfirm();
 
@@ -68,27 +69,25 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
 
   async function handleBatchSave(items: FoodLogFormData[]) {
     try {
-      await Promise.all(items.map((item) => createFoodLog(currentDate, item)));
+      await Promise.all(items.map((item) => addFoodLog(item)));
       setShowAddSheet(false);
       toast.success(`已保存 ${items.length} 条记录`);
       addRecentFoods(toMacroLite(items));
       await reload();
-    } catch (err) {
-      const message = err instanceof ApiError ? err.message : "保存失败";
-      toast.error(message);
-      throw new Error(message);
+    } catch {
+      toast.error("保存失败");
+      throw new Error("保存失败");
     }
   }
 
   async function handleQuickAdd(food: FoodLogFormData, key: string) {
     setQuickSavingId(key);
     try {
-      await createFoodLog(currentDate, food);
+      await addFoodLog(food);
       toast.success(`已添加 ${food.foodName}`);
       await reload();
-    } catch (err) {
-      const message = err instanceof ApiError ? err.message : "添加失败";
-      toast.error(message);
+    } catch {
+      toast.error("添加失败");
     } finally {
       setQuickSavingId(null);
     }
@@ -104,12 +103,11 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
     if (!ok) return;
 
     try {
-      await deleteFoodLog(id);
+      await removeFoodLog(id);
       toast.success("已删除");
       await reload();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "删除失败";
-      toast.error(message);
+    } catch {
+      toast.error("删除失败");
     }
   }
 
@@ -117,14 +115,13 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
     if (!editingLog) return;
 
     try {
-      await updateFoodLog(editingLog.id, currentDate, data);
+      await updateFoodLog(editingLog.id, data);
       toast.success("已更新");
       setEditingLogId(null);
       await reload();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "更新失败";
-      toast.error(message);
-      throw new Error(message);
+    } catch {
+      toast.error("更新失败");
+      throw new Error("更新失败");
     }
   }
 

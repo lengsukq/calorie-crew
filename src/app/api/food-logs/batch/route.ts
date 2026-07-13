@@ -2,11 +2,12 @@ import { z } from "zod";
 import { parseJsonBody, requireSessionUserId, withRouteError } from "@/lib/api-route";
 import { jsonError } from "@/lib/http";
 import { batchActionFoodLogs } from "@/lib/services/food-log.service";
+import { localDateStringSchema } from "@/lib/validation/food-log";
 
 const batchSchema = z.object({
   action: z.enum(["delete", "copy"]),
   ids: z.array(z.string().uuid()).min(1).max(50),
-  targetDate: z.string().optional(),
+  targetDate: localDateStringSchema.optional(),
 });
 
 export async function POST(request: Request): Promise<Response> {

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  batchActionFoodLogs,
   createFoodLog,
   deleteFoodLog,
   fetchFoodLogsByDate,
@@ -22,6 +23,8 @@ interface UseFoodLogsReturn {
   addLog: (data: FoodLogFormData) => Promise<void>;
   updateLog: (id: string, data: FoodLogFormData) => Promise<void>;
   removeLog: (id: string) => Promise<void>;
+  batchDelete: (ids: string[]) => Promise<void>;
+  batchCopy: (ids: string[], targetDate: string) => Promise<void>;
 }
 
 function toErrorMessage(error: unknown, fallbackMessage: string): string {
@@ -92,5 +95,21 @@ export function useFoodLogs({ date, enabled = true }: UseFoodLogsOptions): UseFo
     [date, load],
   );
 
-  return { data, loading, error, reload: load, addLog, updateLog, removeLog };
+  const batchDelete = useCallback(
+    async (ids: string[]) => {
+      await batchActionFoodLogs("delete", ids);
+      await load();
+    },
+    [load],
+  );
+
+  const batchCopy = useCallback(
+    async (ids: string[], targetDate: string) => {
+      await batchActionFoodLogs("copy", ids, targetDate);
+      await load();
+    },
+    [load],
+  );
+
+  return { data, loading, error, reload: load, addLog, updateLog, removeLog, batchDelete, batchCopy };
 }
