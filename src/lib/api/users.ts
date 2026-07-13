@@ -17,7 +17,3 @@ export function updateUserWeightTarget(weightTargetKg: number | null): Promise<U
     body: JSON.stringify({ weightTargetKg }),
   });
 }
-
-export function logout(): Promise<void> {
-  return apiFetch<void>("/api/auth/logout", { method: "POST" });
-}

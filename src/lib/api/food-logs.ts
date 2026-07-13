@@ -41,3 +41,20 @@ export function updateFoodLog(
     body: JSON.stringify({ logDate, ...data }),
   });
 }
+
+interface BatchActionFoodLogsResponse {
+  success: boolean;
+  deletedCount?: number;
+  copiedCount?: number;
+}
+
+export function batchActionFoodLogs(
+  action: "delete" | "copy",
+  ids: string[],
+  targetDate?: string,
+): Promise<BatchActionFoodLogsResponse> {
+  return apiFetch<BatchActionFoodLogsResponse>("/api/food-logs/batch", {
+    method: "POST",
+    body: JSON.stringify({ action, ids, targetDate }),
+  });
+}
