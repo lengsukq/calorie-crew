@@ -1,10 +1,8 @@
-import { getSessionUserId } from "@/lib/auth/session";
-import { db } from "@/lib/db/client";
-import { userAiConfigs } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { parseJsonBody, requireSessionUserId, withRouteError } from "@/lib/api-route";
 import { jsonError } from "@/lib/http";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getEffectiveConfig, recognizeFood } from "@/lib/services/food-recognize.service";
+import { getUserAiConfig } from "@/lib/services/user-ai-config.service";
 import { z } from "zod";
 
 const recognizeSchema = z.object({
@@ -14,14 +12,14 @@ const recognizeSchema = z.object({
 });
 
 export async function POST(request: Request): Promise<Response> {
-  const userId = await getSessionUserId();
-  if (!userId) return jsonError("未登录", 401);
+  const userIdOrError = await requireSessionUserId();
+  if (userIdOrError instanceof Response) return userIdOrError;
 
-  if (!checkRateLimit(`ai:${userId}`, 10, 60_000)) {
+  if (!checkRateLimit(`ai:${userIdOrError}`, 10, 60_000)) {
     return jsonError("操作过于频繁，请稍后再试", 429);
   }
 
-  const parsed = recognizeSchema.safeParse(await request.json());
+  const parsed = recognizeSchema.safeParse(await parseJsonBody(request));
   if (!parsed.success) {
     return jsonError("参数无效", 400);
   }
@@ -32,11 +30,7 @@ export async function POST(request: Request): Promise<Response> {
     return jsonError("请提供图片或文字描述", 400);
   }
 
-  // Get user's AI config, fallback to env vars
-  const userConfig = await db.query.userAiConfigs.findFirst({
-    where: eq(userAiConfigs.userId, userId),
-  });
-
+  const userConfig = await getUserAiConfig(userIdOrError);
   const effectiveConfig = getEffectiveConfig(userConfig ?? null);
   if (!effectiveConfig) {
     return jsonError(
@@ -45,14 +39,11 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  try {
+  return withRouteError(async () => {
     const result = await recognizeFood(
       { imageBase64: imageData, mimeType, description },
       effectiveConfig,
     );
     return Response.json(result);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "识别失败，请重试";
-    return jsonError(message, 500);
-  }
+  }, "识别失败，请重试");
 }

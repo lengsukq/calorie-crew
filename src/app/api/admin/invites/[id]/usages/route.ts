@@ -1,22 +1,16 @@
-import { and, asc, eq } from "drizzle-orm";
-import { getSessionUserId } from "@/lib/auth/session";
-import { db } from "@/lib/db/client";
-import { inviteCodes, inviteUsages, users } from "@/lib/db/schema";
+import { requireAdminUserId, withRouteError } from "@/lib/api-route";
 import { jsonError } from "@/lib/http";
+import { getInviteWithUsages } from "@/lib/services/invite.service";
 
 export async function GET(_: Request, context: { params: Promise<{ id: string }> }): Promise<Response> {
-  const userId = await getSessionUserId();
-  if (!userId) return jsonError("未登录", 401);
-  const admin = await db.query.users.findFirst({ where: eq(users.id, userId), columns: { role: true } });
-  if (admin?.role !== "admin") return jsonError("无管理员权限", 403);
-  const { id } = await context.params;
-  const invite = await db.query.inviteCodes.findFirst({ where: and(eq(inviteCodes.id, id), eq(inviteCodes.createdByUserId, userId)) });
-  if (!invite) return jsonError("邀请码不存在", 404);
+  const userIdOrError = await requireAdminUserId();
+  if (userIdOrError instanceof Response) return userIdOrError;
 
-  const usages = await db.query.inviteUsages.findMany({ where: eq(inviteUsages.inviteCodeId, id), orderBy: [asc(inviteUsages.usedAt)] });
-  const invitedUsers = await Promise.all(usages.map(async (usage) => {
-    const invitedUser = await db.query.users.findFirst({ where: eq(users.id, usage.invitedUserId), columns: { id: true, email: true, createdAt: true } });
-    return { ...usage, invitedUser };
-  }));
-  return Response.json({ invite, usages: invitedUsers });
+  const { id } = await context.params;
+
+  return withRouteError(async () => {
+    const result = await getInviteWithUsages(userIdOrError, id);
+    if (!result) return jsonError("邀请码不存在", 404);
+    return Response.json(result);
+  }, "获取邀请码使用记录失败");
 }
