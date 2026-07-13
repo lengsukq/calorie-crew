@@ -8,6 +8,8 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { CalorieRing } from "@/components/today/CalorieRing";
 import { ExerciseCard } from "@/components/today/ExerciseCard";
 import { MealGroup } from "@/components/today/MealGroup";
+import { SleepCard } from "@/components/today/SleepCard";
+import { WaterCard } from "@/components/today/WaterCard";
 import { WeightCard } from "@/components/today/WeightCard";
 import { MiniStatCard } from "@/components/shared/MiniStatCard";
 import { AiAdviceCard } from "@/components/shared/AiAdviceCard";
@@ -262,6 +264,11 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
       <div className="grid gap-3 md:grid-cols-2">
         <WeightCard currentDate={currentDate} weightTargetKg={weightTargetKg} />
         <ExerciseCard currentDate={currentDate} onChanged={reload} />
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <WaterCard currentDate={currentDate} />
+        <SleepCard currentDate={currentDate} />
       </div>
 
       {shouldShowAiAdvice && (

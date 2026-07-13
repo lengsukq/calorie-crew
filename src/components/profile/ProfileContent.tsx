@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useUserTarget } from "@/hooks/useUserTarget";
+import { useProfile } from "@/hooks/useProfile";
 import { TargetSetting } from "@/components/profile/TargetSetting";
 import { AdminPanel } from "@/components/profile/AdminPanel";
 import { AiConfigPanel } from "@/components/profile/AiConfigPanel";
@@ -63,6 +64,29 @@ function CollapsibleSection({
 
 export function ProfileContent({ email, role, calorieTarget, weightTargetKg }: ProfileContentProps) {
   const { updateTarget } = useUserTarget();
+  const { data: profileData, loading: profileLoading } = useProfile();
+
+  const profileCompleteness = useMemo(() => {
+    if (!profileData?.profile) return 0;
+    const fields = [
+      profileData.profile.displayName,
+      profileData.profile.birthDate,
+      profileData.profile.heightCm,
+      profileData.profile.weightTargetKg,
+    ];
+    const filled = fields.filter((field) => field !== null && field !== undefined && field !== "").length;
+    return Math.round((filled / fields.length) * 100);
+  }, [profileData?.profile]);
+
+  const onboardingTips = useMemo(() => {
+    if (!profileData?.profile) return [];
+    const tips: string[] = [];
+    if (!profileData.profile.displayName) tips.push("设置昵称，让记录更有归属感");
+    if (!profileData.profile.birthDate) tips.push("填写出生日期，以便计算更精准的基础代谢");
+    if (!profileData.profile.heightCm) tips.push("录入身高，系统才能计算 BMI 与推荐摄入");
+    if (!profileData.profile.weightTargetKg) tips.push("设定体重目标，方便追踪长期趋势");
+    return tips;
+  }, [profileData?.profile]);
 
   async function handleCreateInvite(maxUses: number): Promise<string | null> {
     try {
@@ -100,6 +124,30 @@ export function ProfileContent({ email, role, calorieTarget, weightTargetKg }: P
           {role === "admin" ? "管理员" : "会员"}
         </span>
       </div>
+
+      {/* Onboarding guidance */}
+      {!profileLoading && profileData && profileCompleteness < 100 && (
+        <div className="glass-card">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-sm font-semibold text-slate-700">完善资料</p>
+            <span className="text-xs text-slate-400">{profileCompleteness}%</span>
+          </div>
+          <div className="mb-3 h-2 w-full rounded-full bg-slate-100">
+            <div
+              className="h-2 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all"
+              style={{ width: `${profileCompleteness}%` }}
+            />
+          </div>
+          <ul className="space-y-1.5">
+            {onboardingTips.map((tip) => (
+              <li key={tip} className="flex items-start gap-2 text-xs text-slate-500">
+                <span className="mt-0.5 text-cyan-500">•</span>
+                <span>{tip}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Settings section */}
       <div className="space-y-3">

@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useBodyMeasurements } from "@/hooks/useBodyMeasurements";
 import { useExerciseLogs } from "@/hooks/useExerciseLogs";
 import { useHistory } from "@/hooks/useHistory";
+import { useSleepLogs } from "@/hooks/useSleepLogs";
 import { useWeightLogs } from "@/hooks/useWeightLogs";
 import { CalorieChart } from "@/components/progress/CalorieChart";
 import { ExerciseStatsPanel } from "@/components/progress/ExerciseStatsPanel";
@@ -101,6 +103,14 @@ export function ProgressContent({ weightTargetKg }: ProgressContentProps) {
     endDate: rangeEndDate,
   });
   const { logs: exerciseLogs, loading: exerciseLoading } = useExerciseLogs({
+    startDate: rangeStartDate,
+    endDate: rangeEndDate,
+  });
+  const { logs: sleepLogs, loading: sleepLoading } = useSleepLogs({
+    startDate: rangeStartDate,
+    endDate: rangeEndDate,
+  });
+  const { logs: bodyMeasurementLogs, loading: bodyMeasurementLoading } = useBodyMeasurements({
     startDate: rangeStartDate,
     endDate: rangeEndDate,
   });
@@ -266,6 +276,56 @@ export function ProgressContent({ weightTargetKg }: ProgressContentProps) {
         ) : (
           <ExerciseStatsPanel logs={exerciseLogs} />
         )}
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <div className="glass-card">
+          <h2 className="mb-3 text-slate-800">睡眠统计</h2>
+          {sleepLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="y2k-spinner h-5 w-5" />
+            </div>
+          ) : sleepLogs.length === 0 ? (
+            <EmptyState icon="😴" text="暂无睡眠记录" />
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <StatBox
+                label="平均时长"
+                value={`${Math.round(sleepLogs.reduce((s, l) => s + l.sleepMinutes, 0) / sleepLogs.length / 60 * 10) / 10}`}
+                unit="小时"
+              />
+              <StatBox
+                label="平均质量"
+                value={`${(sleepLogs.reduce((s, l) => s + l.quality, 0) / sleepLogs.length).toFixed(1)}`}
+                unit="/ 5"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="glass-card">
+          <h2 className="mb-3 text-slate-800">身体数据</h2>
+          {bodyMeasurementLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="y2k-spinner h-5 w-5" />
+            </div>
+          ) : bodyMeasurementLogs.length === 0 ? (
+            <EmptyState icon="📏" text="暂无身体数据记录" />
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <StatBox
+                label="最新腰围"
+                value={bodyMeasurementLogs[0].waistCm ? Number(bodyMeasurementLogs[0].waistCm).toFixed(1) : "未记录"}
+                unit="cm"
+              />
+              <StatBox
+                label="记录次数"
+                value={`${bodyMeasurementLogs.length}`}
+                unit="次"
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Macro distribution */}

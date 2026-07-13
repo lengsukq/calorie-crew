@@ -21,6 +21,8 @@ interface MealGroupProps {
   onEdit?: (id: string) => void;
   collapsible?: boolean;
   title?: string;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }
 
 export function MealGroup({
@@ -29,6 +31,8 @@ export function MealGroup({
   onEdit,
   collapsible = true,
   title = "饮食记录",
+  selectedIds,
+  onToggleSelect,
 }: MealGroupProps) {
   const [collapsedMeals, setCollapsedMeals] = useState<Set<string>>(new Set());
 
@@ -124,6 +128,14 @@ export function MealGroup({
                         <div className="flex items-center justify-between gap-2">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
+                              {selectedIds && onToggleSelect && (
+                                <input
+                                  type="checkbox"
+                                  checked={selectedIds.has(item.id)}
+                                  onChange={() => onToggleSelect(item.id)}
+                                  className="h-4 w-4 rounded border-slate-300 accent-cyan-500"
+                                />
+                              )}
                               <span className="text-sm font-medium text-slate-700">
                                 {item.foodName}
                               </span>
