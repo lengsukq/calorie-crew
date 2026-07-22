@@ -1,12 +1,19 @@
 "use client";
 
+import { useId } from "react";
+
 interface CalorieRingProps {
   current: number;
   target: number;
+  /** 环形图直径（px），默认 200 */
+  size?: number;
 }
 
-export function CalorieRing({ current, target }: CalorieRingProps) {
-  const radius = 72;
+export function CalorieRing({ current, target, size = 200 }: CalorieRingProps) {
+  const gradientId = `ring-gradient-${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
+  const strokeWidth = 14;
+  const radius = (size - strokeWidth) / 2 - 2;
+  const center = size / 2;
   const circumference = 2 * Math.PI * radius;
   const safeTarget = target > 0 ? target : 1;
   const ratio = Math.min(current / safeTarget, 1);
@@ -16,23 +23,38 @@ export function CalorieRing({ current, target }: CalorieRingProps) {
 
   return (
     <div className="relative mx-auto w-fit">
-      <svg width="200" height="200" viewBox="0 0 200 200" className="-rotate-90">
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+            {isOver ? (
+              <>
+                <stop offset="0%" stopColor="hsl(var(--ring-over-start))" />
+                <stop offset="100%" stopColor="hsl(var(--ring-over-end))" />
+              </>
+            ) : (
+              <>
+                <stop offset="0%" stopColor="hsl(var(--ring-start))" />
+                <stop offset="100%" stopColor="hsl(var(--ring-end))" />
+              </>
+            )}
+          </linearGradient>
+        </defs>
         <circle
-          cx="100"
-          cy="100"
+          cx={center}
+          cy={center}
           r={radius}
           fill="none"
-          strokeWidth="14"
+          strokeWidth={strokeWidth}
           className="stroke-muted"
         />
         <circle
-          cx="100"
-          cy="100"
+          cx={center}
+          cy={center}
           r={radius}
           fill="none"
-          strokeWidth="14"
+          strokeWidth={strokeWidth}
           strokeLinecap="round"
-          stroke={isOver ? "hsl(var(--destructive))" : "hsl(var(--primary))"}
+          stroke={`url(#${gradientId})`}
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           style={{ transition: "stroke-dashoffset 0.6s ease-in-out" }}
@@ -40,8 +62,8 @@ export function CalorieRing({ current, target }: CalorieRingProps) {
       </svg>
 
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold tabular-nums text-foreground">{current}</span>
-        <span className="text-xs text-muted-foreground tabular-nums">/ {target} kcal</span>
+        <span className="text-3xl font-black tabular-nums text-foreground">{current}</span>
+        <span className="text-[11px] text-muted-foreground/70 tabular-nums">/ {target} kcal</span>
       </div>
 
       <div

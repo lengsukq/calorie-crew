@@ -43,14 +43,14 @@ export function WeightTrendChart({ logs, weightTargetKg }: WeightTrendChartProps
   return (
     <div className="w-full">
       <svg width="100%" height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="xMidYMid meet" className="mx-auto">
-        <text x="0" y="18" fontSize="10" fill="#94a3b8">
+        <text x="0" y="18" fontSize="10" fill="hsl(var(--chart-label))">
           {chartMaximumWeight.toFixed(1)}kg
         </text>
-        <text x="0" y={plotHeight + 16} fontSize="10" fill="#94a3b8">
+        <text x="0" y={plotHeight + 16} fontSize="10" fill="hsl(var(--chart-label))">
           {chartMinimumWeight.toFixed(1)}kg
         </text>
-        <line x1={leftPadding} y1="12" x2={leftPadding} y2={plotHeight + 12} stroke="#e2e8f0" />
-        <line x1={leftPadding} y1={plotHeight + 12} x2={chartWidth - 16} y2={plotHeight + 12} stroke="#e2e8f0" />
+        <line x1={leftPadding} y1="12" x2={leftPadding} y2={plotHeight + 12} stroke="hsl(var(--chart-grid))" />
+        <line x1={leftPadding} y1={plotHeight + 12} x2={chartWidth - 16} y2={plotHeight + 12} stroke="hsl(var(--chart-grid))" />
         {targetLineY !== null && (
           <>
             <line
@@ -58,27 +58,27 @@ export function WeightTrendChart({ logs, weightTargetKg }: WeightTrendChartProps
               y1={targetLineY}
               x2={chartWidth - 16}
               y2={targetLineY}
-              stroke="#f59e0b"
+              stroke="hsl(var(--chart-3))"
               strokeWidth="1.5"
               strokeDasharray="4,3"
             />
-            <text x={chartWidth - 58} y={targetLineY - 4} fontSize="10" fill="#f59e0b">
+            <text x={chartWidth - 58} y={targetLineY - 4} fontSize="10" fill="hsl(var(--chart-3))">
               目标
             </text>
           </>
         )}
-        <polyline points={polylinePoints} fill="none" stroke="#06b6d4" strokeWidth="3" strokeLinecap="round" />
+        <polyline points={polylinePoints} fill="none" stroke="hsl(var(--chart-1))" strokeWidth="3" strokeLinecap="round" />
         {sortedLogs.map((log, index) => {
           const xPosition = getXPosition(index);
           const yPosition = getYPosition(Number(log.weightKg));
 
           return (
             <g key={log.id}>
-              <circle cx={xPosition} cy={yPosition} r="4" fill="#06b6d4" stroke="white" strokeWidth="2" />
-              <text x={xPosition} y={yPosition - 10} textAnchor="middle" fontSize="10" fill="#0891b2" fontWeight="600">
+              <circle cx={xPosition} cy={yPosition} r="4" fill="hsl(var(--chart-1))" stroke="hsl(var(--card))" strokeWidth="2" />
+              <text x={xPosition} y={yPosition - 10} textAnchor="middle" fontSize="10" fill="hsl(var(--chart-1))" fontWeight="600">
                 {Number(log.weightKg).toFixed(1)}
               </text>
-              <text x={xPosition} y={chartHeight - 8} textAnchor="middle" fontSize="9" fill="#94a3b8">
+              <text x={xPosition} y={chartHeight - 8} textAnchor="middle" fontSize="9" fill="hsl(var(--chart-label))">
                 {log.logDate.slice(5)}
               </text>
             </g>

@@ -12,12 +12,20 @@ interface StatCardProps {
   className?: string;
 }
 
-const ACCENT_COLORS: Record<string, string> = {
+const ACCENT_TEXT: Record<string, string> = {
   primary: "text-primary",
-  success: "text-emerald-600",
-  warning: "text-amber-600",
-  danger: "text-red-600",
-  purple: "text-purple-600",
+  success: "text-success",
+  warning: "text-warning",
+  danger: "text-danger",
+  purple: "text-chart-4",
+};
+
+const ACCENT_BG: Record<string, string> = {
+  primary: "bg-primary",
+  success: "bg-success",
+  warning: "bg-warning",
+  danger: "bg-danger",
+  purple: "bg-chart-4",
 };
 
 /**
@@ -39,12 +47,12 @@ export function StatCard({
     : 0;
 
   const trendColor =
-    trend === "up" ? "text-emerald-600" : trend === "down" ? "text-red-600" : "text-muted-foreground";
+    trend === "up" ? "text-success" : trend === "down" ? "text-danger" : "text-muted-foreground";
 
   return (
     <div className={cn("rounded-lg border bg-card p-3 text-center", className)}>
       <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
-      <p className={cn("mt-1 text-xl font-bold tabular-nums", accentColor && ACCENT_COLORS[accentColor])}>
+      <p className={cn("mt-1 text-xl font-bold tabular-nums", accentColor && ACCENT_TEXT[accentColor])}>
         {value}
         {unit && <span className="ml-0.5 text-xs font-normal text-muted-foreground">{unit}</span>}
       </p>
@@ -55,8 +63,11 @@ export function StatCard({
         <div className="mt-2">
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
             <div
-              className={cn("h-full rounded-full", accentColor ? ACCENT_COLORS[accentColor] : "bg-primary")}
-              style={{ width: `${progressPercent}%`, backgroundColor: accentColor ? undefined : undefined }}
+              className={cn(
+                "h-full rounded-full transition-[width] duration-500 ease-out",
+                accentColor ? ACCENT_BG[accentColor] : "bg-primary",
+              )}
+              style={{ width: `${progressPercent}%` }}
             />
           </div>
           <p className="mt-1 text-[10px] text-muted-foreground tabular-nums">

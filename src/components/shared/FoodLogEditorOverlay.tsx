@@ -20,6 +20,7 @@ interface FoodLogEditorOverlayProps {
   onEditSubmit: (data: FoodLogFormData) => Promise<void>;
   onCloseAdd: () => void;
   onCloseEdit: () => void;
+  defaultMealType?: string;
 }
 
 export function FoodLogEditorOverlay({
@@ -29,6 +30,7 @@ export function FoodLogEditorOverlay({
   onEditSubmit,
   onCloseAdd,
   onCloseEdit,
+  defaultMealType,
 }: FoodLogEditorOverlayProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const isEditing = Boolean(editingLog);
@@ -43,7 +45,7 @@ export function FoodLogEditorOverlay({
             <SheetDescription className="sr-only">通过搜索或 AI 识别添加食物</SheetDescription>
           </SheetHeader>
           <div className="mt-4 flex-1 overflow-y-auto">
-            <FoodLogForm onSubmit={onAddSubmit} onCancel={onCloseAdd} />
+            <FoodLogForm key={defaultMealType ?? "add"} onSubmit={onAddSubmit} onCancel={onCloseAdd} defaultMealType={defaultMealType} />
           </div>
         </SheetContent>
       </Sheet>

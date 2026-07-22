@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const BMI_COLOR_CLASSES = {
-  blue: "bg-blue-50 text-blue-600",
-  green: "bg-emerald-50 text-emerald-600",
-  orange: "bg-orange-50 text-orange-600",
-  red: "bg-red-50 text-red-600",
+  blue: "bg-primary/10 text-primary",
+  green: "bg-success/10 text-success",
+  orange: "bg-warning/10 text-warning",
+  red: "bg-danger/10 text-danger",
 } as const;
 
 export function HealthMetricsCard() {

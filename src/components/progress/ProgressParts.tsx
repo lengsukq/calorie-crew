@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { cn } from "@/lib/utils";
 
 interface StatBoxProps {
   label: string;
@@ -24,35 +23,15 @@ export function StatBox({ label, value, unit }: StatBoxProps) {
 interface EmptyStateProps {
   icon?: ReactNode;
   text: string;
+  hint?: string;
 }
 
-export function EmptyState({ icon, text }: EmptyStateProps) {
+export function EmptyState({ icon, text, hint }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center gap-2 py-8 text-center">
-      {icon && <div className="text-muted-foreground">{icon}</div>}
-      <p className="text-sm text-muted-foreground">{text}</p>
+    <div className="flex flex-col items-center gap-3 py-8 text-center">
+      {icon && <div className="rounded-full bg-muted p-3 text-muted-foreground">{icon}</div>}
+      <p className="text-sm font-medium text-muted-foreground">{text}</p>
+      {hint && <p className="text-xs text-muted-foreground/70">{hint}</p>}
     </div>
-  );
-}
-
-interface PeriodButtonProps {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-}
-
-export function PeriodButton({ active, onClick, label }: PeriodButtonProps) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "rounded-md px-5 py-2 text-sm font-medium transition-colors",
-        active
-          ? "bg-primary text-primary-foreground"
-          : "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-      )}
-    >
-      {label}
-    </button>
   );
 }

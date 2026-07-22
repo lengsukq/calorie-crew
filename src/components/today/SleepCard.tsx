@@ -3,7 +3,7 @@
 import { Moon } from "lucide-react";
 import { useSleepLogs } from "@/hooks/useSleepLogs";
 import { useResourceForm } from "@/hooks/useResourceForm";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TrackerCard } from "@/components/shared/TrackerCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,47 +37,24 @@ export function SleepCard({ currentDate }: SleepCardProps) {
   const minutes = form.values.sleepMinutes % 60;
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-        <div className="flex items-center gap-2">
-          <Moon className="h-4 w-4 text-primary" />
-          <CardTitle className="text-sm">昨晚睡眠</CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <TrackerCard
+      icon={Moon}
+      title="昨晚睡眠"
+      value={todaySleepLog ? `${hours}h ${minutes}m` : undefined}
+      hint={todaySleepLog ? `质量 ${form.values.quality}/5` : "还没有睡眠记录"}
+    >
+      <div className="space-y-3">
         {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
 
         {loading ? (
-          <Skeleton className="h-20 w-full" />
-        ) : todaySleepLog ? (
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border bg-card p-3">
-              <p className="text-[11px] text-muted-foreground">时长</p>
-              <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
-                {hours}
-                <span className="ml-1 text-xs font-normal text-muted-foreground">时 {minutes} 分</span>
-              </p>
-            </div>
-            <div className="rounded-lg border bg-card p-3">
-              <p className="text-[11px] text-muted-foreground">质量</p>
-              <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
-                {form.values.quality}
-                <span className="ml-1 text-xs font-normal text-muted-foreground">/ 5</span>
-              </p>
-            </div>
-          </div>
+          <Skeleton className="h-16 w-full" />
         ) : (
-          <p className="rounded-md border border-dashed py-4 text-center text-sm text-muted-foreground">
-            记录昨晚睡眠，追踪睡眠趋势
-          </p>
-        )}
-
         <form
           onSubmit={(e) => {
             e.preventDefault();
             void form.handleSubmit();
           }}
-          className="space-y-3 border-t pt-3"
+          className="space-y-3"
         >
           <div className="space-y-1.5">
             <Label htmlFor={`sleep-minutes-${currentDate}`}>睡眠时长 (分钟)</Label>
@@ -118,7 +95,8 @@ export function SleepCard({ currentDate }: SleepCardProps) {
             {form.submitting ? "保存中..." : "保存睡眠"}
           </Button>
         </form>
-      </CardContent>
-    </Card>
+        )}
+      </div>
+    </TrackerCard>
   );
 }

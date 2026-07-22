@@ -11,10 +11,11 @@ import { CalorieChart } from "@/components/progress/CalorieChart";
 import { ExerciseStatsPanel } from "@/components/progress/ExerciseStatsPanel";
 import { MacroDonut } from "@/components/progress/MacroDonut";
 import { WeightTrendChart } from "@/components/progress/WeightTrendChart";
-import { EmptyState, PeriodButton, StatBox } from "@/components/progress/ProgressParts";
+import { EmptyState, StatBox } from "@/components/progress/ProgressParts";
 import { StatCard } from "@/components/shared/StatCard";
 import { AiAdviceCard } from "@/components/shared/AiAdviceCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
 import { addDays, todayDate } from "@/lib/date";
 import {
@@ -31,6 +32,11 @@ interface ProgressContentProps {
 
 function getPeriodStartDate(period: Period): string {
   return addDays(todayDate(), -period + 1);
+}
+
+function formatRangeLabel(period: Period): string {
+  if (period === 365) return "全部记录";
+  return `近 ${period} 天`;
 }
 
 export function ProgressContent({ weightTargetKg }: ProgressContentProps) {
@@ -65,11 +71,15 @@ export function ProgressContent({ weightTargetKg }: ProgressContentProps) {
 
   return (
     <div className="stack page-enter">
-      <div className="flex gap-2">
-        <PeriodButton active={period === 7} onClick={() => setPeriod(7)} label="近 7 天" />
-        <PeriodButton active={period === 30} onClick={() => setPeriod(30)} label="近 30 天" />
-        <PeriodButton active={period === 365} onClick={() => setPeriod(365)} label="全部" />
-      </div>
+      <Segmented
+        options={[
+          { value: 7, label: "近 7 天" },
+          { value: 30, label: "近 30 天" },
+          { value: 365, label: "全部" },
+        ]}
+        value={period}
+        onChange={setPeriod}
+      />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="日均热量" value={avgKcal} unit="kcal" accentColor="primary" />
@@ -96,8 +106,8 @@ export function ProgressContent({ weightTargetKg }: ProgressContentProps) {
                 <span
                   className={`inline-flex items-center gap-1 rounded-md px-3 py-1 text-xs font-semibold ${
                     weekComparison.diff <= 0
-                      ? "bg-emerald-50 text-emerald-600"
-                      : "bg-red-50 text-red-600"
+                      ? "bg-success/10 text-success"
+                      : "bg-danger/10 text-danger"
                   }`}
                 >
                   {weekComparison.diff <= 0 ? "↓" : "↑"} {Math.abs(weekComparison.diff)} kcal
@@ -116,6 +126,7 @@ export function ProgressContent({ weightTargetKg }: ProgressContentProps) {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">热量趋势</CardTitle>
+          <p className="text-xs text-muted-foreground">{formatRangeLabel(period)}·每日摄入与目标对比</p>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -131,6 +142,7 @@ export function ProgressContent({ weightTargetKg }: ProgressContentProps) {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">体重趋势</CardTitle>
+          <p className="text-xs text-muted-foreground">{formatRangeLabel(period)}·体重变化与目标线</p>
         </CardHeader>
         <CardContent>
           {weightLoading ? (
@@ -242,15 +254,15 @@ export function ProgressContent({ weightTargetKg }: ProgressContentProps) {
               <div className="mt-4 grid grid-cols-3 gap-3">
                 <div className="text-center">
                   <p className="text-[11px] text-muted-foreground">蛋白质</p>
-                  <p className="text-sm font-bold text-purple-600 tabular-nums">{totalProtein.toFixed(1)} g</p>
+                  <p className="text-sm font-bold text-chart-4 tabular-nums">{totalProtein.toFixed(1)} g</p>
                 </div>
                 <div className="text-center">
                   <p className="text-[11px] text-muted-foreground">碳水</p>
-                  <p className="text-sm font-bold text-amber-600 tabular-nums">{totalCarbs.toFixed(1)} g</p>
+                  <p className="text-sm font-bold text-chart-3 tabular-nums">{totalCarbs.toFixed(1)} g</p>
                 </div>
                 <div className="text-center">
                   <p className="text-[11px] text-muted-foreground">脂肪</p>
-                  <p className="text-sm font-bold text-emerald-600 tabular-nums">{totalFat.toFixed(1)} g</p>
+                  <p className="text-sm font-bold text-chart-2 tabular-nums">{totalFat.toFixed(1)} g</p>
                 </div>
               </div>
             </>

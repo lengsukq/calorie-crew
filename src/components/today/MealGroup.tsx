@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, Pencil, Plus, Trash2 } from "lucide-react";
 import type { MealType } from "@/lib/db/schema";
 import { MEAL_ORDER, MEAL_LABELS, MEAL_ICONS } from "@/shared/constants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +27,8 @@ interface MealGroupProps {
   title?: string;
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
+  /** 提供后，每个餐次标题行显示 "+" 按钮，空餐次以虚线占位呈现 */
+  onAddMeal?: (mealType: MealType) => void;
 }
 
 export function MealGroup({
@@ -37,6 +39,7 @@ export function MealGroup({
   title = "饮食记录",
   selectedIds,
   onToggleSelect,
+  onAddMeal,
 }: MealGroupProps) {
   const [collapsedMeals, setCollapsedMeals] = useState<Set<string>>(new Set());
 
@@ -61,7 +64,7 @@ export function MealGroup({
     });
   }
 
-  if (!hasAny) {
+  if (!hasAny && !onAddMeal) {
     return (
       <Card>
         <CardHeader>
@@ -106,15 +109,50 @@ export function MealGroup({
                     className={cn(
                       "ml-auto h-4 w-4 text-muted-foreground transition-transform",
                       isCollapsed && "-rotate-90",
+                      onAddMeal && "ml-0",
                     )}
                   />
+                )}
+                {onAddMeal && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`添加${group.label}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onAddMeal(group.type);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.stopPropagation();
+                        onAddMeal(group.type);
+                      }
+                    }}
+                    className={cn(
+                      "flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary",
+                      !collapsible && "ml-auto",
+                    )}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </span>
                 )}
               </button>
 
               {!isCollapsed && (
                 <div className="mt-2 space-y-1.5">
                   {group.items.length === 0 ? (
-                    <p className="px-6 text-xs text-muted-foreground">暂无记录</p>
+                    onAddMeal ? (
+                      <button
+                        type="button"
+                        onClick={() => onAddMeal(group.type)}
+                        className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed py-2.5 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        添加{group.label}
+                      </button>
+                    ) : (
+                      <p className="px-6 text-xs text-muted-foreground">暂无记录</p>
+                    )
                   ) : (
                     group.items.map((item) => (
                       <div

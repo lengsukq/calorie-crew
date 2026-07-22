@@ -7,9 +7,9 @@ interface MacroDonutProps {
 }
 
 const COLORS = {
-  protein: "#a855f7",
-  carbs: "#f59e0b",
-  fat: "#10b981",
+  protein: "hsl(var(--chart-4))",
+  carbs: "hsl(var(--chart-3))",
+  fat: "hsl(var(--chart-2))",
 };
 
 export function MacroDonut({ proteinG, carbsG, fatG }: MacroDonutProps) {

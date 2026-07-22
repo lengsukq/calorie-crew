@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { todayDate } from "@/lib/date";
 import { calculateMacroTargets } from "@/shared/constants";
+import type { MealType } from "@/lib/db/schema";
 import type { FoodLogFormData } from "@/shared/types";
 
 interface TodayContentProps {
@@ -62,6 +63,7 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
   const confirm = useConfirm();
 
   const [showAddSheet, setShowAddSheet] = useState(false);
+  const [addMealType, setAddMealType] = useState<string>("breakfast");
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
   const [quickSavingId, setQuickSavingId] = useState<string | null>(null);
 
@@ -125,6 +127,11 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
     }
   }
 
+  function openAddSheet(mealType?: MealType) {
+    setAddMealType(mealType ?? "breakfast");
+    setShowAddSheet(true);
+  }
+
   const totalKcal = summary?.totalKcal ?? 0;
   const totalExerciseKcal = summary?.totalExerciseKcal ?? 0;
   const netKcal = summary?.netKcal ?? totalKcal;
@@ -138,11 +145,11 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
 
   return (
     <div className="stack page-enter">
+      {/* 问候区（单行紧凑） */}
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs text-muted-foreground">{getGreeting()}，{email}</p>
-          <h2 className="mt-0.5 text-xl font-bold text-foreground">今日摄入概览</h2>
-        </div>
+        <p className="text-sm text-muted-foreground">
+          {getGreeting()}，<span className="font-medium text-foreground">{email}</span>
+        </p>
         <Badge variant={role === "admin" ? "default" : "secondary"}>
           {role === "admin" ? "管理员" : "会员"}
         </Badge>
@@ -168,117 +175,132 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
         </Card>
       )}
 
-      <Card>
-        <CardContent className="pt-6">
-          <CalorieRing current={Math.max(netKcal, 0)} target={calorieTarget} />
-
-          <div className="mt-4 grid w-full grid-cols-3 gap-3">
-            <StatCard label="摄入" value={totalKcal} unit="kcal" />
-            <StatCard label="运动" value={totalExerciseKcal} unit="kcal" accentColor="success" />
-            <StatCard
-              label={remaining >= 0 ? "剩余" : "超出"}
-              value={Math.abs(remaining)}
-              unit="kcal"
-              accentColor={remaining >= 0 ? "primary" : "danger"}
-            />
-          </div>
-
-          <div className="mt-3 grid w-full grid-cols-3 gap-3">
-            <StatCard
-              label="蛋白质"
-              value={protein.toFixed(1)}
-              unit="g"
-              accentColor="purple"
-              progress={{ current: protein, max: targets.proteinG || 1 }}
-            />
-            <StatCard
-              label="碳水"
-              value={carbs.toFixed(1)}
-              unit="g"
-              accentColor="warning"
-              progress={{ current: carbs, max: targets.carbsG || 1 }}
-            />
-            <StatCard
-              label="脂肪"
-              value={fat.toFixed(1)}
-              unit="g"
-              accentColor="success"
-              progress={{ current: fat, max: targets.fatG || 1 }}
-            />
-          </div>
-
-          <p className="mt-4 text-[11px] text-muted-foreground">
-            蛋白质目标按 20%、碳水 50%、脂肪 30% 热量占比估算
-          </p>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <WeightCard currentDate={currentDate} weightTargetKg={weightTargetKg} />
-        <ExerciseCard currentDate={currentDate} onChanged={reload} />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <WaterCard currentDate={currentDate} />
-        <SleepCard currentDate={currentDate} />
-      </div>
-
-      {shouldShowAiAdvice && (
-        <AiAdviceCard
-          title="AI 今日建议"
-          type="daily_diet"
-          enabled={aiAdviceEnabled && logs.length > 0}
-          disabledText={aiAdviceEnabled ? "记录一条饮食后，即可生成今日 AI 建议。" : "AI 建议已关闭，可在个人资料中开启。"}
-          emptyText="暂无今日建议，点击生成后获取基于今日记录的饮食提示。"
-        />
-      )}
-
-      {recentFoods.length > 0 && (
-        <Card>
+      {/* 仪表盘双栏：
+          移动端顺序 = 概览 → 餐食/最近/AI → 健康追踪
+          桌面端 (lg) = 左栏(概览 + 健康追踪) | 右栏(餐食 + 最近 + AI) */}
+      <div className="grid gap-4 lg:grid-cols-[360px_1fr] lg:items-start">
+        {/* 概览：热量环 + 摄入/运动/剩余 + 宏量营养素 */}
+        <Card className="lg:col-start-1 lg:row-start-1">
           <CardContent className="pt-6">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-foreground">最近添加</h2>
-              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={clearRecentFoods}>
-                清除
-              </Button>
+            <CalorieRing current={Math.max(netKcal, 0)} target={calorieTarget} size={170} />
+
+            <div className="mt-4 grid w-full grid-cols-3 gap-3">
+              <StatCard label="摄入" value={totalKcal} unit="kcal" />
+              <StatCard label="运动" value={totalExerciseKcal} unit="kcal" accentColor="success" />
+              <StatCard
+                label={remaining >= 0 ? "剩余" : "超出"}
+                value={Math.abs(remaining)}
+                unit="kcal"
+                accentColor={remaining >= 0 ? "primary" : "danger"}
+              />
             </div>
-            <div className="flex flex-wrap gap-2">
-              {recentFoods.map((food, index) => {
-                const key = `${food.foodName}-${index}`;
-                const isSaving = quickSavingId === key;
-                return (
-                  <button
-                    key={key}
-                    onClick={() => handleQuickAdd(food as FoodLogFormData, key)}
-                    disabled={isSaving}
-                    className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-left transition-colors hover:bg-accent disabled:opacity-50"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{food.foodName}</p>
-                      <p className="text-[11px] text-muted-foreground tabular-nums">
-                        {food.calories} kcal · P{food.proteinG} C{food.carbsG} F{food.fatG}
-                      </p>
-                    </div>
-                    {isSaving ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                    ) : (
-                      <Plus className="h-3.5 w-3.5 text-primary" />
-                    )}
-                  </button>
-                );
-              })}
+
+            <div className="mt-3 grid w-full grid-cols-3 gap-3">
+              <StatCard
+                label="蛋白质"
+                value={protein.toFixed(1)}
+                unit="g"
+                accentColor="purple"
+                progress={{ current: protein, max: targets.proteinG || 1 }}
+              />
+              <StatCard
+                label="碳水"
+                value={carbs.toFixed(1)}
+                unit="g"
+                accentColor="warning"
+                progress={{ current: carbs, max: targets.carbsG || 1 }}
+              />
+              <StatCard
+                label="脂肪"
+                value={fat.toFixed(1)}
+                unit="g"
+                accentColor="success"
+                progress={{ current: fat, max: targets.fatG || 1 }}
+              />
             </div>
+
+            <p className="mt-4 text-[11px] text-muted-foreground">
+              蛋白质目标按 20%、碳水 50%、脂肪 30% 热量占比估算
+            </p>
           </CardContent>
         </Card>
-      )}
 
-      <MealGroup logs={logs} onEdit={setEditingLogId} onDelete={(id) => void handleDelete(id)} collapsible title="今日饮食" />
+        {/* 餐食 + 最近添加 + AI 建议（桌面右栏，移动优先） */}
+        <div className="stack lg:col-start-2 lg:row-start-1 lg:row-span-2">
+          <MealGroup
+            logs={logs}
+            onEdit={setEditingLogId}
+            onDelete={(id) => void handleDelete(id)}
+            collapsible
+            title="今日饮食"
+            onAddMeal={openAddSheet}
+          />
 
-      <QuickAddButton onClick={() => setShowAddSheet(true)} />
+          {recentFoods.length > 0 && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold text-foreground">最近添加</h2>
+                  <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={clearRecentFoods}>
+                    清除
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {recentFoods.map((food, index) => {
+                    const key = `${food.foodName}-${index}`;
+                    const isSaving = quickSavingId === key;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => handleQuickAdd(food as FoodLogFormData, key)}
+                        disabled={isSaving}
+                        className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-left transition-colors hover:border-primary/20 hover:bg-accent disabled:opacity-50"
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{food.foodName}</p>
+                          <p className="text-[11px] text-muted-foreground tabular-nums">
+                            {food.calories} kcal · P{food.proteinG} C{food.carbsG} F{food.fatG}
+                          </p>
+                        </div>
+                        {isSaving ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                        ) : (
+                          <Plus className="h-3.5 w-3.5 text-primary" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {shouldShowAiAdvice && (
+            <AiAdviceCard
+              title="AI 今日建议"
+              type="daily_diet"
+              enabled={aiAdviceEnabled && logs.length > 0}
+              disabledText={aiAdviceEnabled ? "记录一条饮食后，即可生成今日 AI 建议。" : "AI 建议已关闭，可在个人资料中开启。"}
+              emptyText="暂无今日建议，点击生成后获取基于今日记录的饮食提示。"
+            />
+          )}
+        </div>
+
+        {/* 健康追踪（桌面左栏下部，移动靠后） */}
+        <div className="grid gap-3 sm:grid-cols-2 lg:col-start-1 lg:row-start-2 lg:grid-cols-1">
+          <WeightCard currentDate={currentDate} weightTargetKg={weightTargetKg} />
+          <ExerciseCard currentDate={currentDate} onChanged={reload} />
+          <WaterCard currentDate={currentDate} />
+          <SleepCard currentDate={currentDate} />
+        </div>
+      </div>
+
+      <QuickAddButton onClick={() => openAddSheet()} />
 
       <FoodLogEditorOverlay
         isOpenForAdd={showAddSheet}
         editingLog={editingLog}
+        defaultMealType={addMealType}
         onAddSubmit={handleBatchSave}
         onEditSubmit={handleEditSave}
         onCloseAdd={() => setShowAddSheet(false)}

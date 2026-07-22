@@ -55,24 +55,24 @@ export function WaterTrendChart({ logs, targetMl = 2000 }: WaterTrendChartProps)
   return (
     <div className="w-full">
       <svg width="100%" height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="xMidYMid meet" className="mx-auto">
-        <text x="0" y="18" fontSize="10" fill="#94a3b8">
+        <text x="0" y="18" fontSize="10" fill="hsl(var(--chart-label))">
           {Math.round(chartMaximum)}ml
         </text>
-        <text x="0" y={plotHeight + 16} fontSize="10" fill="#94a3b8">
+        <text x="0" y={plotHeight + 16} fontSize="10" fill="hsl(var(--chart-label))">
           0ml
         </text>
-        <line x1={leftPadding} y1="12" x2={leftPadding} y2={plotHeight + 12} stroke="#e2e8f0" />
-        <line x1={leftPadding} y1={plotHeight + 12} x2={chartWidth - 16} y2={plotHeight + 12} stroke="#e2e8f0" />
+        <line x1={leftPadding} y1="12" x2={leftPadding} y2={plotHeight + 12} stroke="hsl(var(--chart-grid))" />
+        <line x1={leftPadding} y1={plotHeight + 12} x2={chartWidth - 16} y2={plotHeight + 12} stroke="hsl(var(--chart-grid))" />
         <line
           x1={leftPadding}
           y1={targetLineY}
           x2={chartWidth - 16}
           y2={targetLineY}
-          stroke="#f59e0b"
+          stroke="hsl(var(--chart-3))"
           strokeWidth="1.5"
           strokeDasharray="4,3"
         />
-        <text x={chartWidth - 58} y={targetLineY - 4} fontSize="10" fill="#f59e0b">
+        <text x={chartWidth - 58} y={targetLineY - 4} fontSize="10" fill="hsl(var(--chart-3))">
           目标
         </text>
         {dailyData.map((item, index) => {
@@ -89,10 +89,10 @@ export function WaterTrendChart({ logs, targetMl = 2000 }: WaterTrendChartProps)
                 rx="3"
                 fill="url(#water-gradient)"
               />
-              <text x={xPosition} y={barY - 4} textAnchor="middle" fontSize="10" fill="#0891b2" fontWeight="600">
+              <text x={xPosition} y={barY - 4} textAnchor="middle" fontSize="10" fill="hsl(var(--chart-1))" fontWeight="600">
                 {item.amountMl}
               </text>
-              <text x={xPosition} y={chartHeight - 8} textAnchor="middle" fontSize="9" fill="#94a3b8">
+              <text x={xPosition} y={chartHeight - 8} textAnchor="middle" fontSize="9" fill="hsl(var(--chart-label))">
                 {item.logDate.slice(5)}
               </text>
             </g>
@@ -100,8 +100,8 @@ export function WaterTrendChart({ logs, targetMl = 2000 }: WaterTrendChartProps)
         })}
         <defs>
           <linearGradient id="water-gradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#22d3ee" />
-            <stop offset="100%" stopColor="#0891b2" />
+            <stop offset="0%" stopColor="hsl(var(--chart-1))" stopOpacity="0.85" />
+            <stop offset="100%" stopColor="hsl(var(--chart-1))" />
           </linearGradient>
         </defs>
       </svg>

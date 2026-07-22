@@ -18,11 +18,11 @@ const PART_OPTIONS: Array<{ value: MeasurementPart; label: string }> = [
 ];
 
 const PART_COLORS: Record<MeasurementPart, string> = {
-  chestCm: "#06b6d4",
-  waistCm: "#8b5cf6",
-  hipCm: "#10b981",
-  armCm: "#f59e0b",
-  legCm: "#ec4899",
+  chestCm: "hsl(var(--chart-1))",
+  waistCm: "hsl(var(--chart-4))",
+  hipCm: "hsl(var(--chart-2))",
+  armCm: "hsl(var(--chart-3))",
+  legCm: "hsl(var(--chart-5))",
 };
 
 export function BodyMeasurementTrendChart({ logs }: BodyMeasurementTrendChartProps) {
@@ -42,13 +42,13 @@ export function BodyMeasurementTrendChart({ logs }: BodyMeasurementTrendChartPro
               type="button"
               onClick={() => setSelectedPart(option.value)}
               disabled
-              className="rounded-lg bg-white/70 px-3 py-1 text-xs font-semibold text-slate-400"
+              className="rounded-lg bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground"
             >
               {option.label}
             </button>
           ))}
         </div>
-        <p className="text-xs text-slate-400">暂无该部位的围度记录</p>
+        <p className="text-xs text-muted-foreground">暂无该部位的围度记录</p>
       </div>
     );
   }
@@ -94,10 +94,10 @@ export function BodyMeasurementTrendChart({ logs }: BodyMeasurementTrendChartPro
               disabled={!hasData}
               className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
                 selectedPart === option.value
-                  ? "bg-cyan-100 text-cyan-700"
+                  ? "bg-primary/10 text-primary"
                   : hasData
-                    ? "bg-white/70 text-slate-500 hover:bg-white"
-                    : "cursor-not-allowed bg-white/40 text-slate-300"
+                    ? "bg-muted text-muted-foreground hover:text-foreground"
+                    : "cursor-not-allowed bg-muted/50 text-muted-foreground/50"
               }`}
             >
               {option.label}
@@ -107,25 +107,25 @@ export function BodyMeasurementTrendChart({ logs }: BodyMeasurementTrendChartPro
       </div>
 
       <svg width="100%" height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="xMidYMid meet" className="mx-auto">
-        <text x="0" y="18" fontSize="10" fill="#94a3b8">
+        <text x="0" y="18" fontSize="10" fill="hsl(var(--chart-label))">
           {chartMaximum.toFixed(1)}cm
         </text>
-        <text x="0" y={plotHeight + 16} fontSize="10" fill="#94a3b8">
+        <text x="0" y={plotHeight + 16} fontSize="10" fill="hsl(var(--chart-label))">
           {chartMinimum.toFixed(1)}cm
         </text>
-        <line x1={leftPadding} y1="12" x2={leftPadding} y2={plotHeight + 12} stroke="#e2e8f0" />
-        <line x1={leftPadding} y1={plotHeight + 12} x2={chartWidth - 16} y2={plotHeight + 12} stroke="#e2e8f0" />
+        <line x1={leftPadding} y1="12" x2={leftPadding} y2={plotHeight + 12} stroke="hsl(var(--chart-grid))" />
+        <line x1={leftPadding} y1={plotHeight + 12} x2={chartWidth - 16} y2={plotHeight + 12} stroke="hsl(var(--chart-grid))" />
         <polyline points={polylinePoints} fill="none" stroke={strokeColor} strokeWidth="3" strokeLinecap="round" />
         {sortedLogs.map((log, index) => {
           const xPosition = getXPosition(index);
           const yPosition = getYPosition(Number(log[selectedPart]));
           return (
             <g key={log.id}>
-              <circle cx={xPosition} cy={yPosition} r="4" fill={strokeColor} stroke="white" strokeWidth="2" />
+              <circle cx={xPosition} cy={yPosition} r="4" fill={strokeColor} stroke="hsl(var(--card))" strokeWidth="2" />
               <text x={xPosition} y={yPosition - 10} textAnchor="middle" fontSize="10" fill={strokeColor} fontWeight="600">
                 {Number(log[selectedPart]).toFixed(1)}
               </text>
-              <text x={xPosition} y={chartHeight - 8} textAnchor="middle" fontSize="9" fill="#94a3b8">
+              <text x={xPosition} y={chartHeight - 8} textAnchor="middle" fontSize="9" fill="hsl(var(--chart-label))">
                 {log.logDate.slice(5)}
               </text>
             </g>

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Scale } from "lucide-react";
 import { useWeightLogs } from "@/hooks/useWeightLogs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TrackerCard } from "@/components/shared/TrackerCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,16 +21,18 @@ export function WeightCard({ currentDate, weightTargetKg }: WeightCardProps) {
     endDate: currentDate,
   });
   const todayWeightLog = logs[0] ?? null;
-  const [isEditing, setIsEditing] = useState(false);
-  const [weightKg, setWeightKg] = useState(todayWeightLog ? Number(todayWeightLog.weightKg) : 0);
-  const [note, setNote] = useState(todayWeightLog?.note ?? "");
+  const [weightKg, setWeightKg] = useState(0);
+  const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  const syncedRef = useRef(false);
 
-  function startEditing() {
-    setWeightKg(todayWeightLog ? Number(todayWeightLog.weightKg) : 0);
-    setNote(todayWeightLog?.note ?? "");
-    setIsEditing(true);
-  }
+  useEffect(() => {
+    if (todayWeightLog && !syncedRef.current) {
+      setWeightKg(Number(todayWeightLog.weightKg));
+      setNote(todayWeightLog.note ?? "");
+      syncedRef.current = true;
+    }
+  }, [todayWeightLog]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,7 +44,6 @@ export function WeightCard({ currentDate, weightTargetKg }: WeightCardProps) {
     try {
       const payload: WeightLogFormData = { logDate: currentDate, weightKg, note };
       await saveLog(payload);
-      setIsEditing(false);
     } catch {
       // hook 已处理错误展示
     } finally {
@@ -55,52 +56,22 @@ export function WeightCard({ currentDate, weightTargetKg }: WeightCardProps) {
       ? Number(todayWeightLog.weightKg) - Number(weightTargetKg)
       : null;
 
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-        <div className="flex items-center gap-2">
-          <Scale className="h-4 w-4 text-primary" />
-          <CardTitle className="text-sm">今日体重</CardTitle>
-        </div>
-        <Button variant="outline" size="sm" onClick={startEditing}>
-          {todayWeightLog ? "更新" : "记录"}
-        </Button>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-xs text-muted-foreground">
-          {weightTargetKg ? `目标 ${Number(weightTargetKg).toFixed(1)} kg` : "尚未设置体重目标"}
-        </p>
+  const value = todayWeightLog ? `${Number(todayWeightLog.weightKg).toFixed(1)} kg` : undefined;
+  const hint = weightTargetKg
+    ? targetDifference === null
+      ? `目标 ${Number(weightTargetKg).toFixed(1)} kg`
+      : `目标 ${Number(weightTargetKg).toFixed(1)} kg · 差 ${targetDifference > 0 ? "+" : ""}${targetDifference.toFixed(1)}`
+    : "尚未设置体重目标";
 
+  return (
+    <TrackerCard icon={Scale} title="今日体重" value={value} hint={hint}>
+      <div className="space-y-3">
         {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
 
         {loading ? (
-          <Skeleton className="h-20 w-full" />
-        ) : todayWeightLog ? (
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border bg-card p-3">
-              <p className="text-[11px] text-muted-foreground">已记录</p>
-              <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
-                {Number(todayWeightLog.weightKg).toFixed(1)}
-                <span className="ml-1 text-xs font-normal text-muted-foreground">kg</span>
-              </p>
-            </div>
-            <div className="rounded-lg border bg-card p-3">
-              <p className="text-[11px] text-muted-foreground">目标差值</p>
-              <p className="mt-1 text-lg font-bold tabular-nums text-primary">
-                {targetDifference === null
-                  ? "--"
-                  : `${targetDifference > 0 ? "+" : ""}${targetDifference.toFixed(1)} kg`}
-              </p>
-            </div>
-          </div>
+          <Skeleton className="h-16 w-full" />
         ) : (
-          <p className="rounded-md border border-dashed py-4 text-center text-sm text-muted-foreground">
-            今天还没有记录体重
-          </p>
-        )}
-
-        {isEditing && (
-          <form onSubmit={handleSubmit} className="space-y-3 border-t pt-3">
+          <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor={`weight-kg-${currentDate}`}>体重 (kg)</Label>
               <Input
@@ -125,17 +96,12 @@ export function WeightCard({ currentDate, weightTargetKg }: WeightCardProps) {
                 placeholder="例如：晨起空腹"
               />
             </div>
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
-                取消
-              </Button>
-              <Button type="submit" size="sm" disabled={saving}>
-                {saving ? "保存中..." : "保存"}
-              </Button>
-            </div>
+            <Button type="submit" size="sm" disabled={saving} className="w-full">
+              {saving ? "保存中..." : todayWeightLog ? "更新体重" : "记录体重"}
+            </Button>
           </form>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </TrackerCard>
   );
 }

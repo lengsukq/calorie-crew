@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ConfirmProvider } from "@/lib/ui/confirm";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -27,7 +28,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="zh-CN" className={inter.variable}>
       <body className="font-sans antialiased">
-        <ConfirmProvider>{children}</ConfirmProvider>
+        <ThemeProvider>
+          <ConfirmProvider>{children}</ConfirmProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

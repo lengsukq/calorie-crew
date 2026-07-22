@@ -17,6 +17,7 @@ interface FoodLogFormProps {
   onSubmit: (items: FoodLogFormData[]) => Promise<void>;
   onCancel?: () => void;
   submitLabel?: string;
+  defaultMealType?: string;
 }
 
 let tempIdCounter = 0;
@@ -48,8 +49,8 @@ function foodItemToFormData(food: FoodItem): FoodLogFormData {
   };
 }
 
-export function FoodLogForm({ onSubmit, onCancel, submitLabel = "批量保存" }: FoodLogFormProps) {
-  const [mealType, setMealType] = useState<string>("breakfast");
+export function FoodLogForm({ onSubmit, onCancel, submitLabel = "批量保存", defaultMealType = "breakfast" }: FoodLogFormProps) {
+  const [mealType, setMealType] = useState<string>(defaultMealType);
   const [items, setItems] = useState<SelectedFood[]>([]);
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);

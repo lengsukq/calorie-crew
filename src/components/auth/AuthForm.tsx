@@ -44,7 +44,15 @@ export function AuthForm({ mode }: AuthFormProps) {
   }
 
   return (
-    <Card className="w-full max-w-sm">
+    <div className="w-full max-w-sm">
+      <div className="mb-6 flex flex-col items-center gap-2">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 text-2xl font-black text-white shadow-lg shadow-primary/25">
+          C
+        </div>
+        <p className="text-xl font-bold text-foreground">CalorieCrew</p>
+        <p className="text-xs text-muted-foreground">记录每一餐，了解每一天</p>
+      </div>
+      <Card className="border-0 shadow-lg">
       <CardHeader className="pb-4">
         <CardTitle className="text-center text-lg">{mode === "login" ? "登录" : "注册"}</CardTitle>
       </CardHeader>
@@ -109,6 +117,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           </Button>
         </form>
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 }

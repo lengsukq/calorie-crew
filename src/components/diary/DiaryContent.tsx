@@ -164,10 +164,6 @@ export function DiaryContent() {
         <StatCard label="脂肪" value={totalFat.toFixed(1)} unit="g" accentColor="success" />
       </div>
 
-      {totalKcal > 0 && (
-        <AiAdviceCard title="AI 洞察" type="daily_diet" emptyText="暂无异常，继续保持。" autoGenerate />
-      )}
-
       {loading ? (
         <Card>
           <CardContent className="flex items-center justify-center py-8">
@@ -269,6 +265,10 @@ export function DiaryContent() {
           ),
         }}
       />
+
+      {totalKcal > 0 && (
+        <AiAdviceCard title="AI 洞察" type="daily_diet" emptyText="暂无异常，继续保持。" autoGenerate />
+      )}
 
       <QuickAddButton onClick={() => setShowAddSheet(true)} />
 

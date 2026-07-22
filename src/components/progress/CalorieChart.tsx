@@ -34,15 +34,15 @@ export function CalorieChart({ data }: CalorieChartProps) {
         className="mx-auto"
       >
         {/* Y-axis labels */}
-        <text x="0" y="15" fontSize="10" fill="#94a3b8">{chartMax}</text>
-        <text x="0" y={chartHeight / 2 + 5} fontSize="10" fill="#94a3b8">
+        <text x="0" y="15" fontSize="10" fill="hsl(var(--chart-label))">{chartMax}</text>
+        <text x="0" y={chartHeight / 2 + 5} fontSize="10" fill="hsl(var(--chart-label))">
           {Math.round(chartMax / 2)}
         </text>
-        <text x="0" y={chartHeight + 5} fontSize="10" fill="#94a3b8">0</text>
+        <text x="0" y={chartHeight + 5} fontSize="10" fill="hsl(var(--chart-label))">0</text>
 
         {/* Grid lines */}
-        <line x1="30" y1="0" x2="30" y2={chartHeight} stroke="#e2e8f0" strokeWidth="1" />
-        <line x1="30" y1={chartHeight / 2} x2={30 + sorted.length * (barWidth + 12)} y2={chartHeight / 2} stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="4" />
+        <line x1="30" y1="0" x2="30" y2={chartHeight} stroke="hsl(var(--chart-grid))" strokeWidth="1" />
+        <line x1="30" y1={chartHeight / 2} x2={30 + sorted.length * (barWidth + 12)} y2={chartHeight / 2} stroke="hsl(var(--chart-grid))" strokeWidth="0.5" strokeDasharray="4" />
 
         {/* Bars */}
         {sorted.map((day, i) => {
@@ -59,7 +59,7 @@ export function CalorieChart({ data }: CalorieChartProps) {
                 y1={targetY}
                 x2={x + barWidth + 2}
                 y2={targetY}
-                stroke="#f59e0b"
+                stroke="hsl(var(--chart-3))"
                 strokeWidth="1.5"
                 strokeDasharray="3,2"
               />
@@ -70,7 +70,7 @@ export function CalorieChart({ data }: CalorieChartProps) {
                 width={barWidth}
                 height={barH}
                 rx="4"
-                fill={isOver ? "#ef4444" : "url(#barGradient)"}
+                fill={isOver ? "hsl(var(--danger))" : "url(#barGradient)"}
                 opacity="0.85"
               />
               {/* Date label */}
@@ -79,7 +79,7 @@ export function CalorieChart({ data }: CalorieChartProps) {
                 y={chartHeight + 16}
                 fontSize="9"
                 textAnchor="middle"
-                fill="#94a3b8"
+                fill="hsl(var(--chart-label))"
               >
                 {day.logDate.slice(5)}
               </text>
@@ -89,7 +89,7 @@ export function CalorieChart({ data }: CalorieChartProps) {
                 y={chartHeight - barH - 6}
                 fontSize="9"
                 textAnchor="middle"
-                fill={isOver ? "#ef4444" : "#06b6d4"}
+                fill={isOver ? "hsl(var(--danger))" : "hsl(var(--chart-1))"}
                 fontWeight="600"
               >
                 {day.totalKcal}
@@ -100,14 +100,14 @@ export function CalorieChart({ data }: CalorieChartProps) {
 
         <defs>
           <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#06b6d4" />
-            <stop offset="100%" stopColor="#0891b2" />
+            <stop offset="0%" stopColor="hsl(var(--chart-1))" />
+            <stop offset="100%" stopColor="hsl(var(--chart-1))" stopOpacity="0.7" />
           </linearGradient>
         </defs>
 
         {/* Target legend */}
-        <line x1="30" y1={chartHeight + 32} x2="40" y2={chartHeight + 32} stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="3,2" />
-        <text x="44" y={chartHeight + 36} fontSize="9" fill="#94a3b8">目标</text>
+        <line x1="30" y1={chartHeight + 32} x2="40" y2={chartHeight + 32} stroke="hsl(var(--chart-3))" strokeWidth="1.5" strokeDasharray="3,2" />
+        <text x="44" y={chartHeight + 36} fontSize="9" fill="hsl(var(--chart-label))">目标</text>
       </svg>
     </div>
   );

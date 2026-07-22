@@ -53,6 +53,21 @@
   --chart-3: 38 92% 50%;
   --chart-4: 262 83% 58%;
   --chart-5: 215 16% 47%;
+
+  /* 图表辅助色：网格线 / 轴标签 */
+  --chart-grid: 214 32% 91%;
+  --chart-label: 215 16% 47%;
+
+  /* 卡片阴影 */
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
+  --card-shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.05), 0 8px 24px rgba(0, 0, 0, 0.06);
+
+  /* 热量环渐变 (青 → 蓝) */
+  --ring-start: 187 92% 55%;
+  --ring-end: 217 91% 60%;
+  /* 热量环超标渐变 (红 → 橙红) */
+  --ring-over-start: 0 84% 60%;
+  --ring-over-end: 15 75% 55%;
 }
 
 .dark {
@@ -75,6 +90,33 @@
   --border: 217 33% 25%;
   --input: 217 33% 25%;
   --ring: 192 81% 45%;
+
+  /* 业务语义色 (暗色) */
+  --success: 142 71% 45%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
+  --danger: 0 63% 50%;
+  --danger-foreground: 210 40% 98%;
+
+  /* 图表配色 (暗色) */
+  --chart-1: 192 81% 50%;
+  --chart-2: 142 71% 50%;
+  --chart-3: 38 92% 55%;
+  --chart-4: 262 83% 65%;
+  --chart-5: 215 20% 65%;
+  --chart-grid: 217 33% 25%;
+  --chart-label: 215 20% 65%;
+
+  /* 卡片阴影 (暗色下减弱) */
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --card-shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.3);
+
+  /* 热量环渐变 (暗色提亮) */
+  --ring-start: 187 92% 60%;
+  --ring-end: 217 91% 65%;
+  --ring-over-start: 0 84% 62%;
+  --ring-over-end: 15 75% 60%;
 }
 
 @theme inline {
@@ -108,6 +150,11 @@
   --color-chart-3: hsl(var(--chart-3));
   --color-chart-4: hsl(var(--chart-4));
   --color-chart-5: hsl(var(--chart-5));
+  --color-chart-grid: hsl(var(--chart-grid));
+  --color-chart-label: hsl(var(--chart-label));
+
+  --shadow-card: var(--card-shadow);
+  --shadow-card-hover: var(--card-shadow-hover);
 
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 0.25rem);
@@ -182,7 +229,7 @@
 }
 
 .page-enter {
-  animation: page-fade-in 0.25s ease-out;
+  animation: page-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ===================================================

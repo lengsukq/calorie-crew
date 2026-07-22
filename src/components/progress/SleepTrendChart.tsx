@@ -49,24 +49,24 @@ export function SleepTrendChart({ logs }: SleepTrendChartProps) {
   return (
     <div className="w-full">
       <svg width="100%" height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="xMidYMid meet" className="mx-auto">
-        <text x="0" y="18" fontSize="10" fill="#94a3b8">
+        <text x="0" y="18" fontSize="10" fill="hsl(var(--chart-label))">
           {formatHours(chartMaximum)}h
         </text>
-        <text x="0" y={plotHeight + 16} fontSize="10" fill="#94a3b8">
+        <text x="0" y={plotHeight + 16} fontSize="10" fill="hsl(var(--chart-label))">
           {formatHours(chartMinimum)}h
         </text>
-        <line x1={leftPadding} y1="12" x2={leftPadding} y2={plotHeight + 12} stroke="#e2e8f0" />
-        <line x1={leftPadding} y1={plotHeight + 12} x2={chartWidth - 16} y2={plotHeight + 12} stroke="#e2e8f0" />
+        <line x1={leftPadding} y1="12" x2={leftPadding} y2={plotHeight + 12} stroke="hsl(var(--chart-grid))" />
+        <line x1={leftPadding} y1={plotHeight + 12} x2={chartWidth - 16} y2={plotHeight + 12} stroke="hsl(var(--chart-grid))" />
         <line
           x1={leftPadding}
           y1={eightHourY}
           x2={chartWidth - 16}
           y2={eightHourY}
-          stroke="#10b981"
+          stroke="hsl(var(--chart-2))"
           strokeWidth="1"
           strokeDasharray="4,3"
         />
-        <text x={chartWidth - 58} y={eightHourY - 4} fontSize="10" fill="#10b981">
+        <text x={chartWidth - 58} y={eightHourY - 4} fontSize="10" fill="hsl(var(--chart-2))">
           8h
         </text>
         <line
@@ -74,24 +74,24 @@ export function SleepTrendChart({ logs }: SleepTrendChartProps) {
           y1={sixHourY}
           x2={chartWidth - 16}
           y2={sixHourY}
-          stroke="#f59e0b"
+          stroke="hsl(var(--chart-3))"
           strokeWidth="1"
           strokeDasharray="4,3"
         />
-        <text x={chartWidth - 58} y={sixHourY - 4} fontSize="10" fill="#f59e0b">
+        <text x={chartWidth - 58} y={sixHourY - 4} fontSize="10" fill="hsl(var(--chart-3))">
           6h
         </text>
-        <polyline points={polylinePoints} fill="none" stroke="#6366f1" strokeWidth="3" strokeLinecap="round" />
+        <polyline points={polylinePoints} fill="none" stroke="hsl(var(--chart-4))" strokeWidth="3" strokeLinecap="round" />
         {sortedLogs.map((log, index) => {
           const xPosition = getXPosition(index);
           const yPosition = getYPosition(log.sleepMinutes);
           return (
             <g key={log.id}>
-              <circle cx={xPosition} cy={yPosition} r="4" fill="#6366f1" stroke="white" strokeWidth="2" />
-              <text x={xPosition} y={yPosition - 10} textAnchor="middle" fontSize="10" fill="#4f46e5" fontWeight="600">
+              <circle cx={xPosition} cy={yPosition} r="4" fill="hsl(var(--chart-4))" stroke="hsl(var(--card))" strokeWidth="2" />
+              <text x={xPosition} y={yPosition - 10} textAnchor="middle" fontSize="10" fill="hsl(var(--chart-4))" fontWeight="600">
                 {formatHours(log.sleepMinutes)}
               </text>
-              <text x={xPosition} y={chartHeight - 8} textAnchor="middle" fontSize="9" fill="#94a3b8">
+              <text x={xPosition} y={chartHeight - 8} textAnchor="middle" fontSize="9" fill="hsl(var(--chart-label))">
                 {log.logDate.slice(5)}
               </text>
             </g>

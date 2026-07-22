@@ -3,7 +3,7 @@
 import { Droplets, Trash2 } from "lucide-react";
 import { useWaterLogs } from "@/hooks/useWaterLogs";
 import { useResourceForm } from "@/hooks/useResourceForm";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TrackerCard } from "@/components/shared/TrackerCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,26 +34,20 @@ export function WaterCard({ currentDate }: WaterCardProps) {
   });
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-        <div className="flex items-center gap-2">
-          <Droplets className="h-4 w-4 text-primary" />
-          <CardTitle className="text-sm">今日饮水</CardTitle>
-        </div>
-        <span className="text-xs text-muted-foreground tabular-nums">{totalMl} ml</span>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <TrackerCard
+      icon={Droplets}
+      title="今日饮水"
+      value={`${totalMl} ml`}
+      hint={logs.length > 0 ? `${logs.length} 次记录` : "还没有饮水记录"}
+    >
+      <div className="space-y-3">
         {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
 
         {loading ? (
           <div className="space-y-2">
             <Skeleton className="h-12 w-full" />
           </div>
-        ) : logs.length === 0 ? (
-          <p className="rounded-md border border-dashed py-4 text-center text-sm text-muted-foreground">
-            今天还没有饮水记录
-          </p>
-        ) : (
+        ) : logs.length > 0 && (
           <div className="space-y-1.5">
             {logs.map((log) => (
               <div
@@ -83,7 +77,7 @@ export function WaterCard({ currentDate }: WaterCardProps) {
             e.preventDefault();
             void form.handleSubmit();
           }}
-          className="space-y-3 border-t pt-3"
+          className="space-y-3"
         >
           <div className="flex flex-wrap gap-2">
             {WATER_SUGGESTIONS.map((suggestion) => (
@@ -128,7 +122,7 @@ export function WaterCard({ currentDate }: WaterCardProps) {
             {form.submitting ? "保存中..." : "记录饮水"}
           </Button>
         </form>
-      </CardContent>
-    </Card>
+      </div>
+    </TrackerCard>
   );
 }

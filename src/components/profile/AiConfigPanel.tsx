@@ -116,7 +116,7 @@ export function AiConfigPanel() {
               <Label htmlFor="ai-key">
                 API 密钥
                 {config.hasApiKey && (
-                  <span className="ml-2 text-[10px] font-normal text-emerald-600">(已配置，留空则保持原值)</span>
+                  <span className="ml-2 text-[10px] font-normal text-success">(已配置，留空则保持原值)</span>
                 )}
               </Label>
               <div className="relative">
