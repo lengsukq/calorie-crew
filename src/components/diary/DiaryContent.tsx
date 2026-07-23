@@ -1,20 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, UtensilsCrossed } from "lucide-react";
 import { useFoodLogs } from "@/hooks/useFoodLogs";
 import { useExerciseLogs } from "@/hooks/useExerciseLogs";
 import { useWaterLogs } from "@/hooks/useWaterLogs";
 import { useSleepLogs } from "@/hooks/useSleepLogs";
 import { useBodyMeasurements } from "@/hooks/useBodyMeasurements";
 import { useWeightLogs } from "@/hooks/useWeightLogs";
+import { useProfile } from "@/hooks/useProfile";
 import { useConfirm } from "@/lib/ui/confirm";
+import { useRecordTrigger } from "@/hooks/useRecordTrigger";
 import { DateNavigator } from "@/components/diary/DateNavigator";
 import { FoodBatchToolbar } from "@/components/diary/FoodBatchToolbar";
 import { DiaryHealthSections } from "@/components/diary/DiaryHealthSections";
 import { MealGroup } from "@/components/today/MealGroup";
 import { StatCard } from "@/components/shared/StatCard";
+import { EmptyState } from "@/components/progress/ProgressParts";
 import { AiAdviceCard } from "@/components/shared/AiAdviceCard";
 import { FoodLogEditorOverlay } from "@/components/shared/FoodLogEditorOverlay";
 import { QuickAddButton } from "@/components/shared/QuickAddButton";
@@ -34,6 +37,7 @@ export function DiaryContent() {
   const waterLogsHook = useWaterLogs({ startDate: selectedDate, endDate: selectedDate });
   const sleepLogsHook = useSleepLogs({ startDate: selectedDate, endDate: selectedDate });
   const bodyMeasurementsHook = useBodyMeasurements({ startDate: selectedDate, endDate: selectedDate });
+  const { data: profileData } = useProfile();
   const confirm = useConfirm();
 
   const [showAddSheet, setShowAddSheet] = useState(false);
@@ -44,6 +48,11 @@ export function DiaryContent() {
   const [batchSaving, setBatchSaving] = useState(false);
 
   const editingLog = logs.find((log) => log.id === editingLogId) ?? null;
+
+  const openRecordFromTrigger = useCallback(() => {
+    setShowAddSheet(true);
+  }, []);
+  useRecordTrigger(openRecordFromTrigger);
 
   async function handleBatchSave(items: FoodLogFormData[]) {
     try {
@@ -172,8 +181,12 @@ export function DiaryContent() {
         </Card>
       ) : logs.length === 0 ? (
         <Card>
-          <CardContent className="py-6 text-center">
-            <p className="text-sm text-muted-foreground">这一天还没有饮食记录</p>
+          <CardContent>
+            <EmptyState
+              icon={<UtensilsCrossed className="h-8 w-8" />}
+              text="这一天还没有饮食记录"
+              hint="点击下方按钮或中央记录按钮添加"
+            />
           </CardContent>
         </Card>
       ) : (
@@ -267,7 +280,12 @@ export function DiaryContent() {
       />
 
       {totalKcal > 0 && (
-        <AiAdviceCard title="AI 洞察" type="daily_diet" emptyText="暂无异常，继续保持。" autoGenerate />
+        <AiAdviceCard
+          title="AI 洞察"
+          type="daily_diet"
+          emptyText="暂无异常，继续保持。"
+          autoGenerate={(profileData?.profile.aiAdviceFrequency ?? "daily") === "daily"}
+        />
       )}
 
       <QuickAddButton onClick={() => setShowAddSheet(true)} />

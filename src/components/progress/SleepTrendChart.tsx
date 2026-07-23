@@ -4,12 +4,13 @@ import type { SleepLogEntry } from "@/shared/types";
 
 interface SleepTrendChartProps {
   logs: SleepLogEntry[];
+  targetMinutes?: number;
 }
 
 const SIX_HOURS_MINUTES = 360;
 const EIGHT_HOURS_MINUTES = 480;
 
-export function SleepTrendChart({ logs }: SleepTrendChartProps) {
+export function SleepTrendChart({ logs, targetMinutes = EIGHT_HOURS_MINUTES }: SleepTrendChartProps) {
   const sortedLogs = [...logs].sort((left, right) => left.logDate.localeCompare(right.logDate));
   if (sortedLogs.length === 0) return null;
 
@@ -19,7 +20,7 @@ export function SleepTrendChart({ logs }: SleepTrendChartProps) {
   const bottomPadding = 28;
   const plotWidth = chartWidth - leftPadding - 16;
   const plotHeight = chartHeight - bottomPadding - 12;
-  const allMinutes = [...sortedLogs.map((log) => log.sleepMinutes), EIGHT_HOURS_MINUTES, SIX_HOURS_MINUTES];
+  const allMinutes = [...sortedLogs.map((log) => log.sleepMinutes), EIGHT_HOURS_MINUTES, SIX_HOURS_MINUTES, targetMinutes];
   const maxMinutes = Math.max(...allMinutes);
   const minMinutes = Math.min(...allMinutes, 0);
   const rangePadding = Math.max((maxMinutes - minMinutes) * 0.15, 30);
@@ -45,6 +46,7 @@ export function SleepTrendChart({ logs }: SleepTrendChartProps) {
     .join(" ");
   const sixHourY = getYPosition(SIX_HOURS_MINUTES);
   const eightHourY = getYPosition(EIGHT_HOURS_MINUTES);
+  const targetY = getYPosition(targetMinutes);
 
   return (
     <div className="w-full">
@@ -80,6 +82,18 @@ export function SleepTrendChart({ logs }: SleepTrendChartProps) {
         />
         <text x={chartWidth - 58} y={sixHourY - 4} fontSize="10" fill="hsl(var(--chart-3))">
           6h
+        </text>
+        <line
+          x1={leftPadding}
+          y1={targetY}
+          x2={chartWidth - 16}
+          y2={targetY}
+          stroke="hsl(var(--chart-1))"
+          strokeWidth="1.5"
+          strokeDasharray="4,3"
+        />
+        <text x={chartWidth - 58} y={targetY - 4} fontSize="10" fill="hsl(var(--chart-1))">
+          目标
         </text>
         <polyline points={polylinePoints} fill="none" stroke="hsl(var(--chart-4))" strokeWidth="3" strokeLinecap="round" />
         {sortedLogs.map((log, index) => {

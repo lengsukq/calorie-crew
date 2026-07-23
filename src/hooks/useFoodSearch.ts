@@ -23,7 +23,7 @@ interface UseFoodSearchReturn {
   clear: () => void;
 }
 
-export function useFoodSearch(): UseFoodSearchReturn {
+export function useFoodSearch(personalFoods: FoodItem[] = []): UseFoodSearchReturn {
   const [query, setQuery] = useState("");
   const [allFoods, setAllFoods] = useState<FoodItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,27 +59,28 @@ export function useFoodSearch(): UseFoodSearchReturn {
 
   const results = useMemo(() => {
     if (!displayQuery) return [];
-    return allFoods
-      .filter((food) => {
-        const nameMatch = food.name.toLowerCase().includes(displayQuery);
-        const keywordMatch = food.keywords.some((k) =>
-          k.toLowerCase().includes(displayQuery),
-        );
-        const categoryMatch = food.category.toLowerCase().includes(displayQuery);
-        return nameMatch || keywordMatch || categoryMatch;
-      })
-      .slice(0, 10)
-      .sort((a, b) => {
-        // Prioritize: exact name match > prefix match > contains match
-        const aExact = a.name.toLowerCase() === displayQuery ? 0 : 1;
-        const bExact = b.name.toLowerCase() === displayQuery ? 0 : 1;
-        if (aExact !== bExact) return aExact - bExact;
 
-        const aPrefix = a.name.toLowerCase().startsWith(displayQuery) ? 0 : 1;
-        const bPrefix = b.name.toLowerCase().startsWith(displayQuery) ? 0 : 1;
-        return aPrefix - bPrefix;
-      });
-  }, [displayQuery, allFoods]);
+    const matches = (food: FoodItem) => {
+      const nameMatch = food.name.toLowerCase().includes(displayQuery);
+      const keywordMatch = food.keywords.some((k) => k.toLowerCase().includes(displayQuery));
+      const categoryMatch = food.category.toLowerCase().includes(displayQuery);
+      return nameMatch || keywordMatch || categoryMatch;
+    };
+
+    const rank = (food: FoodItem) => {
+      if (food.name.toLowerCase() === displayQuery) return 0;
+      if (food.name.toLowerCase().startsWith(displayQuery)) return 1;
+      return 2;
+    };
+
+    const personalMatches = personalFoods.filter(matches).sort((a, b) => rank(a) - rank(b));
+    const publicMatches = allFoods
+      .filter(matches)
+      .sort((a, b) => rank(a) - rank(b))
+      .slice(0, 10);
+
+    return [...personalMatches, ...publicMatches].slice(0, 12);
+  }, [displayQuery, allFoods, personalFoods]);
 
   function clear() {
     setQuery("");

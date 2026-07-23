@@ -4,7 +4,7 @@ import type { WaterLogEntry } from "@/shared/types";
 
 interface WaterTrendChartProps {
   logs: WaterLogEntry[];
-  targetMl?: number;
+  targetMl: number;
 }
 
 interface DailyWater {
@@ -23,7 +23,7 @@ function aggregateByDate(logs: WaterLogEntry[]): DailyWater[] {
     .sort((left, right) => left.logDate.localeCompare(right.logDate));
 }
 
-export function WaterTrendChart({ logs, targetMl = 2000 }: WaterTrendChartProps) {
+export function WaterTrendChart({ logs, targetMl }: WaterTrendChartProps) {
   const dailyData = aggregateByDate(logs);
   if (dailyData.length === 0) return null;
 

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Pencil, Plus, Trash2, UtensilsCrossed } from "lucide-react";
 import type { MealType } from "@/lib/db/schema";
 import { MEAL_ORDER, MEAL_LABELS, MEAL_ICONS } from "@/shared/constants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/progress/ProgressParts";
 import { cn } from "@/lib/utils";
 
 interface Log {
@@ -71,9 +72,7 @@ export function MealGroup({
           <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col items-center gap-2 py-8 text-center">
-            <p className="text-sm text-muted-foreground">还没有记录，开始添加吧</p>
-          </div>
+          <EmptyState icon={<UtensilsCrossed className="h-8 w-8" />} text="还没有记录，开始添加吧" />
         </CardContent>
       </Card>
     );
@@ -129,7 +128,7 @@ export function MealGroup({
                       }
                     }}
                     className={cn(
-                      "flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary",
+                      "flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary",
                       !collapsible && "ml-auto",
                     )}
                   >
@@ -193,7 +192,7 @@ export function MealGroup({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-primary"
+                              className="h-9 w-9 text-muted-foreground hover:text-primary"
                               onClick={() => onEdit(item.id)}
                               aria-label="编辑"
                             >
@@ -204,7 +203,7 @@ export function MealGroup({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                              className="h-9 w-9 text-muted-foreground hover:text-destructive"
                               onClick={() => onDelete(item.id)}
                               aria-label="删除"
                             >

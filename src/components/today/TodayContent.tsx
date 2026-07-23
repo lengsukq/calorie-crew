@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Copy, Flame, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { useProfile } from "@/hooks/useProfile";
+import { useEngagement } from "@/hooks/useEngagement";
 import { useSummary } from "@/hooks/useSummary";
 import { useFoodLogs } from "@/hooks/useFoodLogs";
 import { useRecentFoods } from "@/hooks/useRecentFoods";
 import { useConfirm } from "@/lib/ui/confirm";
+import { useRecordTrigger } from "@/hooks/useRecordTrigger";
 import { CalorieRing } from "@/components/today/CalorieRing";
 import { ExerciseCard } from "@/components/today/ExerciseCard";
 import { MealGroup } from "@/components/today/MealGroup";
@@ -16,13 +19,16 @@ import { WaterCard } from "@/components/today/WaterCard";
 import { WeightCard } from "@/components/today/WeightCard";
 import { StatCard } from "@/components/shared/StatCard";
 import { AiAdviceCard } from "@/components/shared/AiAdviceCard";
+import { NextMealCard } from "@/components/today/NextMealCard";
 import { FoodLogEditorOverlay } from "@/components/shared/FoodLogEditorOverlay";
 import { QuickAddButton } from "@/components/shared/QuickAddButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { todayDate } from "@/lib/date";
-import { calculateMacroTargets } from "@/shared/constants";
+import { todayDate, addDays } from "@/lib/date";
+import { inferMealType } from "@/lib/utils/meal-time";
+import { copyDayFoodLogs } from "@/lib/api/food-logs";
+import { calculateMacroTargets, MACRO_RATIOS_BY_GOAL, HEALTH_GOAL_LABELS } from "@/shared/constants";
 import type { MealType } from "@/lib/db/schema";
 import type { FoodLogFormData } from "@/shared/types";
 
@@ -58,6 +64,7 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
   const logs = summaryData?.logs ?? [];
   const summary = summaryData?.summary ?? null;
   const { data: profileData } = useProfile();
+  const { data: engagementData } = useEngagement();
   const { addLog: addFoodLog, updateLog: updateFoodLog, removeLog: removeFoodLog } = useFoodLogs({ date: currentDate, enabled: false });
   const { recentFoods, addRecentFoods, clearRecentFoods } = useRecentFoods();
   const confirm = useConfirm();
@@ -66,6 +73,7 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
   const [addMealType, setAddMealType] = useState<string>("breakfast");
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
   const [quickSavingId, setQuickSavingId] = useState<string | null>(null);
+  const [copyingYesterday, setCopyingYesterday] = useState(false);
 
   const editingLog = logs.find((log) => log.id === editingLogId) ?? null;
 
@@ -128,8 +136,31 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
   }
 
   function openAddSheet(mealType?: MealType) {
-    setAddMealType(mealType ?? "breakfast");
+    setAddMealType(mealType ?? inferMealType());
     setShowAddSheet(true);
+  }
+
+  const openRecordFromTrigger = useCallback(() => {
+    setAddMealType(inferMealType());
+    setShowAddSheet(true);
+  }, []);
+  useRecordTrigger(openRecordFromTrigger);
+
+  async function handleCopyYesterday() {
+    setCopyingYesterday(true);
+    try {
+      const result = await copyDayFoodLogs(addDays(currentDate, -1), currentDate);
+      if (result.copiedCount > 0) {
+        toast.success(`已复制昨日 ${result.copiedCount} 条记录`);
+        await reload();
+      } else {
+        toast.info("昨日没有可复制的记录");
+      }
+    } catch {
+      toast.error("复制失败");
+    } finally {
+      setCopyingYesterday(false);
+    }
   }
 
   const totalKcal = summary?.totalKcal ?? 0;
@@ -139,8 +170,10 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
   const carbs = parseFloat(summary?.totalCarbsG ?? "0");
   const fat = parseFloat(summary?.totalFatG ?? "0");
   const remaining = summary?.remainingKcal ?? calorieTarget - netKcal;
-  const targets = calculateMacroTargets(calorieTarget);
+  const healthGoal = profileData?.profile.healthGoal ?? "general_health";
+  const targets = calculateMacroTargets(calorieTarget, healthGoal);
   const aiAdviceEnabled = profileData?.profile.aiAdviceEnabled ?? true;
+  const aiAdviceFrequency = profileData?.profile.aiAdviceFrequency ?? "daily";
   const shouldShowAiAdvice = logs.length > 0 || !aiAdviceEnabled;
 
   return (
@@ -150,10 +183,33 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
         <p className="text-sm text-muted-foreground">
           {getGreeting()}，<span className="font-medium text-foreground">{email}</span>
         </p>
-        <Badge variant={role === "admin" ? "default" : "secondary"}>
-          {role === "admin" ? "管理员" : "会员"}
-        </Badge>
+        <div className="flex items-center gap-2">
+          {engagementData && engagementData.currentStreak > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning">
+              <Flame className="h-3.5 w-3.5" />
+              连续 {engagementData.currentStreak} 天
+            </span>
+          )}
+          <Badge variant={role === "admin" ? "default" : "secondary"}>
+            {role === "admin" ? "管理员" : "会员"}
+          </Badge>
+        </div>
       </div>
+
+      {profileData && profileData.profileCompleteness.percentage < 100 && (
+        <Link
+          href="/profile"
+          className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3 transition-colors hover:bg-primary/10"
+        >
+          <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-foreground">完善个人档案</p>
+            <p className="text-xs text-muted-foreground">
+              资料完成度 {profileData.profileCompleteness.percentage}%，补全后可获得更精准的建议
+            </p>
+          </div>
+        </Link>
+      )}
 
       {loading && (
         <Card>
@@ -220,13 +276,19 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
             </div>
 
             <p className="mt-4 text-[11px] text-muted-foreground">
-              蛋白质目标按 20%、碳水 50%、脂肪 30% 热量占比估算
+              宏量目标按「{HEALTH_GOAL_LABELS[healthGoal]}」比例估算（蛋白 {Math.round(MACRO_RATIOS_BY_GOAL[healthGoal].protein * 100)}% / 碳水 {Math.round(MACRO_RATIOS_BY_GOAL[healthGoal].carbs * 100)}% / 脂肪 {Math.round(MACRO_RATIOS_BY_GOAL[healthGoal].fat * 100)}%）
             </p>
           </CardContent>
         </Card>
 
         {/* 餐食 + 最近添加 + AI 建议（桌面右栏，移动优先） */}
         <div className="stack lg:col-start-2 lg:row-start-1 lg:row-span-2">
+          <div className="flex justify-end">
+            <Button variant="outline" size="sm" disabled={copyingYesterday} onClick={() => void handleCopyYesterday()}>
+              {copyingYesterday ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Copy className="h-3.5 w-3.5" />}
+              复制昨日餐食
+            </Button>
+          </div>
           <MealGroup
             logs={logs}
             onEdit={setEditingLogId}
@@ -280,10 +342,13 @@ export function TodayContent({ email, role, calorieTarget, weightTargetKg }: Tod
               title="AI 今日建议"
               type="daily_diet"
               enabled={aiAdviceEnabled && logs.length > 0}
+              autoGenerate={aiAdviceEnabled && logs.length > 0 && aiAdviceFrequency === "daily"}
               disabledText={aiAdviceEnabled ? "记录一条饮食后，即可生成今日 AI 建议。" : "AI 建议已关闭，可在个人资料中开启。"}
               emptyText="暂无今日建议，点击生成后获取基于今日记录的饮食提示。"
             />
           )}
+
+          {aiAdviceEnabled && <NextMealCard />}
         </div>
 
         {/* 健康追踪（桌面左栏下部，移动靠后） */}

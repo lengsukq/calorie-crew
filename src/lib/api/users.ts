@@ -17,3 +17,17 @@ export function updateUserWeightTarget(weightTargetKg: number | null): Promise<U
     body: JSON.stringify({ weightTargetKg }),
   });
 }
+
+export function updateWaterTarget(waterTargetMl: number): Promise<UpdateTargetResponse> {
+  return apiFetch<UpdateTargetResponse>("/api/users/target", {
+    method: "PUT",
+    body: JSON.stringify({ waterTargetMl }),
+  });
+}
+
+export function updateSleepTarget(sleepTargetMinutes: number): Promise<UpdateTargetResponse> {
+  return apiFetch<UpdateTargetResponse>("/api/users/target", {
+    method: "PUT",
+    body: JSON.stringify({ sleepTargetMinutes }),
+  });
+}

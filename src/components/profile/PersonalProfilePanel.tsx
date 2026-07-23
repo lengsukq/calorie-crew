@@ -35,6 +35,8 @@ function profileToFormData(profile: UserProfileData): Required<UserProfileFormDa
     activityLevel: profile.activityLevel,
     healthGoal: profile.healthGoal,
     weightTargetKg: profile.weightTargetKg ? Number(profile.weightTargetKg) : null,
+    waterTargetMl: profile.waterTargetMl,
+    sleepTargetMinutes: profile.sleepTargetMinutes,
     aiAdviceEnabled: profile.aiAdviceEnabled,
     aiAdviceFrequency: profile.aiAdviceFrequency,
   };

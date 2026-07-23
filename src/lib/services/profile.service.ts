@@ -26,6 +26,8 @@ const DEFAULT_PROFILE: Omit<UserProfileData, "weightTargetKg"> = {
   heightCm: null,
   activityLevel: "sedentary",
   healthGoal: "general_health",
+  waterTargetMl: 2000,
+  sleepTargetMinutes: 480,
   aiAdviceEnabled: true,
   aiAdviceFrequency: "daily",
 };
@@ -50,6 +52,8 @@ function normalizeProfileRow(
     activityLevel: profile?.activityLevel ?? DEFAULT_PROFILE.activityLevel,
     healthGoal: profile?.healthGoal ?? DEFAULT_PROFILE.healthGoal,
     weightTargetKg: profile?.weightTargetKg ?? userWeightTargetKg,
+    waterTargetMl: profile?.waterTargetMl ?? DEFAULT_PROFILE.waterTargetMl,
+    sleepTargetMinutes: profile?.sleepTargetMinutes ?? DEFAULT_PROFILE.sleepTargetMinutes,
     aiAdviceEnabled: profile?.aiAdviceEnabled ?? DEFAULT_PROFILE.aiAdviceEnabled,
     aiAdviceFrequency: profile?.aiAdviceFrequency ?? DEFAULT_PROFILE.aiAdviceFrequency,
   };
@@ -130,6 +134,8 @@ export async function updateProfile(
     ...(data.weightTargetKg !== undefined
       ? { weightTargetKg: data.weightTargetKg === null ? null : data.weightTargetKg.toFixed(2) }
       : {}),
+    ...(data.waterTargetMl !== undefined ? { waterTargetMl: data.waterTargetMl } : {}),
+    ...(data.sleepTargetMinutes !== undefined ? { sleepTargetMinutes: data.sleepTargetMinutes } : {}),
     ...(data.aiAdviceEnabled !== undefined ? { aiAdviceEnabled: data.aiAdviceEnabled } : {}),
     ...(data.aiAdviceFrequency !== undefined ? { aiAdviceFrequency: data.aiAdviceFrequency } : {}),
   };
@@ -155,14 +161,38 @@ export async function updateProfile(
 
 export async function updateUserTarget(
   userId: string,
-  data: { calorieTarget?: number; weightTargetKg?: number | null },
+  data: {
+    calorieTarget?: number;
+    weightTargetKg?: number | null;
+    waterTargetMl?: number;
+    sleepTargetMinutes?: number;
+  },
 ): Promise<void> {
-  await db.update(users).set({
+  const userUpdateData: Partial<typeof users.$inferInsert> = {
     ...(data.calorieTarget !== undefined ? { calorieTarget: data.calorieTarget } : {}),
     ...(data.weightTargetKg !== undefined
       ? { weightTargetKg: data.weightTargetKg === null ? null : data.weightTargetKg.toFixed(2) }
       : {}),
-  }).where(eq(users.id, userId));
+  };
+
+  if (Object.keys(userUpdateData).length > 0) {
+    await db.update(users).set(userUpdateData).where(eq(users.id, userId));
+  }
+
+  const profileUpdateData: Partial<typeof userProfiles.$inferInsert> = {
+    ...(data.waterTargetMl !== undefined ? { waterTargetMl: data.waterTargetMl } : {}),
+    ...(data.sleepTargetMinutes !== undefined ? { sleepTargetMinutes: data.sleepTargetMinutes } : {}),
+  };
+
+  if (Object.keys(profileUpdateData).length > 0) {
+    await db.insert(userProfiles).values({
+      userId,
+      ...profileUpdateData,
+    }).onConflictDoUpdate({
+      target: userProfiles.userId,
+      set: { ...profileUpdateData, updatedAt: sql`now()` },
+    });
+  }
 }
 
 

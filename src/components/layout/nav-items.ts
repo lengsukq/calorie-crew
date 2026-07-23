@@ -19,3 +19,13 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "progress", label: "进度", href: "/progress", icon: BarChart3 },
   { id: "profile", label: "我的", href: "/profile", icon: User },
 ];
+
+/** 移动端底部导航：中央记录按钮左侧的标签 */
+export const NAV_ITEMS_LEFT: NavItem[] = NAV_ITEMS.filter((item) =>
+  ["today", "diary"].includes(item.id),
+);
+
+/** 移动端底部导航：中央记录按钮右侧的标签 */
+export const NAV_ITEMS_RIGHT: NavItem[] = NAV_ITEMS.filter((item) =>
+  ["progress", "profile"].includes(item.id),
+);

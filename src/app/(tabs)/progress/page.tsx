@@ -10,5 +10,5 @@ export default async function ProgressPage() {
   const user = await getUserProfile(userId);
   if (!user) redirect("/login");
 
-  return <ProgressContent weightTargetKg={user.weightTargetKg} />;
+  return <ProgressContent calorieTarget={user.calorieTarget} weightTargetKg={user.weightTargetKg} />;
 }

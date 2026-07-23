@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
-import { RefreshCw, Loader2, Sparkles, type LucideIcon } from "lucide-react";
+import { RefreshCw, Loader2, Sparkles, History, type LucideIcon } from "lucide-react";
 import { useAiAdvice } from "@/hooks/useAiAdvice";
 import type { AiAdviceType } from "@/lib/db/schema";
 import { runWithToast } from "@/lib/ui/with-toast-action";
@@ -43,7 +44,7 @@ export function AiAdviceCard({
   enabled = true,
   autoGenerate = false,
 }: AiAdviceCardProps) {
-  const { data: adviceData, loading, generating, error, generate, complete, dismiss, feedback, reload } = useAiAdvice({ type, enabled });
+  const { data: adviceData, loading, generating, error, generate, complete, dismiss, feedback, reload } = useAiAdvice({ type, enabled, autoGenerate });
   const [expanded, setExpanded] = useState(false);
   const displayAdvice = adviceData.latestAdvice;
 
@@ -66,6 +67,14 @@ export function AiAdviceCard({
           <CardTitle className="text-sm">{title}</CardTitle>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            href="/advice-history"
+            className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            aria-label="查看 AI 建议历史"
+          >
+            <History className="h-3.5 w-3.5" />
+            历史
+          </Link>
           <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => void reload()}>
             刷新列表
           </Button>

@@ -1,13 +1,20 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { updateCalorieTarget, updateUserWeightTarget } from "@/lib/api/users";
+import {
+  updateCalorieTarget,
+  updateSleepTarget as apiUpdateSleepTarget,
+  updateUserWeightTarget,
+  updateWaterTarget as apiUpdateWaterTarget,
+} from "@/lib/api/users";
 
 interface UseUserTargetReturn {
   updating: boolean;
   error: string | null;
   updateTarget: (target: number) => Promise<boolean>;
   updateWeightTarget: (target: number | null) => Promise<boolean>;
+  updateWaterTarget: (target: number) => Promise<boolean>;
+  updateSleepTarget: (target: number) => Promise<boolean>;
 }
 
 export function useUserTarget(): UseUserTargetReturn {
@@ -44,5 +51,35 @@ export function useUserTarget(): UseUserTargetReturn {
     }
   }, []);
 
-  return { updating, error, updateTarget, updateWeightTarget };
+  const updateWaterTarget = useCallback(async (target: number): Promise<boolean> => {
+    setUpdating(true);
+    setError(null);
+    try {
+      await apiUpdateWaterTarget(target);
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "更新失败";
+      setError(message);
+      return false;
+    } finally {
+      setUpdating(false);
+    }
+  }, []);
+
+  const updateSleepTarget = useCallback(async (target: number): Promise<boolean> => {
+    setUpdating(true);
+    setError(null);
+    try {
+      await apiUpdateSleepTarget(target);
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "更新失败";
+      setError(message);
+      return false;
+    } finally {
+      setUpdating(false);
+    }
+  }, []);
+
+  return { updating, error, updateTarget, updateWeightTarget, updateWaterTarget, updateSleepTarget };
 }

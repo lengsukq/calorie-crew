@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   completeAiAdvice,
   deleteAiAdvice,
@@ -17,6 +17,7 @@ interface UseAiAdviceOptions {
   type?: AiAdviceType;
   range?: "7d" | "30d" | "90d";
   enabled?: boolean;
+  autoGenerate?: boolean;
 }
 
 interface AiAdviceDataBundle {
@@ -50,6 +51,7 @@ export function useAiAdvice({
   type,
   range = "7d",
   enabled = true,
+  autoGenerate = false,
 }: UseAiAdviceOptions): UseAiAdviceReturn {
   const [advices, setAdvices] = useState<AiAdviceData[]>([]);
   const [loading, setLoading] = useState(false);
@@ -96,6 +98,18 @@ export function useAiAdvice({
     },
     [type],
   );
+
+  const autoGenerateTriggered = useRef(false);
+
+  useEffect(() => {
+    if (!autoGenerate || !enabled || !type || loading) return;
+    if (autoGenerateTriggered.current) return;
+    if (advices.length > 0) return;
+    autoGenerateTriggered.current = true;
+    void generate(false).catch(() => {
+      /* 懒生成失败时静默处理，用户仍可手动触发 */
+    });
+  }, [autoGenerate, enabled, type, loading, advices.length, generate]);
 
   const remove = useCallback(async (id: string) => {
     try {

@@ -3,13 +3,14 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { useAiAdviceHistory } from "@/hooks/useAiAdviceHistory";
 import type { AiAdviceType } from "@/lib/db/schema";
 import type { AiAdviceData } from "@/shared/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/progress/ProgressParts";
 
 const TYPE_LABELS: Record<AiAdviceType, string> = {
   daily_diet: "每日饮食",
@@ -127,10 +128,11 @@ export function AdviceHistoryContent() {
       ) : data.length === 0 ? (
         <Card>
           <CardContent>
-            <div className="flex flex-col items-center gap-2 py-8 text-center">
-              <span className="text-3xl opacity-50">📝</span>
-              <p className="text-sm text-muted-foreground">暂无建议历史</p>
-            </div>
+            <EmptyState
+              icon={<Sparkles className="h-8 w-8" />}
+              text="暂无建议历史"
+              hint="生成 AI 建议后会在这里保留记录"
+            />
           </CardContent>
         </Card>
       ) : (

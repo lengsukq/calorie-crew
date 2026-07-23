@@ -1,15 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { TrendingUp, Scale, Moon, Ruler, PieChart } from "lucide-react";
+import { TrendingUp, Scale, Moon, Ruler, PieChart, Droplets } from "lucide-react";
 import { useBodyMeasurements } from "@/hooks/useBodyMeasurements";
 import { useExerciseLogs } from "@/hooks/useExerciseLogs";
 import { useHistory } from "@/hooks/useHistory";
+import { useProfile } from "@/hooks/useProfile";
 import { useSleepLogs } from "@/hooks/useSleepLogs";
+import { useWaterLogs } from "@/hooks/useWaterLogs";
 import { useWeightLogs } from "@/hooks/useWeightLogs";
 import { CalorieChart } from "@/components/progress/CalorieChart";
 import { ExerciseStatsPanel } from "@/components/progress/ExerciseStatsPanel";
 import { MacroDonut } from "@/components/progress/MacroDonut";
+import { SleepTrendChart } from "@/components/progress/SleepTrendChart";
+import { WaterTrendChart } from "@/components/progress/WaterTrendChart";
 import { WeightTrendChart } from "@/components/progress/WeightTrendChart";
 import { EmptyState, StatBox } from "@/components/progress/ProgressParts";
 import { StatCard } from "@/components/shared/StatCard";
@@ -18,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
 import { addDays, todayDate } from "@/lib/date";
+import { calculateMacroTargets } from "@/shared/constants";
 import {
   calculateOnTargetRate,
   calculateStreak,
@@ -27,6 +32,7 @@ import {
 type Period = 7 | 30 | 365;
 
 interface ProgressContentProps {
+  calorieTarget: number;
   weightTargetKg: string | null;
 }
 
@@ -39,15 +45,23 @@ function formatRangeLabel(period: Period): string {
   return `近 ${period} 天`;
 }
 
-export function ProgressContent({ weightTargetKg }: ProgressContentProps) {
+export function ProgressContent({ calorieTarget, weightTargetKg }: ProgressContentProps) {
   const [period, setPeriod] = useState<Period>(7);
   const { data, loading } = useHistory(period);
+  const { data: profileData } = useProfile();
   const rangeStartDate = getPeriodStartDate(period);
   const rangeEndDate = todayDate();
   const { data: weightLogs, loading: weightLoading } = useWeightLogs({ startDate: rangeStartDate, endDate: rangeEndDate });
   const { data: exerciseLogs, loading: exerciseLoading } = useExerciseLogs({ startDate: rangeStartDate, endDate: rangeEndDate });
   const { data: sleepLogs, loading: sleepLoading } = useSleepLogs({ startDate: rangeStartDate, endDate: rangeEndDate });
+  const { data: waterLogs, loading: waterLoading } = useWaterLogs({ startDate: rangeStartDate, endDate: rangeEndDate });
   const { data: bodyMeasurementLogs, loading: bodyMeasurementLoading } = useBodyMeasurements({ startDate: rangeStartDate, endDate: rangeEndDate });
+
+  const waterTargetMl = profileData?.profile.waterTargetMl ?? 2000;
+  const sleepTargetMinutes = profileData?.profile.sleepTargetMinutes ?? 480;
+  const healthGoal = profileData?.profile.healthGoal ?? "general_health";
+  const aiAdviceFrequency = profileData?.profile.aiAdviceFrequency ?? "daily";
+  const macroTargets = calculateMacroTargets(calorieTarget, healthGoal);
 
   const sortedData = useMemo(
     () => [...data].sort((left, right) => left.logDate.localeCompare(right.logDate)),
@@ -88,7 +102,7 @@ export function ProgressContent({ weightTargetKg }: ProgressContentProps) {
         <StatCard label="最长连续" value={streak} unit="天" accentColor="warning" />
       </div>
 
-      <AiAdviceCard title="AI 健康周报" type="weekly_summary" autoGenerate />
+      <AiAdviceCard title="AI 健康周报" type="weekly_summary" autoGenerate={aiAdviceFrequency === "weekly"} />
 
       {weekComparison && (
         <Card>
@@ -189,6 +203,22 @@ export function ProgressContent({ weightTargetKg }: ProgressContentProps) {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">饮水趋势</CardTitle>
+          <p className="text-xs text-muted-foreground">{formatRangeLabel(period)}·每日饮水与目标对比</p>
+        </CardHeader>
+        <CardContent>
+          {waterLoading ? (
+            <Skeleton className="h-48 w-full" />
+          ) : waterLogs.length === 0 ? (
+            <EmptyState icon={<Droplets className="h-8 w-8" />} text="暂无饮水记录，先在今日页面记录一杯吧" />
+          ) : (
+            <WaterTrendChart logs={waterLogs} targetMl={waterTargetMl} />
+          )}
+        </CardContent>
+      </Card>
+
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader className="pb-3">
@@ -200,7 +230,9 @@ export function ProgressContent({ weightTargetKg }: ProgressContentProps) {
             ) : sleepLogs.length === 0 ? (
               <EmptyState icon={<Moon className="h-8 w-8" />} text="暂无睡眠记录" />
             ) : (
-              <div className="grid grid-cols-2 gap-3">
+              <>
+                <SleepTrendChart logs={sleepLogs} targetMinutes={sleepTargetMinutes} />
+                <div className="mt-4 grid grid-cols-2 gap-3">
                 <StatBox
                   label="平均时长"
                   value={`${Math.round(sleepLogs.reduce((sum, log) => sum + log.sleepMinutes, 0) / sleepLogs.length / 60 * 10) / 10}`}
@@ -212,6 +244,7 @@ export function ProgressContent({ weightTargetKg }: ProgressContentProps) {
                   unit="/ 5"
                 />
               </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -265,6 +298,9 @@ export function ProgressContent({ weightTargetKg }: ProgressContentProps) {
                   <p className="text-sm font-bold text-chart-2 tabular-nums">{totalFat.toFixed(1)} g</p>
                 </div>
               </div>
+              <p className="mt-3 text-center text-[11px] text-muted-foreground">
+                每日目标（{calorieTarget} kcal）：蛋白 {macroTargets.proteinG}g · 碳水 {macroTargets.carbsG}g · 脂肪 {macroTargets.fatG}g
+              </p>
             </>
           )}
         </CardContent>

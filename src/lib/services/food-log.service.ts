@@ -101,6 +101,45 @@ export async function getFoodLogsByDate(userId: string, logDate: string) {
   });
 }
 
+export async function copyDayFoodLogs(userId: string, sourceDate: string, targetDate: string) {
+  if (sourceDate === targetDate) return 0;
+
+  const sourceRows = await db.query.foodLogs.findMany({
+    where: and(eq(foodLogs.userId, userId), eq(foodLogs.logDate, sourceDate)),
+    columns: {
+      userId: true,
+      mealType: true,
+      foodName: true,
+      servingDescription: true,
+      calories: true,
+      proteinG: true,
+      carbsG: true,
+      fatG: true,
+    },
+  });
+  if (sourceRows.length === 0) return 0;
+
+  const copiedCount = await copyFoodLogsToDate(
+    userId,
+    sourceRows as Array<{
+      userId: string;
+      mealType: MealType;
+      foodName: string;
+      servingDescription: string;
+      calories: number;
+      proteinG: string;
+      carbsG: string;
+      fatG: string;
+    }>,
+    targetDate,
+  );
+
+  if (copiedCount > 0) {
+    await recalculateDailySummary(userId, targetDate);
+  }
+  return copiedCount;
+}
+
 export async function createFoodLog(userId: string, data: FoodLogWriteInput) {
   const [log] = await db
     .insert(foodLogs)

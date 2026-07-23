@@ -58,3 +58,14 @@ export function batchActionFoodLogs(
     body: JSON.stringify({ action, ids, targetDate }),
   });
 }
+
+interface CopyDayResponse {
+  copiedCount: number;
+}
+
+export function copyDayFoodLogs(sourceDate: string, targetDate: string): Promise<CopyDayResponse> {
+  return apiFetch<CopyDayResponse>("/api/food-logs/copy", {
+    method: "POST",
+    body: JSON.stringify({ sourceDate, targetDate }),
+  });
+}

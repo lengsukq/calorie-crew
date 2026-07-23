@@ -1,11 +1,12 @@
 import { and, desc, eq, gte, gt } from "drizzle-orm";
-import { AI_ADVICE_PROMPTS } from "@/lib/constants/ai-advice-prompts";
+import { AI_ADVICE_PROMPTS, NEXT_MEAL_PROMPT } from "@/lib/constants/ai-advice-prompts";
 import { db } from "@/lib/db/client";
 import {
   aiAdvices,
   dailySummaries,
   exerciseLogs,
   userAiConfigs,
+  users,
   weightLogs,
   type AiAdviceType,
 } from "@/lib/db/schema";
@@ -13,7 +14,8 @@ import { addDays, todayDate } from "@/lib/date";
 import { fallbackAdvicePayload, sanitizeAdvice } from "@/lib/services/advice-safety";
 import { getEffectiveConfig } from "@/lib/services/food-recognize.service";
 import { getProfile } from "@/lib/services/profile.service";
-import type { AiAdviceData } from "@/shared/types";
+import { calculateMacroTargets, HEALTH_GOAL_LABELS } from "@/shared/constants";
+import type { AiAdviceData, NextMealSuggestion } from "@/shared/types";
 
 interface RecentAdviceData {
   summaries: Array<typeof dailySummaries.$inferSelect>;
@@ -192,6 +194,53 @@ export async function generateAdvice(userId: string, type: AiAdviceType, force: 
   }).returning();
 
   return mapAdviceRow(createdAdvice);
+}
+
+export async function generateNextMealSuggestion(userId: string): Promise<NextMealSuggestion> {
+  const [profileResponse, user, todaySummary] = await Promise.all([
+    getProfile(userId),
+    db.query.users.findFirst({ where: eq(users.id, userId), columns: { calorieTarget: true } }),
+    db.query.dailySummaries.findFirst({
+      where: and(eq(dailySummaries.userId, userId), eq(dailySummaries.logDate, todayDate())),
+    }),
+  ]);
+
+  if (!profileResponse.profile.aiAdviceEnabled) {
+    throw new Error("AI 建议已关闭");
+  }
+
+  const calorieTarget = user?.calorieTarget ?? 2000;
+  const healthGoal = profileResponse.profile.healthGoal;
+  const macroTargets = calculateMacroTargets(calorieTarget, healthGoal);
+
+  const consumedProteinG = Number(todaySummary?.totalProteinG ?? 0);
+  const consumedCarbsG = Number(todaySummary?.totalCarbsG ?? 0);
+  const consumedFatG = Number(todaySummary?.totalFatG ?? 0);
+  const remainingKcal = todaySummary?.remainingKcal ?? calorieTarget;
+  const proteinGap = Math.max(0, Math.round(macroTargets.proteinG - consumedProteinG));
+  const carbsGap = Math.max(0, Math.round(macroTargets.carbsG - consumedCarbsG));
+  const fatGap = Math.max(0, Math.round(macroTargets.fatG - consumedFatG));
+
+  const userContext = [
+    `健康目标：${HEALTH_GOAL_LABELS[healthGoal]}`,
+    `今日热量目标：${calorieTarget}kcal，已摄入 ${todaySummary?.totalKcal ?? 0}kcal，剩余可摄入 ${remainingKcal}kcal。`,
+    `今日宏量已摄入：蛋白质 ${consumedProteinG.toFixed(1)}g，碳水 ${consumedCarbsG.toFixed(1)}g，脂肪 ${consumedFatG.toFixed(1)}g。`,
+    `宏量缺口（距每日目标）：蛋白质 ${proteinGap}g，碳水 ${carbsGap}g，脂肪 ${fatGap}g。`,
+    `今日已记录餐食：${todaySummary && todaySummary.totalKcal > 0 ? "有" : "无（可能是第一餐）"}。`,
+  ].join("\n");
+
+  const rawContent = await requestAiAdvice(NEXT_MEAL_PROMPT.systemPrompt, userContext, NEXT_MEAL_PROMPT.taskPrompt, userId);
+  const sanitizedPayload = rawContent ? sanitizeAdvice(rawContent) : fallbackAdvicePayload("下一餐建议暂时不可用，请稍后重试。");
+
+  return {
+    summary: sanitizedPayload.summary,
+    suggestions: sanitizedPayload.suggestions,
+    remainingKcal,
+    proteinGap,
+    carbsGap,
+    fatGap,
+    generatedAt: new Date().toISOString(),
+  };
 }
 
 export async function deleteAdvice(userId: string, id: string): Promise<boolean> {

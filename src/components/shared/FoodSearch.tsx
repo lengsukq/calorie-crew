@@ -1,15 +1,45 @@
 "use client";
 
+import { useMemo } from "react";
 import { Search } from "lucide-react";
 import { useFoodSearch, type FoodItem } from "@/hooks/useFoodSearch";
+import { useUserFoods } from "@/hooks/useUserFoods";
 import { Loader2 } from "lucide-react";
 
 interface FoodSearchProps {
   onSelect: (food: FoodItem) => void;
 }
 
+const USER_FOOD_ID_PREFIX = "user-";
+
 export function FoodSearch({ onSelect }: FoodSearchProps) {
-  const { query, setQuery, results, loading } = useFoodSearch();
+  const { foods: userFoods, markUsed } = useUserFoods();
+
+  const personalFoods = useMemo<FoodItem[]>(
+    () =>
+      userFoods.map((food) => ({
+        id: `${USER_FOOD_ID_PREFIX}${food.id}`,
+        name: food.name,
+        category: "我的食物",
+        servingSize: food.servingDescription || "1 份",
+        calories: food.calories,
+        proteinG: parseFloat(food.proteinG || "0"),
+        carbsG: parseFloat(food.carbsG || "0"),
+        fatG: parseFloat(food.fatG || "0"),
+        keywords: [food.name],
+      })),
+    [userFoods],
+  );
+
+  const { query, setQuery, results, loading } = useFoodSearch(personalFoods);
+
+  function handleSelect(food: FoodItem) {
+    if (food.id.startsWith(USER_FOOD_ID_PREFIX)) {
+      void markUsed(food.id.slice(USER_FOOD_ID_PREFIX.length));
+    }
+    onSelect(food);
+    setQuery("");
+  }
 
   return (
     <div className="relative">
@@ -35,10 +65,7 @@ export function FoodSearch({ onSelect }: FoodSearchProps) {
             results.map((food) => (
               <button
                 key={food.id}
-                onClick={() => {
-                  onSelect(food);
-                  setQuery("");
-                }}
+                onClick={() => handleSelect(food)}
                 className="flex w-full items-center justify-between px-4 py-2.5 text-left text-sm transition-colors hover:bg-accent"
               >
                 <div className="min-w-0 flex-1">

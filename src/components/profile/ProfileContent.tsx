@@ -9,6 +9,8 @@ import { createInvite } from "@/lib/api/admin-invites";
 import { ApiError } from "@/lib/api/client";
 import { logout } from "@/lib/api/auth";
 import { TargetSetting } from "@/components/profile/TargetSetting";
+import { DataExportPanel } from "@/components/profile/DataExportPanel";
+import { AchievementsPanel } from "@/components/profile/AchievementsPanel";
 import { AdminPanel } from "@/components/profile/AdminPanel";
 import { AiConfigPanel } from "@/components/profile/AiConfigPanel";
 import { HealthMetricsCard } from "@/components/profile/HealthMetricsCard";
@@ -29,7 +31,7 @@ interface ProfileContentProps {
 }
 
 export function ProfileContent({ email, role, calorieTarget, weightTargetKg }: ProfileContentProps) {
-  const { updateTarget } = useUserTarget();
+  const { updateTarget, updateWaterTarget, updateSleepTarget } = useUserTarget();
   const { data: profileData, loading: profileLoading } = useProfile();
 
   const profileCompleteness = profileData?.profileCompleteness.percentage ?? 0;
@@ -102,7 +104,16 @@ export function ProfileContent({ email, role, calorieTarget, weightTargetKg }: P
       {/* Settings section */}
       <div className="space-y-3">
         <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">设置</p>
-        <TargetSetting currentTarget={calorieTarget} onUpdate={updateTarget} />
+        <TargetSetting
+          calorieTarget={calorieTarget}
+          waterTargetMl={profileData?.profile.waterTargetMl ?? 2000}
+          sleepTargetMinutes={profileData?.profile.sleepTargetMinutes ?? 480}
+          onUpdateCalorie={updateTarget}
+          onUpdateWater={updateWaterTarget}
+          onUpdateSleep={updateSleepTarget}
+        />
+        <DataExportPanel />
+        <AchievementsPanel />
         <HealthMetricsCard />
         <Accordion type="multiple" defaultValue={!weightTargetKg ? ["profile"] : undefined} className="space-y-3">
           <AccordionItem value="profile" className="rounded-lg border bg-card px-4">

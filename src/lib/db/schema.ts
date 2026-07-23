@@ -177,6 +177,8 @@ export const userProfiles = pgTable(
     activityLevel: text("activity_level", { enum: activityLevels }).default("sedentary"),
     healthGoal: text("health_goal", { enum: healthGoals }).default("general_health"),
     weightTargetKg: numeric("weight_target_kg", { precision: 6, scale: 2 }),
+    waterTargetMl: integer("water_target_ml").notNull().default(2000),
+    sleepTargetMinutes: integer("sleep_target_minutes").notNull().default(480),
     aiAdviceEnabled: boolean("ai_advice_enabled").notNull().default(true),
     aiAdviceFrequency: text("ai_advice_frequency", { enum: aiAdviceFrequencies }).default("daily"),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -264,6 +266,42 @@ export const bodyMeasurements = pgTable(
 
 export const mealTypes = ["breakfast", "lunch", "dinner", "snack"] as const;
 export type MealType = (typeof mealTypes)[number];
+
+export const userFoods = pgTable(
+  "user_foods",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    servingDescription: text("serving_description").notNull().default(""),
+    calories: integer("calories").notNull().default(0),
+    proteinG: numeric("protein_g", { precision: 8, scale: 2 }).notNull().default("0"),
+    carbsG: numeric("carbs_g", { precision: 8, scale: 2 }).notNull().default("0"),
+    fatG: numeric("fat_g", { precision: 8, scale: 2 }).notNull().default("0"),
+    isFavorite: boolean("is_favorite").notNull().default(false),
+    usageCount: integer("usage_count").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("user_foods_user_id_idx").on(table.userId),
+    index("user_foods_user_usage_idx").on(table.userId, table.usageCount),
+  ],
+);
+
+export const achievements = pgTable(
+  "achievements",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    achievementId: text("achievement_id").notNull(),
+    unlockedAt: timestamp("unlocked_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    unique("achievements_user_achievement_unique").on(table.userId, table.achievementId),
+    index("achievements_user_id_idx").on(table.userId),
+  ],
+);
 
 export const userAiConfigs = pgTable(
   "user_ai_configs",

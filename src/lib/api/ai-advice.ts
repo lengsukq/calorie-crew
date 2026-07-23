@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
-import type { AiAdviceData } from "@/shared/types";
+import type { AiAdviceData, NextMealSuggestion } from "@/shared/types";
 import type { AiAdviceType } from "@/lib/db/schema";
 
 interface AiAdviceListResponse {
@@ -52,4 +52,8 @@ export function reactivateAiAdvice(id: string): Promise<{ advice: AiAdviceData }
   return apiFetch<{ advice: AiAdviceData }>(`/api/ai/advice/${id}/reactivate`, {
     method: "POST",
   });
+}
+
+export function fetchNextMealSuggestion(): Promise<NextMealSuggestion> {
+  return apiFetch<NextMealSuggestion>("/api/ai/next-meal", { method: "POST" });
 }

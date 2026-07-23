@@ -22,7 +22,7 @@ export default async function TabsLayout({ children }: TabsLayoutProps) {
 
       <div className="lg:pl-64">
         <TopBar email={user?.email} role={user?.role} />
-        <main className="mx-auto w-full max-w-5xl px-4 py-6 pb-24 lg:px-8 lg:py-8 lg:pb-8">
+        <main className="mx-auto w-full max-w-5xl px-4 py-6 pb-28 lg:px-8 lg:py-8 lg:pb-8">
           {children}
         </main>
       </div>

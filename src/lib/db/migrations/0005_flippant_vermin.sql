@@ -1,0 +1,2 @@
+ALTER TABLE "user_profiles" ADD COLUMN "water_target_ml" integer DEFAULT 2000 NOT NULL;--> statement-breakpoint
+ALTER TABLE "user_profiles" ADD COLUMN "sleep_target_minutes" integer DEFAULT 480 NOT NULL;

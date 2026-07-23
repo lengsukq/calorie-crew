@@ -56,11 +56,33 @@ export const AI_ADVICE_FREQUENCY_LABELS: Record<AiAdviceFrequency, string> = {
   off: "关闭",
 };
 
-/** Default macro calorie split used for progress bars when no personal targets exist. */
-export const DEFAULT_MACRO_CALORIE_RATIOS = {
-  protein: 0.2,
-  carbs: 0.5,
-  fat: 0.3,
+export type AchievementMetric = "foodLogs" | "streak";
+
+export interface AchievementDefinition {
+  id: string;
+  title: string;
+  description: string;
+  metric: AchievementMetric;
+  target: number;
+}
+
+export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
+  { id: "first_log", title: "初次记录", description: "记录第一笔饮食", metric: "foodLogs", target: 1 },
+  { id: "logs_30", title: "持之以恒", description: "累计记录 30 餐", metric: "foodLogs", target: 30 },
+  { id: "logs_100", title: "百餐达人", description: "累计记录 100 餐", metric: "foodLogs", target: 100 },
+  { id: "streak_7", title: "七日连击", description: "连续记录 7 天", metric: "streak", target: 7 },
+  { id: "streak_30", title: "月度坚持", description: "连续记录 30 天", metric: "streak", target: 30 },
+];
+
+/** Macro calorie split per health goal. Ratios always sum to 1. */
+export const MACRO_RATIOS_BY_GOAL: Record<
+  HealthGoal,
+  { protein: number; carbs: number; fat: number }
+> = {
+  lose_weight: { protein: 0.3, carbs: 0.4, fat: 0.3 },
+  gain_muscle: { protein: 0.3, carbs: 0.5, fat: 0.2 },
+  maintain: { protein: 0.2, carbs: 0.5, fat: 0.3 },
+  general_health: { protein: 0.2, carbs: 0.5, fat: 0.3 },
 } as const;
 
 export const KCAL_PER_GRAM = {
@@ -69,14 +91,18 @@ export const KCAL_PER_GRAM = {
   fat: 9,
 } as const;
 
-export function calculateMacroTargets(totalKcal: number): {
+export function calculateMacroTargets(
+  totalKcal: number,
+  goal: HealthGoal = "general_health",
+): {
   proteinG: number;
   carbsG: number;
   fatG: number;
 } {
+  const ratios = MACRO_RATIOS_BY_GOAL[goal];
   return {
-    proteinG: Math.round((totalKcal * DEFAULT_MACRO_CALORIE_RATIOS.protein) / KCAL_PER_GRAM.protein),
-    carbsG: Math.round((totalKcal * DEFAULT_MACRO_CALORIE_RATIOS.carbs) / KCAL_PER_GRAM.carbs),
-    fatG: Math.round((totalKcal * DEFAULT_MACRO_CALORIE_RATIOS.fat) / KCAL_PER_GRAM.fat),
+    proteinG: Math.round((totalKcal * ratios.protein) / KCAL_PER_GRAM.protein),
+    carbsG: Math.round((totalKcal * ratios.carbs) / KCAL_PER_GRAM.carbs),
+    fatG: Math.round((totalKcal * ratios.fat) / KCAL_PER_GRAM.fat),
   };
 }

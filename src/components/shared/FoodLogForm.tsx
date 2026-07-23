@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { mealTypes } from "@/lib/db/schema";
 import { MEAL_LABELS } from "@/shared/constants";
+import { inferMealType } from "@/lib/utils/meal-time";
+import { createUserFood } from "@/lib/api/user-foods";
 import { AiFoodImageUpload } from "@/components/shared/AiFoodImageUpload";
 import { FoodSearch } from "@/components/shared/FoodSearch";
 import { FoodItemList, type SelectedFood } from "@/components/shared/FoodItemList";
@@ -49,11 +52,12 @@ function foodItemToFormData(food: FoodItem): FoodLogFormData {
   };
 }
 
-export function FoodLogForm({ onSubmit, onCancel, submitLabel = "批量保存", defaultMealType = "breakfast" }: FoodLogFormProps) {
+export function FoodLogForm({ onSubmit, onCancel, submitLabel = "批量保存", defaultMealType = inferMealType() }: FoodLogFormProps) {
   const [mealType, setMealType] = useState<string>(defaultMealType);
   const [items, setItems] = useState<SelectedFood[]>([]);
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [saveToLibrary, setSaveToLibrary] = useState(false);
 
   function addItem(formData: FoodLogFormData) {
     setSubmitError(null);
@@ -90,6 +94,29 @@ export function FoodLogForm({ onSubmit, onCancel, submitLabel = "批量保存", 
     try {
       const data = items.map(({ tempId: _tempId, ...rest }) => rest);
       await onSubmit(data);
+      if (saveToLibrary) {
+        const seen = new Set<string>();
+        await Promise.all(
+          data
+            .filter((item) => {
+              const key = item.foodName.trim().toLowerCase();
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            })
+            .map((item) =>
+              createUserFood({
+                name: item.foodName,
+                servingDescription: item.servingDescription,
+                calories: item.calories,
+                proteinG: item.proteinG,
+                carbsG: item.carbsG,
+                fatG: item.fatG,
+              }).catch(() => null),
+            ),
+        );
+        toast.success("已保存到我的食物库");
+      }
       setItems([]);
     } catch (err) {
       const message = err instanceof Error ? err.message : "保存失败，请稍后重试";
@@ -132,6 +159,15 @@ export function FoodLogForm({ onSubmit, onCancel, submitLabel = "批量保存", 
         <div className="border-t" />
 
         <FoodItemList items={items} onRemove={removeItem} onUpdateServing={updateServing} />
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={saveToLibrary}
+            onChange={(e) => setSaveToLibrary(e.target.checked)}
+            className="h-3.5 w-3.5 rounded border-input accent-primary"
+          />
+          同时保存到我的食物库
+        </label>
         {submitError && (
           <p className="text-sm text-destructive" role="alert">
             {submitError}

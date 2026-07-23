@@ -18,6 +18,44 @@ export interface FoodLogEntry {
   fatG: string;
 }
 
+export interface UserFoodEntry {
+  id: string;
+  name: string;
+  servingDescription: string;
+  calories: number;
+  proteinG: string;
+  carbsG: string;
+  fatG: string;
+  isFavorite: boolean;
+  usageCount: number;
+}
+
+export interface UserFoodFormData {
+  name: string;
+  servingDescription?: string;
+  calories: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+}
+
+export interface AchievementState {
+  id: string;
+  title: string;
+  description: string;
+  target: number;
+  progress: number;
+  unlocked: boolean;
+  unlockedAt: string | null;
+}
+
+export interface EngagementData {
+  currentStreak: number;
+  longestStreak: number;
+  totalFoodLogs: number;
+  achievements: AchievementState[];
+}
+
 export interface DailySummary {
   totalKcal: number;
   totalExerciseKcal: number;
@@ -92,6 +130,8 @@ export interface UserProfileData {
   activityLevel: ActivityLevel;
   healthGoal: HealthGoal;
   weightTargetKg: string | null;
+  waterTargetMl: number;
+  sleepTargetMinutes: number;
   aiAdviceEnabled: boolean;
   aiAdviceFrequency: AiAdviceFrequency;
 }
@@ -127,6 +167,8 @@ export interface UserProfileFormData {
   activityLevel?: ActivityLevel;
   healthGoal?: HealthGoal;
   weightTargetKg?: number | null;
+  waterTargetMl?: number;
+  sleepTargetMinutes?: number;
   aiAdviceEnabled?: boolean;
   aiAdviceFrequency?: AiAdviceFrequency;
 }
@@ -150,6 +192,16 @@ export interface AiAdviceData {
   completedAt: string | null;
   dismissed: boolean;
   dismissedAt: string | null;
+}
+
+export interface NextMealSuggestion {
+  summary: string;
+  suggestions: AiAdviceSuggestionData[];
+  remainingKcal: number;
+  proteinGap: number;
+  carbsGap: number;
+  fatGap: number;
+  generatedAt: string;
 }
 
 export interface WaterLogEntry {
