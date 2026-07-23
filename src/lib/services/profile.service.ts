@@ -17,6 +17,8 @@ import {
   getSuggestedIntakeRange,
 } from "@/lib/services/health-metrics.service";
 import { calculateCompleteness } from "@/lib/services/profile-completeness";
+import { recalculateDailySummary } from "@/lib/services/daily-summary.service";
+import { todayDate } from "@/lib/date";
 import type { HealthMetricsData, ProfileResponseData, UserProfileData, UserProfileFormData } from "@/shared/types";
 
 const DEFAULT_PROFILE: Omit<UserProfileData, "weightTargetKg"> = {
@@ -177,6 +179,10 @@ export async function updateUserTarget(
 
   if (Object.keys(userUpdateData).length > 0) {
     await db.update(users).set(userUpdateData).where(eq(users.id, userId));
+  }
+
+  if (data.calorieTarget !== undefined) {
+    await recalculateDailySummary(userId, todayDate());
   }
 
   const profileUpdateData: Partial<typeof userProfiles.$inferInsert> = {

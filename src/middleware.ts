@@ -11,7 +11,7 @@ function secretKey(): Uint8Array {
   return new TextEncoder().encode(secret);
 }
 
-const protectedPaths = ["/today", "/diary", "/progress", "/profile"];
+const protectedPaths = ["/today", "/diary", "/progress", "/profile", "/advice-history"];
 const authPaths = ["/login", "/register"];
 
 export async function middleware(request: NextRequest) {
